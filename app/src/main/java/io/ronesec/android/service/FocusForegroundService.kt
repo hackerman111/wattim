@@ -1,0 +1,108 @@
+package io.ronesec.android.service
+
+import android.app.Notification
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
+import android.os.IBinder
+import androidx.core.app.NotificationCompat
+import io.ronesec.android.R
+import io.ronesec.android.RonesecApplication
+import io.ronesec.android.ui.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+class FocusForegroundService : Service() {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        startForegroundWithNotification("Protection active")
+
+        val repository = (application as RonesecApplication).repository
+        scope.launch {
+            repository.getTargetsFlow().collectLatest { targets ->
+                val activeCount = targets.count { it.enabled }
+                val text = if (activeCount > 0) {
+                    "Protection active · $activeCount apps"
+                } else {
+                    "Protection idle · 0 apps protected"
+                }
+                updateNotification(text)
+            }
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_STICKY
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
+
+    private fun startForegroundWithNotification(contentText: String) {
+        val notification = buildNotification(contentText)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+    }
+
+    private fun updateNotification(contentText: String) {
+        val notification = buildNotification(contentText)
+        val manager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+        manager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun buildNotification(contentText: String): Notification {
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        return NotificationCompat.Builder(this, RonesecApplication.CHANNEL_ID_PROTECTION)
+            .setContentTitle("RONESEC")
+            .setContentText(contentText)
+            .setSmallIcon(android.R.drawable.ic_lock_lock)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+    }
+
+    companion object {
+        const val NOTIFICATION_ID = 1001
+
+        fun start(context: Context) {
+            val intent = Intent(context, FocusForegroundService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
+        fun stop(context: Context) {
+            context.stopService(Intent(context, FocusForegroundService::class.java))
+        }
+    }
+}
