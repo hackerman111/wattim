@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="nord">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wattim 🌿</title>
+  <link rel="stylesheet" href="../common/theme.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="header-logo">
+        <span class="logo-leaf">🌿</span>
+        <span class="logo-text">wattim</span>
+      </div>
+      <div class="header-version">v1.0.0</div>
+    </header>
+
+    <!-- Status Card -->
+    <div class="status-card" id="statusCard">
+      <div class="status-indicator">
+        <span class="status-dot dot-active" id="statusDot"></span>
+        <span class="status-title" id="statusTitle">ЗАЩИТА АКТИВНА</span>
+      </div>
+      <div class="status-desc" id="statusDesc">
+        Отслеживается сайтов: <strong id="activeTargetsCount">0</strong>
+      </div>
+      <!-- Countdown timer when paused -->
+      <div class="pause-timer-box" id="pauseTimerBox" style="display: none;">
+        <span class="pause-timer-label">Пауза истекает через:</span>
+        <span class="pause-countdown" id="pauseCountdown">00:00</span>
+        <button class="btn-resume" id="btnResume">Возобновить защиту</button>
+      </div>
+    </div>
+
+    <!-- Quick Pause Buttons Group -->
+    <div class="section-title">Быстрая пауза всей защиты:</div>
+    <div class="pause-buttons-grid">
+      <button class="btn-pause" data-duration="15">15 мин</button>
+      <button class="btn-pause" data-duration="30">30 мин</button>
+      <button class="btn-pause" data-duration="60">1 час</button>
+      <button class="btn-pause btn-pause-infinite" data-duration="1440">1 день</button>
+    </div>
+
+    <!-- Quick Target Action for Current Active Tab -->
+    <div class="current-site-card" id="currentSiteCard">
+      <div class="current-site-info">
+        <span class="site-label">Текущая вкладка:</span>
+        <span class="site-domain" id="currentDomain">Загрузка...</span>
+      </div>
+      <button class="btn-toggle-site" id="btnToggleSite">
+        + Защитить этот сайт
+      </button>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="stats-card">
+      <div class="stats-row">
+        <span class="stat-item">
+          <span class="stat-value" id="statImpulses">0</span>
+          <span class="stat-label">побед над импульсом</span>
+        </span>
+        <span class="stat-separator">·</span>
+        <span class="stat-item">
+          <span class="stat-value" id="statMinutes">0</span>
+          <span class="stat-label">мин сбережено</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Footer Controls -->
+    <footer class="popup-footer">
+      <button class="btn-options" id="btnOpenOptions">
+        ⚙️ Все настройки
+      </button>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
