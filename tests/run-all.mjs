@@ -44,9 +44,14 @@ assert.equal(manifest.manifest_version, 3, 'Manifest version must be 3');
 assert.ok(manifest.name, 'Manifest name must be present');
 assert.ok(manifest.version, 'Manifest version must be present');
 
+// Verify Chromium + Firefox dual compatibility
+assert.ok(manifest.background?.service_worker, 'background.service_worker must be present for Chromium');
+assert.ok(Array.isArray(manifest.background?.scripts) && manifest.background.scripts.length > 0, 'background.scripts must be present for Firefox');
+
 // Verify referenced files
 const filesToCheck = [
   manifest.background?.service_worker,
+  ...(manifest.background?.scripts || []),
   manifest.action?.default_popup,
   manifest.options_ui?.page,
   manifest.action?.default_icon?.['16'],
