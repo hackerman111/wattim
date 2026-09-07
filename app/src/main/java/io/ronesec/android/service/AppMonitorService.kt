@@ -176,6 +176,23 @@ class AppMonitorService : AccessibilityService() {
                         config = decision.config,
                         savedTimeText = savedText,
                         theme = currentTheme,
+                        onEmergencyAccess = { durationMs, disableTarget ->
+                            scope.launch(Dispatchers.IO) {
+                                if (disableTarget) {
+                                    repository.updateTargetEnabled(rawPackage, false)
+                                    repository.grantAccess(rawPackage, null)
+                                } else {
+                                    val grantDuration = durationMs ?: target?.intervention?.reinterventionMs
+                                    repository.grantAccess(rawPackage, grantDuration)
+                                }
+                                repository.recordAttempt(rawPackage, AttemptOutcome.CONTINUED, now)
+                            }
+                            if (durationMs != null) {
+                                cancelReintervention(rawPackage)
+                            } else if (!disableTarget) {
+                                scheduleReintervention(rawPackage, decision.config, 1)
+                            }
+                        },
                         onClose = {
                             performGlobalAction(GLOBAL_ACTION_HOME)
                             cancelReintervention(rawPackage)
@@ -260,6 +277,24 @@ class AppMonitorService : AccessibilityService() {
                 config = reinterventionConfig,
                 savedTimeText = savedText,
                 theme = currentTheme,
+                onEmergencyAccess = { durationMs, disableTarget ->
+                    val emergencyTime = Instant.now()
+                    scope.launch(Dispatchers.IO) {
+                        if (disableTarget) {
+                            repository.updateTargetEnabled(targetPackage, false)
+                            repository.grantAccess(targetPackage, null)
+                        } else {
+                            val grantDuration = durationMs ?: config.reinterventionMs
+                            repository.grantAccess(targetPackage, grantDuration)
+                        }
+                        repository.recordAttempt(targetPackage, AttemptOutcome.CONTINUED, emergencyTime)
+                    }
+                    if (durationMs != null) {
+                        cancelReintervention(targetPackage)
+                    } else if (!disableTarget) {
+                        scheduleReintervention(targetPackage, config, 1)
+                    }
+                },
                 onClose = {
                     performGlobalAction(GLOBAL_ACTION_HOME)
                     cancelReintervention(targetPackage)

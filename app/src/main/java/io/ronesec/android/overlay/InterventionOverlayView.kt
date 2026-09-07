@@ -2,9 +2,11 @@ package io.ronesec.android.overlay
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +46,7 @@ import io.ronesec.android.domain.animation.FillAnimation
 import io.ronesec.android.domain.model.AnimationPhase
 import io.ronesec.android.domain.model.AnimationType
 import io.ronesec.android.domain.model.InterventionConfig
+import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
@@ -48,11 +54,13 @@ import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InterventionOverlayContent(
     targetAppName: String,
     config: InterventionConfig,
     savedTimeText: String? = null,
+    onEmergencyAccess: ((durationMs: Long?, disableTarget: Boolean) -> Unit)? = null,
     onClose: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
@@ -65,6 +73,7 @@ fun InterventionOverlayContent(
     var currentPhase by remember { mutableStateOf(AnimationPhase.INHALE) }
     var remainingTimeMs by remember { mutableLongStateOf(config.durationMs) }
     var elapsedMillisState by remember { mutableLongStateOf(0L) }
+    var showEmergencyConfirmDialog by remember { mutableStateOf(false) }
 
     // 60 FPS animation loop
     LaunchedEffect(config) {
@@ -281,11 +290,9 @@ fun InterventionOverlayContent(
             }
 
             // Action buttons: immediate exit during breathing, or close/continue when complete
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (currentPhase == AnimationPhase.INHALE || currentPhase == AnimationPhase.EXHALE) {
                     TerminalButton(
@@ -293,6 +300,18 @@ fun InterventionOverlayContent(
                         onClick = onClose,
                         isPrimary = false,
                         modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "⚡ ЭКСТРЕННЫЙ ВХОД",
+                        fontFamily = TerminalFontFamily,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.1.sp,
+                        color = palette.textSecondary,
+                        modifier = Modifier
+                            .clickable { showEmergencyConfirmDialog = true }
+                            .padding(vertical = 4.dp, horizontal = 8.dp)
                     )
                 } else if (currentPhase == AnimationPhase.COMPLETE) {
                     Row(
@@ -310,6 +329,113 @@ fun InterventionOverlayContent(
                             onClick = onContinue,
                             isPrimary = true,
                             modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (showEmergencyConfirmDialog) {
+            BasicAlertDialog(
+                onDismissRequest = { showEmergencyConfirmDialog = false }
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, palette.border),
+                    color = palette.surface
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "ВЫ УВЕРЕНЫ?",
+                            fontFamily = TerminalFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            letterSpacing = 0.15.sp,
+                            color = accent
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Text(
+                            text = "Вы действительно хотите пропустить паузу осознанности и войти в приложение?",
+                            fontFamily = TerminalFontFamily,
+                            fontSize = 12.sp,
+                            color = palette.textSecondary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        TerminalButton(
+                            text = "ВОЙТИ РАЗОВО",
+                            onClick = {
+                                onEmergencyAccess?.invoke(null, false)
+                                showEmergencyConfirmDialog = false
+                            },
+                            isPrimary = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "ПРИОСТАНОВИТЬ ЗАЩИТУ ДЛЯ $targetAppName:",
+                            fontFamily = TerminalFontFamily,
+                            fontSize = 11.sp,
+                            letterSpacing = 0.08.sp,
+                            color = palette.textSecondary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                        ) {
+                            TerminalBadge(
+                                text = "15м",
+                                modifier = Modifier.clickable {
+                                    onEmergencyAccess?.invoke(15 * 60_000L, false)
+                                    showEmergencyConfirmDialog = false
+                                }
+                            )
+                            TerminalBadge(
+                                text = "30м",
+                                modifier = Modifier.clickable {
+                                    onEmergencyAccess?.invoke(30 * 60_000L, false)
+                                    showEmergencyConfirmDialog = false
+                                }
+                            )
+                            TerminalBadge(
+                                text = "60м",
+                                modifier = Modifier.clickable {
+                                    onEmergencyAccess?.invoke(60 * 60_000L, false)
+                                    showEmergencyConfirmDialog = false
+                                }
+                            )
+                            TerminalBadge(
+                                text = "До включения",
+                                modifier = Modifier.clickable {
+                                    onEmergencyAccess?.invoke(null, true)
+                                    showEmergencyConfirmDialog = false
+                                }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        TerminalButton(
+                            text = "ВЕРНУТЬСЯ К ДЫХАНИЮ",
+                            onClick = { showEmergencyConfirmDialog = false },
+                            isPrimary = false,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }

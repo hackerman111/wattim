@@ -111,6 +111,11 @@ class RonesecRepository private constructor(
         targetAppDao.insertOrUpdate(TargetAppEntity.fromDomain(target))
     }
 
+    suspend fun updateTargetEnabled(packageName: String, enabled: Boolean) {
+        val target = getTarget(packageName) ?: return
+        saveTarget(target.copy(enabled = enabled))
+    }
+
     suspend fun deleteTarget(packageName: String) {
         targetAppDao.deleteByPackage(packageName)
         accessGrantDao.deleteByPackage(packageName)

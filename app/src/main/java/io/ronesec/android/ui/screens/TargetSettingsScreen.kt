@@ -114,6 +114,7 @@ fun TargetSettingsScreen(
                         growthPeriodMinutes = growthPeriodMinutes
                     ),
                     savedTimeText = "Предпросмотр: вы сберегли 2 дня жизни",
+                    onEmergencyAccess = { _, _ -> showPreview = false },
                     onClose = { showPreview = false },
                     onContinue = { showPreview = false }
                 )

@@ -197,6 +197,7 @@ class OverlayController(private val context: Context) {
         config: InterventionConfig,
         savedTimeText: String? = null,
         theme: AppTheme = AppTheme.NORD,
+        onEmergencyAccess: ((durationMs: Long?, disableTarget: Boolean) -> Unit)? = null,
         onClose: () -> Unit,
         onContinue: () -> Unit
     ) {
@@ -242,6 +243,12 @@ class OverlayController(private val context: Context) {
                         targetAppName = targetAppName,
                         config = config,
                         savedTimeText = savedTimeText,
+                        onEmergencyAccess = if (onEmergencyAccess != null) {
+                            { durationMs, disableTarget ->
+                                dismiss()
+                                onEmergencyAccess(durationMs, disableTarget)
+                            }
+                        } else null,
                         onClose = {
                             dismiss()
                             onClose()
