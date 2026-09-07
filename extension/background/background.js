@@ -1,7 +1,7 @@
 /**
  * wattim Browser Extension - Background Service Worker
- * Intercepts navigation to distracting sites, computes exponential delay,
- * handles mindful pauses, session grants, and alarms.
+ * Evaluates navigation rules, computes exponential delay,
+ * handles mindful pauses, session grants, and tab closures.
  */
 
 import {
@@ -19,7 +19,7 @@ import {
   setStorage
 } from '../common/storage.js';
 
-// In-memory state (backed by service worker lifecycle)
+// In-memory state
 // Maps domain -> expiration timestamp (ms)
 const sessionPasses = new Map();
 
@@ -52,16 +52,16 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 /**
- * Intercept navigation before web request starts.
+ * Core rule evaluation: determines if a URL requires intervention.
+ * 
+ * @param {string} url - Target URL to evaluate
+ * @returns {Promise<Object>} Evaluation result
  */
-chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
-  // Only intercept top-level main frame navigations
-  if (details.frameId !== 0) return;
+export async function evaluateNavigation(url) {
+  if (!url || typeof url !== 'string') {
+    return { shouldIntervene: false };
+  }
 
-  const url = details.url;
-  if (!url || typeof url !== 'string') return;
-
-  // Ignore internal/browser pages
   if (
     url.startsWith('chrome://') ||
     url.startsWith('chrome-extension://') ||
@@ -70,42 +70,41 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     url.startsWith('edge://') ||
     url.startsWith('view-source:')
   ) {
-    return;
+    return { shouldIntervene: false };
   }
 
   const hostname = extractHostname(url);
-  if (!hostname) return;
+  if (!hostname) return { shouldIntervene: false };
 
   const storage = await getStorage();
-
-  // 1. Check Global Pause
   const now = Date.now();
+
+  // 1. Global Pause check
   if (storage.globalPause && storage.globalPause.until > now) {
-    return; // Protection is paused globally
+    return { shouldIntervene: false, isGloballyPaused: true };
   }
 
-  // 2. Check if host matches any enabled target
+  // 2. Target domain check
   const matchedTarget = storage.targets.find(t => t.enabled && matchDomain(url, t.domain));
   if (!matchedTarget) {
-    return; // Not a distracting/target site
+    return { shouldIntervene: false };
   }
 
   const targetDomain = matchedTarget.domain;
 
-  // 3. Check if active session pass exists for this domain
+  // 3. Active Session Pass check
   const passExpiry = sessionPasses.get(targetDomain);
   if (passExpiry && passExpiry > now) {
-    return; // Allowed by temporary session pass
+    return { shouldIntervene: false, hasActivePass: true, remainingMs: passExpiry - now };
   }
 
-  // 4. Check active schedules
+  // 4. Schedules check
   let isHardBlocked = false;
   let customDelay = null;
 
   if (Array.isArray(storage.schedules)) {
     for (const schedule of storage.schedules) {
       if (isScheduleActive(schedule, new Date())) {
-        // Check if schedule applies to all or this specific domain
         if (schedule.targetDomain === 'all' || schedule.targetDomain === targetDomain) {
           if (schedule.mode === 'hard_block') {
             isHardBlocked = true;
@@ -118,16 +117,18 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     }
   }
 
-  // If hard blocked, user cannot enter at all
   if (isHardBlocked) {
-    const interventionUrl = chrome.runtime.getURL(
-      `intervention/intervention.html?mode=hard_block&target=${encodeURIComponent(url)}&domain=${encodeURIComponent(targetDomain)}`
-    );
-    chrome.tabs.update(details.tabId, { url: interventionUrl });
-    return;
+    return {
+      shouldIntervene: true,
+      mode: 'hard_block',
+      targetDomain,
+      url,
+      settings: storage.settings,
+      stats: storage.stats
+    };
   }
 
-  // 5. Calculate Delay with Exponential Backoff
+  // 5. Exponential Backoff Calculation
   const windowMinutes = (storage.backoff && storage.backoff.windowMinutes) || 60;
   const recentAttempts = getRecentAttemptCount(targetDomain, windowMinutes);
 
@@ -145,16 +146,21 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     delay = calculateBackoffDelay(baseDelay, growthPercent, recentAttempts, maxDelay);
   }
 
-  // 6. Redirect to Mindful Intervention Screen
-  const interventionUrl = chrome.runtime.getURL(
-    `intervention/intervention.html?target=${encodeURIComponent(url)}&domain=${encodeURIComponent(targetDomain)}&delay=${delay}&attempts=${recentAttempts}`
-  );
-
-  chrome.tabs.update(details.tabId, { url: interventionUrl });
-});
+  return {
+    shouldIntervene: true,
+    mode: 'normal',
+    targetDomain,
+    url,
+    delay,
+    attempts: recentAttempts,
+    growthPercent: (storage.backoff && storage.backoff.growthPercent) || 20,
+    settings: storage.settings,
+    stats: storage.stats
+  };
+}
 
 /**
- * Handle messages from intervention page, popup, or options.
+ * Message Dispatcher
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message !== 'object') return;
@@ -162,13 +168,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const now = Date.now();
 
   switch (message.type) {
+    case 'CHECK_NAVIGATION': {
+      (async () => {
+        const result = await evaluateNavigation(message.url);
+        sendResponse(result);
+      })();
+      return true;
+    }
+
+    case 'CLOSE_TAB': {
+      (async () => {
+        const { domain, minutesSaved } = message;
+        const storage = await getStorage();
+        const updatedStats = calculateUpdatedStats(
+          storage.stats,
+          minutesSaved || storage.settings.avgSessionMinutes || 10,
+          domain
+        );
+        await setStorage({ stats: updatedStats });
+
+        if (sender.tab && sender.tab.id) {
+          chrome.tabs.remove(sender.tab.id);
+        }
+        sendResponse({ success: true, stats: updatedStats });
+      })();
+      return true;
+    }
+
     case 'GRANT_PASS': {
       const { domain, durationMinutes = 15 } = message;
       if (domain) {
         const expiry = now + (Number(durationMinutes) || 15) * 60 * 1000;
         sessionPasses.set(domain, expiry);
       }
-      sendResponse({ success: true, passes: Object.fromEntries(sessionPasses) });
+      sendResponse({ success: true });
       break;
     }
 
@@ -184,7 +217,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         await setStorage({ stats: updatedStats });
         sendResponse({ success: true, stats: updatedStats });
       })();
-      return true; // Keep channel open for async response
+      return true;
     }
 
     case 'SET_GLOBAL_PAUSE': {
@@ -220,22 +253,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const { domain } = message;
       const expiry = sessionPasses.get(domain) || 0;
       sendResponse({ valid: expiry > now, remainingMs: Math.max(0, expiry - now) });
-      break;
-    }
-
-    case 'RE_INTERVENE': {
-      // Re-trigger intervention when dwell time sentinel expires
-      const { targetUrl, domain } = message;
-      if (domain) {
-        sessionPasses.delete(domain); // Invalidate pass
-      }
-      if (sender.tab && sender.tab.id) {
-        const interventionUrl = chrome.runtime.getURL(
-          `intervention/intervention.html?target=${encodeURIComponent(targetUrl)}&domain=${encodeURIComponent(domain)}&reintervention=true`
-        );
-        chrome.tabs.update(sender.tab.id, { url: interventionUrl });
-      }
-      sendResponse({ success: true });
       break;
     }
 

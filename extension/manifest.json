@@ -49,13 +49,14 @@
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["sentinel/sentinel.js"],
-      "run_at": "document_idle"
+      "js": ["overlay/overlay.js"],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     {
       "resources": [
+        "overlay/*",
         "intervention/*",
         "common/*",
         "icons/*"

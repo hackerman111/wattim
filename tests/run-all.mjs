@@ -25,7 +25,8 @@ const jsFiles = [
   'extension/intervention/intervention.js',
   'extension/popup/popup.js',
   'extension/options/options.js',
-  'extension/sentinel/sentinel.js'
+  'extension/sentinel/sentinel.js',
+  'extension/overlay/overlay.js'
 ];
 
 for (const file of jsFiles) {
