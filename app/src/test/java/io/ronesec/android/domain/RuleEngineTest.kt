@@ -347,4 +347,36 @@ class RuleEngineTest {
         val config = (decision as Decision.Intervention).config
         assertEquals(8_000L, config.durationMs)
     }
+
+    @Test
+    fun `global protection pause unexpired allows access`() {
+        val pausedUntil = baseTime.toEpochMilli() + 600_000L // 10 minutes in future
+        val state = RuntimeState(
+            targets = mapOf(instagram.packageName to instagram),
+            protectionPausedUntil = pausedUntil
+        )
+        val decision = ruleEngine.evaluate(instagram.packageName, baseTime, state, zoneId)
+        assertEquals(Decision.Allow, decision)
+    }
+
+    @Test
+    fun `global protection pause indefinite -1 allows access`() {
+        val state = RuntimeState(
+            targets = mapOf(instagram.packageName to instagram),
+            protectionPausedUntil = -1L
+        )
+        val decision = ruleEngine.evaluate(instagram.packageName, baseTime, state, zoneId)
+        assertEquals(Decision.Allow, decision)
+    }
+
+    @Test
+    fun `global protection pause expired falls back to intervention`() {
+        val pausedUntil = baseTime.toEpochMilli() - 1_000L // 1 second in past
+        val state = RuntimeState(
+            targets = mapOf(instagram.packageName to instagram),
+            protectionPausedUntil = pausedUntil
+        )
+        val decision = ruleEngine.evaluate(instagram.packageName, baseTime, state, zoneId)
+        assertTrue(decision is Decision.Intervention)
+    }
 }

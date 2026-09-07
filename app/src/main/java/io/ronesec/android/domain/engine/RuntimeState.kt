@@ -11,5 +11,6 @@ data class RuntimeState(
     val activeGrants: Map<String, AccessGrant> = emptyMap(),
     val lastExitTimes: Map<String, Instant> = emptyMap(),
     val activeBlockSessions: List<BlockSession> = emptyList(),
-    val blockSchedules: List<BlockSchedule> = emptyList()
+    val blockSchedules: List<BlockSchedule> = emptyList(),
+    val protectionPausedUntil: Long? = null
 )

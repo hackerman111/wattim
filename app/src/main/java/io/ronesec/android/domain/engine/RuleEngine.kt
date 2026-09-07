@@ -17,6 +17,13 @@ class RuleEngine {
         zoneId: ZoneId = ZoneId.systemDefault(),
         recentAttemptsCount: Int = 0
     ): Decision {
+        val pausedUntil = state.protectionPausedUntil
+        if (pausedUntil != null) {
+            if (pausedUntil == -1L || now.toEpochMilli() < pausedUntil) {
+                return Decision.Allow
+            }
+        }
+
         val target = state.targets[packageName] ?: return Decision.Allow
 
         if (!target.enabled) {

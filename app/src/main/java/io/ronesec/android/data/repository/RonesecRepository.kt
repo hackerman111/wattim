@@ -2,6 +2,7 @@ package io.ronesec.android.data.repository
 
 import android.content.Context
 import io.ronesec.android.data.local.AppDatabase
+import io.ronesec.android.data.local.dao.SettingsDao
 import io.ronesec.android.data.local.entity.AccessGrantEntity
 import io.ronesec.android.data.local.entity.AppSettingEntity
 import io.ronesec.android.data.local.entity.BlockScheduleEntity
@@ -79,13 +80,22 @@ class RonesecRepository private constructor(
                 _runtimeState.value = _runtimeState.value.copy(activeBlockSessions = sessions)
             }
         }
+
+        scope.launch {
+            settingsDao.getFlow("protection_paused_until").collect { pausedUntilStr ->
+                val pausedUntil = pausedUntilStr?.toLongOrNull()
+                _runtimeState.value = _runtimeState.value.copy(protectionPausedUntil = pausedUntil)
+            }
+        }
     }
 
     fun getHotRuntimeState(): RuntimeState {
+        val pausedUntil = settingsDao.getByKey("protection_paused_until")?.toLongOrNull()
         // Merge in-memory active grants and exit timestamps for immediate Grace evaluation
         return _runtimeState.value.copy(
             activeGrants = HashMap(activeGrantsMap),
-            lastExitTimes = HashMap(lastExitMap)
+            lastExitTimes = HashMap(lastExitMap),
+            protectionPausedUntil = pausedUntil
         )
     }
 
@@ -216,6 +226,33 @@ class RonesecRepository private constructor(
 
     suspend fun setSetting(key: String, value: String) {
         settingsDao.set(AppSettingEntity(key = key, value = value))
+    }
+
+    suspend fun pauseProtection(durationMinutes: Int) {
+        val targetTime = if (durationMinutes == -1) {
+            -1L
+        } else {
+            System.currentTimeMillis() + durationMinutes * 60_000L
+        }
+        _runtimeState.value = _runtimeState.value.copy(protectionPausedUntil = targetTime)
+        setSetting("protection_paused_until", targetTime.toString())
+    }
+
+    suspend fun resumeProtection() {
+        _runtimeState.value = _runtimeState.value.copy(protectionPausedUntil = null)
+        setSetting("protection_paused_until", "")
+    }
+
+    fun getProtectionPausedUntilFlow(): Flow<Long?> {
+        return getSettingFlow("protection_paused_until").map { it?.toLongOrNull() }
+    }
+
+    private fun SettingsDao.getByKey(key: String): String? {
+        return if (key == "protection_paused_until") {
+            _runtimeState.value.protectionPausedUntil?.toString()
+        } else {
+            null
+        }
     }
 
     companion object {
