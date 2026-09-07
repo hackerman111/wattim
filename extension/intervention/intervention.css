@@ -1,0 +1,347 @@
+/**
+ * wattim Browser Extension - Intervention Screen Styles
+ * Terminal aesthetic matching wattim Android app.
+ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+
+#breathCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.terminal-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 540px;
+  margin: 20px;
+  background: rgba(30, 34, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px var(--accent-glow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Terminal Header */
+.terminal-header {
+  background: var(--bg-surface);
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+.terminal-prompt {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+
+.terminal-target-badge {
+  margin-left: auto;
+  font-size: 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Intervention Card */
+.intervention-card {
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.backoff-badge {
+  background: rgba(250, 189, 47, 0.15);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  margin-bottom: 24px;
+  animation: pulseBadge 2s infinite ease-in-out;
+}
+
+@keyframes pulseBadge {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 0.6; }
+}
+
+.phase-container {
+  margin: 16px 0 20px;
+}
+
+.phase-label {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+}
+
+.timer-countdown {
+  font-size: 3.8rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+
+.quote-text {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 10px 0 28px;
+  max-width: 420px;
+  font-style: italic;
+}
+
+/* Actions Group */
+.actions-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+  outline: none;
+}
+
+.btn-exit {
+  background: var(--bg-surface-elevated);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.btn-exit:hover {
+  background: var(--error);
+  border-color: var(--error);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(191, 97, 106, 0.35);
+}
+
+.btn-continue {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-color: var(--accent);
+  box-shadow: 0 0 25px var(--accent-glow);
+  animation: glowPulse 2s infinite ease-in-out;
+}
+
+.btn-continue:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 10px 30px var(--accent-glow);
+}
+
+@keyframes glowPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.btn-subtext {
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.emergency-wrapper {
+  margin-top: 20px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.btn-link:hover {
+  color: var(--text-muted);
+}
+
+/* Card Blocked (Hard block) */
+.card-blocked .blocked-icon {
+  font-size: 3.5rem;
+  margin-bottom: 12px;
+}
+
+.card-blocked .blocked-title {
+  font-size: 1.8rem;
+  color: var(--error);
+  margin-bottom: 12px;
+}
+
+.card-blocked .blocked-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+/* Terminal Footer */
+.terminal-footer {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  padding: 10px 18px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.terminal-footer strong {
+  color: var(--accent);
+}
+
+/* Modal Dialog */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  max-width: 440px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.modal-text {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-modal-primary {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+.btn-modal-secondary {
+  background: var(--bg-surface-elevated);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.btn-modal-cancel {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}

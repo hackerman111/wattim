@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="nord">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wattim 🌿 — Осознанная пауза</title>
+  <link rel="stylesheet" href="../common/theme.css">
+  <link rel="stylesheet" href="intervention.css">
+</head>
+<body>
+  <!-- 60 FPS Background Canvas -->
+  <canvas id="breathCanvas"></canvas>
+
+  <main class="terminal-container">
+    <!-- Top Terminal Bar -->
+    <header class="terminal-header">
+      <div class="terminal-dots">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+      </div>
+      <div class="terminal-prompt" id="terminalPrompt">$ wattim --breathe</div>
+      <div class="terminal-target-badge" id="targetBadge">target: loading...</div>
+    </header>
+
+    <!-- Main Intervention Card -->
+    <section class="intervention-card" id="cardMain">
+      <!-- Backoff Indicator (if attempts > 0) -->
+      <div class="backoff-badge" id="backoffBadge" style="display: none;">
+        ⚡ Экспоненциальный рост: +<span id="backoffPercent">20</span>% задержки (попытка #<span id="backoffAttempt">1</span>)
+      </div>
+
+      <!-- Breathing Phase & Countdown -->
+      <div class="phase-container">
+        <h1 class="phase-label" id="phaseLabel">Вдох...</h1>
+        <div class="timer-countdown" id="timerDisplay">10</div>
+      </div>
+
+      <!-- Mindful Quote -->
+      <p class="quote-text" id="quoteText">«Сделай глубокий вдох и верни контроль над своим вниманием.»</p>
+
+      <!-- Action Buttons -->
+      <div class="actions-group">
+        <!-- Main Exit Button (Instant win) -->
+        <button class="btn btn-exit" id="btnExit" autofocus>
+          <span class="btn-icon">🚪</span>
+          <span class="btn-text">ВЫЙТИ</span>
+          <span class="btn-subtext">(закрыть вкладку)</span>
+        </button>
+
+        <!-- Continue Button (Hidden until breath finishes) -->
+        <button class="btn btn-continue" id="btnContinue" style="display: none;">
+          <span class="btn-icon">🌿</span>
+          <span class="btn-text">ПРОДОЛЖИТЬ НА САЙТ</span>
+          <span class="btn-subtext">(допуск на 15 минут)</span>
+        </button>
+      </div>
+
+      <!-- Emergency Options Trigger -->
+      <div class="emergency-wrapper" id="emergencyWrapper">
+        <button class="btn-link" id="btnEmergencyTrigger">⚡ Экстренный вход...</button>
+      </div>
+    </section>
+
+    <!-- Hard Block Card (Hidden by default, shown if mode=hard_block) -->
+    <section class="intervention-card card-blocked" id="cardBlocked" style="display: none;">
+      <div class="blocked-icon">🔒</div>
+      <h1 class="blocked-title">Сайт заблокирован</h1>
+      <p class="blocked-desc" id="blockedDesc">Действует расписание полной блокировки (Hard Block). Пора вернуться к важным делам.</p>
+      <div class="actions-group">
+        <button class="btn btn-exit" id="btnExitBlocked">
+          <span class="btn-icon">🚪</span>
+          <span class="btn-text">ЗАКРЫТЬ ВКЛАДКУ</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Bottom Motivational Banner -->
+    <footer class="terminal-footer" id="terminalFooter">
+      <span class="stats-badge">🌱 Сбережено: <strong id="statMinutes">0</strong> минут жизни · <strong id="statImpulses">0</strong> импульсов</span>
+    </footer>
+  </main>
+
+  <!-- Emergency Bypass Modal Dialog -->
+  <div class="modal-backdrop" id="emergencyModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">⚠️ Вы уверены?</span>
+        <button class="modal-close" id="btnModalClose">&times;</button>
+      </div>
+      <p class="modal-text">
+        Импульсивный вход прерывает вашу осознанность. Действительно необходимо открыть сайт прямо сейчас?
+      </p>
+      <div class="modal-actions">
+        <button class="btn btn-modal-primary" id="btnEmergencyOnce">
+          Войти разово прямо сейчас
+        </button>
+        <button class="btn btn-modal-secondary" id="btnEmergencyPauseDomain">
+          Приостановить для этого сайта на 15 минут
+        </button>
+        <button class="btn btn-modal-cancel" id="btnEmergencyCancel">
+          Вернуться к дыханию
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="intervention.js"></script>
+</body>
+</html>
