@@ -47,8 +47,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.text.style.TextOverflow
 import io.ronesec.android.domain.model.BlockSchedule
 import io.ronesec.android.domain.model.BlockSession
+import io.ronesec.android.domain.model.ScheduleAppOverride
+import io.ronesec.android.domain.model.ScheduleType
 import io.ronesec.android.domain.model.TargetApp
 import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
@@ -90,7 +94,8 @@ fun BlocksScreen(
     val palette = LocalAppPalette.current
     val activeSession = activeSessions.firstOrNull { it.active && it.endTime.isAfter(Instant.now()) }
 
-    var showAddScheduleDialog by remember { mutableStateOf(false) }
+    var showScheduleDialog by remember { mutableStateOf(false) }
+    var editingSchedule by remember { mutableStateOf<BlockSchedule?>(null) }
 
     var remainingSeconds by remember(activeSession) {
         val rem = if (activeSession != null) Duration.between(Instant.now(), activeSession.endTime).seconds else 0L
@@ -104,14 +109,19 @@ fun BlocksScreen(
         }
     }
 
-    if (showAddScheduleDialog) {
-        AddScheduleDialog(
+    if (showScheduleDialog) {
+        ScheduleEditorDialog(
+            initialSchedule = editingSchedule,
             targets = targets,
-            onSave = { newSchedule ->
-                onSaveSchedule(newSchedule)
-                showAddScheduleDialog = false
+            onSave = { schedule ->
+                onSaveSchedule(schedule)
+                showScheduleDialog = false
+                editingSchedule = null
             },
-            onDismiss = { showAddScheduleDialog = false }
+            onDismiss = {
+                showScheduleDialog = false
+                editingSchedule = null
+            }
         )
     }
 
@@ -297,7 +307,10 @@ fun BlocksScreen(
 
         TerminalButton(
             text = "+ СОЗДАТЬ РАСПИСАНИЕ",
-            onClick = { showAddScheduleDialog = true },
+            onClick = {
+                editingSchedule = null
+                showScheduleDialog = true
+            },
             isPrimary = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -327,6 +340,10 @@ fun BlocksScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 10.dp)
+                        .clickable {
+                            editingSchedule = schedule
+                            showScheduleDialog = true
+                        }
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
@@ -339,10 +356,24 @@ fun BlocksScreen(
                                 fontFamily = TerminalFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
-                                color = palette.textPrimary
+                                color = palette.textPrimary,
+                                modifier = Modifier
+                                    .weight(1f, fill = false)
+                                    .padding(end = 6.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
 
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                TerminalBadge(
+                                    text = "РЕДАКТИРОВАТЬ",
+                                    isActive = false,
+                                    modifier = Modifier.clickable {
+                                        editingSchedule = schedule
+                                        showScheduleDialog = true
+                                    }
+                                )
+
                                 TerminalBadge(
                                     text = if (schedule.enabled) "АКТИВНО" else "ВЫКЛ",
                                     isActive = schedule.enabled,
@@ -363,6 +394,21 @@ fun BlocksScreen(
 
                         Spacer(modifier = Modifier.height(6.dp))
 
+                        val typeLabel = if (schedule.scheduleType == ScheduleType.HARD_BLOCK) {
+                            "🔒 Полная блокировка"
+                        } else {
+                            "🧘 Интервенции по расписанию"
+                        }
+                        Text(
+                            text = typeLabel,
+                            fontFamily = TerminalFontFamily,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 11.sp,
+                            color = palette.textSecondary
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         Text(
                             text = "⏰ ${formatDaysRu(schedule.days)} · ${schedule.start} → ${schedule.end}",
                             fontFamily = TerminalFontFamily,
@@ -380,8 +426,9 @@ fun BlocksScreen(
                             if (names.isEmpty()) "Не выбраны" else names.joinToString(", ")
                         }
 
+                        val appPrefix = if (schedule.scheduleType == ScheduleType.HARD_BLOCK) "Заблокировано" else "Интервенции"
                         Text(
-                            text = "Заблокировано: $appNames",
+                            text = "$appPrefix: $appNames",
                             fontFamily = TerminalFontFamily,
                             fontSize = 11.sp,
                             color = palette.textSecondary,
@@ -396,7 +443,8 @@ fun BlocksScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddScheduleDialog(
+fun ScheduleEditorDialog(
+    initialSchedule: BlockSchedule? = null,
     targets: List<TargetApp>,
     onSave: (BlockSchedule) -> Unit,
     onDismiss: () -> Unit
@@ -406,16 +454,16 @@ fun AddScheduleDialog(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    var name by remember { mutableStateOf("") }
-    var startHour by remember { mutableIntStateOf(9) }
-    var startMinute by remember { mutableIntStateOf(0) }
-    var endHour by remember { mutableIntStateOf(18) }
-    var endMinute by remember { mutableIntStateOf(0) }
+    var name by remember(initialSchedule) { mutableStateOf(initialSchedule?.name ?: "") }
+    var startHour by remember(initialSchedule) { mutableIntStateOf(initialSchedule?.start?.hour ?: 9) }
+    var startMinute by remember(initialSchedule) { mutableIntStateOf(initialSchedule?.start?.minute ?: 0) }
+    var endHour by remember(initialSchedule) { mutableIntStateOf(initialSchedule?.end?.hour ?: 18) }
+    var endMinute by remember(initialSchedule) { mutableIntStateOf(initialSchedule?.end?.minute ?: 0) }
 
-    var startHourInput by remember { mutableStateOf(String.format(Locale.US, "%02d", startHour)) }
-    var startMinuteInput by remember { mutableStateOf(String.format(Locale.US, "%02d", startMinute)) }
-    var endHourInput by remember { mutableStateOf(String.format(Locale.US, "%02d", endHour)) }
-    var endMinuteInput by remember { mutableStateOf(String.format(Locale.US, "%02d", endMinute)) }
+    var startHourInput by remember(initialSchedule) { mutableStateOf(String.format(Locale.US, "%02d", startHour)) }
+    var startMinuteInput by remember(initialSchedule) { mutableStateOf(String.format(Locale.US, "%02d", startMinute)) }
+    var endHourInput by remember(initialSchedule) { mutableStateOf(String.format(Locale.US, "%02d", endHour)) }
+    var endMinuteInput by remember(initialSchedule) { mutableStateOf(String.format(Locale.US, "%02d", endMinute)) }
 
     fun setStartTime(h: Int, m: Int) {
         startHour = h.mod(24)
@@ -431,9 +479,9 @@ fun AddScheduleDialog(
         endMinuteInput = String.format(Locale.US, "%02d", endMinute)
     }
 
-    var selectedDays by remember {
+    var selectedDays by remember(initialSchedule) {
         mutableStateOf(
-            setOf(
+            initialSchedule?.days ?: setOf(
                 DayOfWeek.MONDAY,
                 DayOfWeek.TUESDAY,
                 DayOfWeek.WEDNESDAY,
@@ -443,8 +491,22 @@ fun AddScheduleDialog(
         )
     }
 
-    var selectedPackages by remember {
-        mutableStateOf(targets.map { it.packageName }.toSet())
+    var selectedPackages by remember(initialSchedule) {
+        mutableStateOf(initialSchedule?.packages ?: targets.map { it.packageName }.toSet())
+    }
+
+    var scheduleType by remember(initialSchedule) {
+        mutableStateOf(initialSchedule?.scheduleType ?: ScheduleType.HARD_BLOCK)
+    }
+
+    var appOverrides by remember(initialSchedule) {
+        mutableStateOf(initialSchedule?.appOverrides?.toMutableMap() ?: mutableMapOf<String, ScheduleAppOverride>())
+    }
+
+    val dialogTitle = if (initialSchedule != null) {
+        "РЕДАКТИРОВАНИЕ РАСПИСАНИЯ"
+    } else {
+        "НОВОЕ РАСПИСАНИЕ"
     }
 
     BasicAlertDialog(onDismissRequest = onDismiss) {
@@ -458,7 +520,7 @@ fun AddScheduleDialog(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "НОВОЕ РАСПИСАНИЕ БЛОКИРОВКИ",
+                text = dialogTitle,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
@@ -477,6 +539,93 @@ fun AddScheduleDialog(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) })
             )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Schedule Type Selector
+            Text(
+                text = "ТИП РАСПИСАНИЯ",
+                fontFamily = TerminalFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp,
+                color = palette.textSecondary
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                val isHardBlock = scheduleType == ScheduleType.HARD_BLOCK
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isHardBlock) palette.surfaceElevated else palette.surface)
+                        .border(1.dp, if (isHardBlock) accent else palette.border, RoundedCornerShape(6.dp))
+                        .clickable { scheduleType = ScheduleType.HARD_BLOCK }
+                        .padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "ПОЛНАЯ БЛОКИРОВКА",
+                            fontFamily = TerminalFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = if (isHardBlock) accent else palette.textPrimary
+                        )
+                        TerminalBadge(
+                            text = if (isHardBlock) "ВЫБРАНО" else "—",
+                            isActive = isHardBlock
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = "Приложения полностью блокируются в указанные часы.",
+                        fontFamily = TerminalFontFamily,
+                        fontSize = 10.sp,
+                        color = palette.textSecondary
+                    )
+                }
+
+                val isIntervention = scheduleType == ScheduleType.INTERVENTION
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isIntervention) palette.surfaceElevated else palette.surface)
+                        .border(1.dp, if (isIntervention) accent else palette.border, RoundedCornerShape(6.dp))
+                        .clickable { scheduleType = ScheduleType.INTERVENTION }
+                        .padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "ОСОБЫЕ ИНТЕРВЕНЦИИ",
+                            fontFamily = TerminalFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = if (isIntervention) accent else palette.textPrimary
+                        )
+                        TerminalBadge(
+                            text = if (isIntervention) "ВЫБРАНО" else "—",
+                            isActive = isIntervention
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = "Приложения открываются через экран паузы с индивидуальными рамками.",
+                        fontFamily = TerminalFontFamily,
+                        fontSize = 10.sp,
+                        color = palette.textSecondary
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -1095,36 +1244,53 @@ fun AddScheduleDialog(
                     color = palette.textSecondary
                 )
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     targets.forEach { target ->
                         val isChecked = target.packageName in selectedPackages
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(if (isChecked) palette.surfaceElevated else palette.surface)
-                                .border(1.dp, if (isChecked) accent else palette.border, RoundedCornerShape(4.dp))
-                                .clickable {
-                                    selectedPackages = if (isChecked) {
-                                        selectedPackages - target.packageName
-                                    } else {
-                                        selectedPackages + target.packageName
-                                    }
-                                }
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(
-                                text = target.displayName,
-                                fontFamily = TerminalFontFamily,
-                                fontSize = 12.sp,
-                                color = if (isChecked) accent else palette.textPrimary
-                            )
-                            TerminalBadge(
-                                text = if (isChecked) "ВКЛ" else "—",
-                                isActive = isChecked
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(if (isChecked) palette.surfaceElevated else palette.surface)
+                                    .border(1.dp, if (isChecked) accent else palette.border, RoundedCornerShape(4.dp))
+                                    .clickable {
+                                        selectedPackages = if (isChecked) {
+                                            selectedPackages - target.packageName
+                                        } else {
+                                            selectedPackages + target.packageName
+                                        }
+                                    }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = target.displayName,
+                                    fontFamily = TerminalFontFamily,
+                                    fontSize = 12.sp,
+                                    color = if (isChecked) accent else palette.textPrimary
+                                )
+                                TerminalBadge(
+                                    text = if (isChecked) "ВКЛ" else "—",
+                                    isActive = isChecked
+                                )
+                            }
+
+                            if (isChecked && scheduleType == ScheduleType.INTERVENTION) {
+                                AppInterventionOverrideCard(
+                                    target = target,
+                                    override = appOverrides[target.packageName],
+                                    onOverrideChange = { newOverride ->
+                                        appOverrides = appOverrides.toMutableMap().apply {
+                                            put(target.packageName, newOverride)
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -1154,18 +1320,268 @@ fun AddScheduleDialog(
                         val mEnd = endMinuteInput.toIntOrNull()?.coerceIn(0, 59) ?: endMinute
                         val pkgs = if (selectedPackages.isEmpty()) targets.map { it.packageName }.toSet() else selectedPackages
                         val schedule = BlockSchedule(
-                            name = name.trim().ifEmpty { "Блокировка" },
+                            id = initialSchedule?.id ?: 0L,
+                            name = name.trim().ifEmpty { if (scheduleType == ScheduleType.HARD_BLOCK) "Блокировка" else "Интервенции" },
                             days = selectedDays,
                             start = LocalTime.of(hStart, mStart),
                             end = LocalTime.of(hEnd, mEnd),
                             packages = pkgs,
-                            enabled = true
+                            enabled = initialSchedule?.enabled ?: true,
+                            scheduleType = scheduleType,
+                            appOverrides = if (scheduleType == ScheduleType.INTERVENTION) appOverrides else emptyMap()
                         )
                         onSave(schedule)
                     },
                     isPrimary = true,
                     modifier = Modifier.weight(1f)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun AddScheduleDialog(
+    targets: List<TargetApp>,
+    onSave: (BlockSchedule) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ScheduleEditorDialog(
+        initialSchedule = null,
+        targets = targets,
+        onSave = onSave,
+        onDismiss = onDismiss
+    )
+}
+
+@Composable
+private fun AppInterventionOverrideCard(
+    target: TargetApp,
+    override: ScheduleAppOverride?,
+    onOverrideChange: (ScheduleAppOverride) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val palette = LocalAppPalette.current
+    val accent = palette.accent
+    val focusManager = LocalFocusManager.current
+
+    val effectiveDurationMs = override?.durationMs ?: target.intervention.durationMs
+    val effectiveDurationSec = (effectiveDurationMs / 1000L).coerceAtLeast(1L)
+    val effectiveReinterventionMs = if (override != null) override.reinterventionMs else target.intervention.reinterventionMs
+
+    var isExpanded by remember { mutableStateOf(true) }
+    var durationText by remember(effectiveDurationSec) { mutableStateOf(effectiveDurationSec.toString()) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .background(palette.surfaceElevated)
+            .border(1.dp, palette.border, RoundedCornerShape(6.dp))
+            .padding(10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isExpanded = !isExpanded },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Индивидуальные рамки: ${target.displayName}",
+                fontFamily = TerminalFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                color = accent
+            )
+            Text(
+                text = if (isExpanded) "▲" else "▼",
+                fontFamily = TerminalFontFamily,
+                fontSize = 10.sp,
+                color = palette.textSecondary
+            )
+        }
+
+        if (isExpanded) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "ДЛИТЕЛЬНОСТЬ ПАУЗЫ",
+                fontFamily = TerminalFontFamily,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = palette.textSecondary
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TerminalButton(
+                    text = "-5с",
+                    onClick = {
+                        val newSec = (effectiveDurationSec - 5L).coerceAtLeast(1L)
+                        durationText = newSec.toString()
+                        onOverrideChange(
+                            ScheduleAppOverride(
+                                durationMs = newSec * 1000L,
+                                reinterventionMs = effectiveReinterventionMs
+                            )
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                TerminalButton(
+                    text = "-1с",
+                    onClick = {
+                        val newSec = (effectiveDurationSec - 1L).coerceAtLeast(1L)
+                        durationText = newSec.toString()
+                        onOverrideChange(
+                            ScheduleAppOverride(
+                                durationMs = newSec * 1000L,
+                                reinterventionMs = effectiveReinterventionMs
+                            )
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                Box(
+                    modifier = Modifier
+                        .weight(1.4f)
+                        .border(1.dp, palette.border, RoundedCornerShape(4.dp))
+                        .background(palette.surface, RoundedCornerShape(4.dp))
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        BasicTextField(
+                            value = durationText,
+                            onValueChange = { input ->
+                                val filtered = input.filter { it.isDigit() }.take(3)
+                                durationText = filtered
+                                val parsed = filtered.toLongOrNull()
+                                if (parsed != null && parsed > 0) {
+                                    val sec = parsed.coerceIn(1L, 300L)
+                                    onOverrideChange(
+                                        ScheduleAppOverride(
+                                            durationMs = sec * 1000L,
+                                            reinterventionMs = effectiveReinterventionMs
+                                        )
+                                    )
+                                }
+                            },
+                            textStyle = TextStyle(
+                                fontFamily = TerminalFontFamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = palette.textPrimary,
+                                textAlign = TextAlign.Center
+                            ),
+                            cursorBrush = SolidColor(accent),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    if (durationText.isBlank() || durationText == "0") {
+                                        durationText = effectiveDurationSec.toString()
+                                    }
+                                    focusManager.clearFocus()
+                                }
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.width(32.dp)
+                        )
+                        Text(
+                            text = "сек",
+                            fontFamily = TerminalFontFamily,
+                            fontSize = 11.sp,
+                            color = palette.textSecondary
+                        )
+                    }
+                }
+
+                TerminalButton(
+                    text = "+1с",
+                    onClick = {
+                        val newSec = (effectiveDurationSec + 1L).coerceAtMost(300L)
+                        durationText = newSec.toString()
+                        onOverrideChange(
+                            ScheduleAppOverride(
+                                durationMs = newSec * 1000L,
+                                reinterventionMs = effectiveReinterventionMs
+                            )
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                TerminalButton(
+                    text = "+5с",
+                    onClick = {
+                        val newSec = (effectiveDurationSec + 5L).coerceAtMost(300L)
+                        durationText = newSec.toString()
+                        onOverrideChange(
+                            ScheduleAppOverride(
+                                durationMs = newSec * 1000L,
+                                reinterventionMs = effectiveReinterventionMs
+                            )
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "ПОВТОР ИНТЕРВЕНЦИИ",
+                fontFamily = TerminalFontFamily,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = palette.textSecondary
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            val intervalChips = listOf(
+                "Выкл" to null,
+                "1м" to 60_000L,
+                "3м" to 180_000L,
+                "5м" to 300_000L,
+                "10м" to 600_000L
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                intervalChips.forEach { (label, ms) ->
+                    val isSelected = effectiveReinterventionMs == ms
+                    TerminalBadge(
+                        text = label,
+                        isActive = isSelected,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                onOverrideChange(
+                                    ScheduleAppOverride(
+                                        durationMs = effectiveDurationSec * 1000L,
+                                        reinterventionMs = ms
+                                    )
+                                )
+                            }
+                    )
+                }
             }
         }
     }
