@@ -43,6 +43,13 @@
       "strict_min_version": "109.0"
     }
   },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["sentinel/sentinel.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "web_accessible_resources": [
     {
       "resources": [
