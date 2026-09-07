@@ -121,42 +121,54 @@ class AppMonitorService : AccessibilityService() {
         }
 
         val state = repository.getHotRuntimeState()
-        val decision = ruleEngine.evaluate(rawPackage, now, state)
-
-        when (decision) {
-            is Decision.Allow -> {
-                if (overlayController.isShowing) {
-                    overlayController.dismiss()
+        scope.launch {
+            val target = state.targets[rawPackage]
+            val count = if (target != null && target.enabled && target.intervention.exponentialGrowthEnabled) {
+                withContext(Dispatchers.IO) {
+                    repository.getRecentAttemptsCount(rawPackage, target.intervention.growthPeriodMinutes)
                 }
-                // If returning to a protected target app within grace, re-grant access & reschedule reintervention
-                val target = state.targets[rawPackage]
-                if (target != null && target.enabled) {
-                    scope.launch(Dispatchers.IO) {
-                        repository.grantAccess(rawPackage, target.intervention.reinterventionMs)
-                    }
-                    scheduleReintervention(rawPackage, target.intervention)
-                }
+            } else {
+                0
             }
 
-            is Decision.Block -> {
-                val appLabel = getAppLabel(rawPackage)
-                overlayController.showBlock(
-                    sessionName = appLabel,
-                    until = decision.until,
-                    theme = currentTheme,
-                    onClose = {
-                        performGlobalAction(GLOBAL_ACTION_HOME)
+            if (currentForegroundPackage != rawPackage) {
+                return@launch
+            }
+
+            val decision = ruleEngine.evaluate(rawPackage, now, state, recentAttemptsCount = count)
+
+            when (decision) {
+                is Decision.Allow -> {
+                    if (overlayController.isShowing) {
+                        overlayController.dismiss()
+                    }
+                    // If returning to a protected target app within grace, re-grant access & reschedule reintervention
+                    if (target != null && target.enabled) {
                         scope.launch(Dispatchers.IO) {
-                            repository.recordAttempt(rawPackage, AttemptOutcome.BLOCKED, now)
+                            repository.grantAccess(rawPackage, target.intervention.reinterventionMs)
                         }
-                        currentForegroundPackage = null
+                        scheduleReintervention(rawPackage, target.intervention)
                     }
-                )
-            }
+                }
 
-            is Decision.Intervention -> {
-                val appLabel = getAppLabel(rawPackage)
-                scope.launch {
+                is Decision.Block -> {
+                    val appLabel = getAppLabel(rawPackage)
+                    overlayController.showBlock(
+                        sessionName = appLabel,
+                        until = decision.until,
+                        theme = currentTheme,
+                        onClose = {
+                            performGlobalAction(GLOBAL_ACTION_HOME)
+                            scope.launch(Dispatchers.IO) {
+                                repository.recordAttempt(rawPackage, AttemptOutcome.BLOCKED, now)
+                            }
+                            currentForegroundPackage = null
+                        }
+                    )
+                }
+
+                is Decision.Intervention -> {
+                    val appLabel = getAppLabel(rawPackage)
                     val savedText = getSavedTimeTextIfEnabled(repository)
 
                     overlayController.showIntervention(

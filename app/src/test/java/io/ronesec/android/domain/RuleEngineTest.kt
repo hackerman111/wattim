@@ -7,6 +7,8 @@ import io.ronesec.android.domain.model.BlockSchedule
 import io.ronesec.android.domain.model.BlockSession
 import io.ronesec.android.domain.model.Decision
 import io.ronesec.android.domain.model.InterventionConfig
+import io.ronesec.android.domain.model.ScheduleAppOverride
+import io.ronesec.android.domain.model.ScheduleType
 import io.ronesec.android.domain.model.TargetApp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -195,5 +197,154 @@ class RuleEngineTest {
         // Returned immediately (1ms later)
         val decision = ruleEngine.evaluate(zeroGraceApp.packageName, baseTime.plusMillis(1), state, zoneId)
         assertTrue(decision is Decision.Intervention)
+    }
+
+    @Test
+    fun `active HARD_BLOCK schedule returns Decision Block`() {
+        val schedule = BlockSchedule(
+            id = 10,
+            name = "WORK HARD BLOCK",
+            days = setOf(DayOfWeek.MONDAY),
+            start = LocalTime.of(9, 0),
+            end = LocalTime.of(17, 0),
+            packages = setOf(instagram.packageName),
+            enabled = true,
+            scheduleType = ScheduleType.HARD_BLOCK
+        )
+        val state = RuntimeState(
+            targets = mapOf(instagram.packageName to instagram),
+            blockSchedules = listOf(schedule)
+        )
+        val decision = ruleEngine.evaluate(instagram.packageName, baseTime, state, zoneId)
+        assertTrue(decision is Decision.Block)
+    }
+
+    @Test
+    fun `active INTERVENTION schedule overrides durationMs and reinterventionMs`() {
+        val schedule = BlockSchedule(
+            id = 11,
+            name = "WORK INTERVENTION",
+            days = setOf(DayOfWeek.MONDAY),
+            start = LocalTime.of(9, 0),
+            end = LocalTime.of(17, 0),
+            packages = setOf(instagram.packageName),
+            enabled = true,
+            scheduleType = ScheduleType.INTERVENTION,
+            appOverrides = mapOf(
+                instagram.packageName to ScheduleAppOverride(
+                    durationMs = 15_000L,
+                    reinterventionMs = 120_000L
+                )
+            )
+        )
+        val state = RuntimeState(
+            targets = mapOf(instagram.packageName to instagram),
+            blockSchedules = listOf(schedule)
+        )
+        val decision = ruleEngine.evaluate(instagram.packageName, baseTime, state, zoneId)
+        assertTrue(decision is Decision.Intervention)
+        val config = (decision as Decision.Intervention).config
+        assertEquals(15_000L, config.durationMs)
+        assertEquals(120_000L, config.reinterventionMs)
+    }
+
+    @Test
+    fun `active INTERVENTION schedule allows access if AccessGrant is active`() {
+        val schedule = BlockSchedule(
+            id = 12,
+            name = "WORK INTERVENTION",
+            days = setOf(DayOfWeek.MONDAY),
+            start = LocalTime.of(9, 0),
+            end = LocalTime.of(17, 0),
+            packages = setOf(instagram.packageName),
+            enabled = true,
+            scheduleType = ScheduleType.INTERVENTION,
+            appOverrides = mapOf(
+                instagram.packageName to ScheduleAppOverride(
+                    durationMs = 15_000L,
+                    reinterventionMs = 120_000L
+                )
+            )
+        )
+        val grant = AccessGrant(
+            packageName = instagram.packageName,
+            createdAt = baseTime,
+            expiresAt = baseTime.plusSeconds(300)
+        )
+        val state = RuntimeState(
+            targets = mapOf(instagram.packageName to instagram),
+            activeGrants = mapOf(instagram.packageName to grant),
+            blockSchedules = listOf(schedule)
+        )
+        val decision = ruleEngine.evaluate(instagram.packageName, baseTime.plusSeconds(60), state, zoneId)
+        assertEquals(Decision.Allow, decision)
+    }
+
+    @Test
+    fun `active INTERVENTION schedule allows access if within quick return grace`() {
+        val schedule = BlockSchedule(
+            id = 13,
+            name = "WORK INTERVENTION",
+            days = setOf(DayOfWeek.MONDAY),
+            start = LocalTime.of(9, 0),
+            end = LocalTime.of(17, 0),
+            packages = setOf(instagram.packageName),
+            enabled = true,
+            scheduleType = ScheduleType.INTERVENTION
+        )
+        val lastExit = baseTime
+        val state = RuntimeState(
+            targets = mapOf(instagram.packageName to instagram),
+            lastExitTimes = mapOf(instagram.packageName to lastExit),
+            blockSchedules = listOf(schedule)
+        )
+        val decision = ruleEngine.evaluate(instagram.packageName, baseTime.plusSeconds(30), state, zoneId)
+        assertEquals(Decision.Allow, decision)
+    }
+
+    @Test
+    fun `exponentialGrowthEnabled true calculates duration properly with recent attempts`() {
+        val expConfig = instagramConfig.copy(
+            durationMs = 10_000L,
+            exponentialGrowthEnabled = true,
+            growthPercent = 20
+        )
+        val app = instagram.copy(intervention = expConfig)
+        val state = RuntimeState(targets = mapOf(app.packageName to app))
+
+        val decision = ruleEngine.evaluate(
+            packageName = app.packageName,
+            now = baseTime,
+            state = state,
+            zoneId = zoneId,
+            recentAttemptsCount = 5
+        )
+
+        assertTrue(decision is Decision.Intervention)
+        val config = (decision as Decision.Intervention).config
+        assertEquals(24_883L, config.durationMs)
+    }
+
+    @Test
+    fun `exponentialGrowthEnabled false keeps original duration even if recentAttemptsCount greater than 0`() {
+        val linearConfig = instagramConfig.copy(
+            durationMs = 8_000L,
+            exponentialGrowthEnabled = false,
+            growthPercent = 20
+        )
+        val app = instagram.copy(intervention = linearConfig)
+        val state = RuntimeState(targets = mapOf(app.packageName to app))
+
+        val decision = ruleEngine.evaluate(
+            packageName = app.packageName,
+            now = baseTime,
+            state = state,
+            zoneId = zoneId,
+            recentAttemptsCount = 5
+        )
+
+        assertTrue(decision is Decision.Intervention)
+        val config = (decision as Decision.Intervention).config
+        assertEquals(8_000L, config.durationMs)
     }
 }
