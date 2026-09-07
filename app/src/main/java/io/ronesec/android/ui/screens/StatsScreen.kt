@@ -19,11 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ronesec.android.ui.components.TerminalCard
-import io.ronesec.android.ui.theme.LocalTerminalAccent
-import io.ronesec.android.ui.theme.TerminalBackground
+import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
-import io.ronesec.android.ui.theme.TerminalTextPrimary
-import io.ronesec.android.ui.theme.TerminalTextSecondary
 import io.ronesec.android.ui.viewmodel.AppStatRow
 import io.ronesec.android.ui.viewmodel.TodayStats
 
@@ -33,32 +30,88 @@ fun StatsScreen(
     appStats: List<AppStatRow>,
     modifier: Modifier = Modifier
 ) {
-    val accent = LocalTerminalAccent.current
+    val palette = LocalAppPalette.current
+    val accent = palette.accent
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(TerminalBackground)
+            .background(palette.background)
             .padding(16.dp)
     ) {
         Text(
-            text = "STATISTICS",
+            text = "СТАТИСТИКА",
             fontFamily = TerminalFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
+            fontSize = 16.sp,
             letterSpacing = 0.15.sp,
             color = accent
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Life Time Saved Hero Card
+        TerminalCard(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "СЭКОНОМЛЕНО ВРЕМЕНИ ЖИЗНИ",
+                fontFamily = TerminalFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 12.sp,
+                letterSpacing = 0.1.sp,
+                color = palette.textSecondary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = todayStats.allTimeSavedFormatted,
+                fontFamily = TerminalFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp,
+                letterSpacing = 0.05.sp,
+                color = accent
+            )
+
+            Text(
+                text = "Всего предотвращено импульсивных сессий: ${todayStats.allTimeAvoided}",
+                fontFamily = TerminalFontFamily,
+                fontSize = 11.sp,
+                color = palette.textSecondary,
+                modifier = Modifier.padding(top = 4.dp, bottom = 10.dp)
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Сегодня спасено:",
+                    fontFamily = TerminalFontFamily,
+                    fontSize = 13.sp,
+                    color = palette.textSecondary
+                )
+                Text(
+                    text = todayStats.savedTimeFormatted,
+                    fontFamily = TerminalFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = accent
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Summary Card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "TODAY SUMMARY",
+                text = "СВОДКА ЗА СЕГОДНЯ",
                 fontFamily = TerminalFontFamily,
+                fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
-                color = TerminalTextSecondary,
+                letterSpacing = 0.1.sp,
+                color = palette.textSecondary,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
@@ -66,23 +119,23 @@ fun StatsScreen(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("OPEN ATTEMPTS", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = TerminalTextSecondary)
-                Text("${todayStats.openAttempts}", fontFamily = TerminalFontFamily, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TerminalTextPrimary)
+                Text("ПОПЫТОК ОТКРЫТИЯ", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textSecondary)
+                Text("${todayStats.openAttempts}", fontFamily = TerminalFontFamily, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = palette.textPrimary)
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("CONTINUED", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = TerminalTextSecondary)
-                Text("${todayStats.continued}", fontFamily = TerminalFontFamily, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TerminalTextPrimary)
+                Text("ПРОДОЛЖЕНО", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textSecondary)
+                Text("${todayStats.continued}", fontFamily = TerminalFontFamily, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = palette.textPrimary)
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("CLOSED", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = TerminalTextSecondary)
+                Text("ЗАКРЫТО", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textSecondary)
                 Text("${todayStats.closed}", fontFamily = TerminalFontFamily, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = accent)
             }
 
@@ -90,7 +143,7 @@ fun StatsScreen(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("AVOIDED", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = TerminalTextSecondary)
+                Text("ОСОЗНАННОСТЬ", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textSecondary)
                 Text("${todayStats.avoidedPercent}%", fontFamily = TerminalFontFamily, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = accent)
             }
         }
@@ -98,33 +151,33 @@ fun StatsScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "BY APPLICATION",
+            text = "ПО ПРИЛОЖЕНИЯМ",
             fontFamily = TerminalFontFamily,
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
             letterSpacing = 0.15.sp,
-            color = TerminalTextSecondary
+            color = palette.textSecondary
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Header Row
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("APP", fontFamily = TerminalFontFamily, fontSize = 12.sp, color = TerminalTextSecondary, modifier = Modifier.weight(1f))
-            Text("OPEN", fontFamily = TerminalFontFamily, fontSize = 12.sp, color = TerminalTextSecondary, modifier = Modifier.padding(horizontal = 16.dp))
-            Text("CLOSED", fontFamily = TerminalFontFamily, fontSize = 12.sp, color = TerminalTextSecondary)
+            Text("ПРИЛОЖЕНИЕ", fontFamily = TerminalFontFamily, fontSize = 12.sp, color = palette.textSecondary, modifier = Modifier.weight(1f))
+            Text("ОТКРЫТО", fontFamily = TerminalFontFamily, fontSize = 12.sp, color = palette.textSecondary, modifier = Modifier.padding(horizontal = 16.dp))
+            Text("ЗАКРЫТО", fontFamily = TerminalFontFamily, fontSize = 12.sp, color = palette.textSecondary)
         }
 
         if (appStats.isEmpty()) {
             TerminalCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "NO ACTIVITY RECORDED TODAY",
+                    text = "АКТИВНОСТЬ ЗА СЕГОДНЯ НЕ ЗАФИКСИРОВАНА",
                     fontFamily = TerminalFontFamily,
                     fontSize = 13.sp,
-                    color = TerminalTextSecondary
+                    color = palette.textSecondary
                 )
             }
         } else {
@@ -142,15 +195,16 @@ fun StatsScreen(
                             fontFamily = TerminalFontFamily,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
-                            color = TerminalTextPrimary,
+                            color = palette.textPrimary,
                             modifier = Modifier.weight(1f)
                         )
 
                         Text(
                             text = "${row.openCount}",
                             fontFamily = TerminalFontFamily,
-                            fontSize = 14.sp,
-                            color = TerminalTextPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = palette.textPrimary,
                             modifier = Modifier.padding(horizontal = 24.dp)
                         )
 
@@ -158,7 +212,7 @@ fun StatsScreen(
                             text = "${row.closedCount}",
                             fontFamily = TerminalFontFamily,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             color = accent
                         )
                     }

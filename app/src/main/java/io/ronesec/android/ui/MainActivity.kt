@@ -2,6 +2,7 @@ package io.ronesec.android.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
@@ -37,10 +38,10 @@ class MainActivity : ComponentActivity() {
         FocusForegroundService.start(this)
 
         setContent {
-            val currentAccent by viewModel.currentAccent.collectAsState()
+            val currentTheme by viewModel.currentTheme.collectAsState()
             val permissionsGranted by viewModel.permissionsGranted.collectAsState()
 
-            RonesecTheme(accent = currentAccent) {
+            RonesecTheme(theme = currentTheme) {
                 var forceShowMain by remember { mutableStateOf(false) }
 
                 if (!permissionsGranted && !forceShowMain) {
@@ -70,10 +71,20 @@ fun MainAppContent(viewModel: MainViewModel) {
     val activeSessions by viewModel.activeBlockSessions.collectAsState()
     val schedules by viewModel.blockSchedules.collectAsState()
     val installedApps by viewModel.installedApps.collectAsState()
-    val currentAccent by viewModel.currentAccent.collectAsState()
+    val currentTheme by viewModel.currentTheme.collectAsState()
+    val sessionMinutes by viewModel.sessionMinutes.collectAsState()
+    val showSavedTimeStats by viewModel.showSavedTimeOnOverlay.collectAsState()
 
     var currentNav by remember { mutableStateOf(NavDestination.APPS) }
     var selectedTargetForEditing by remember { mutableStateOf<TargetApp?>(null) }
+
+    BackHandler(enabled = selectedTargetForEditing != null) {
+        selectedTargetForEditing = null
+    }
+
+    BackHandler(enabled = selectedTargetForEditing == null && currentNav != NavDestination.APPS) {
+        currentNav = NavDestination.APPS
+    }
 
     Scaffold(
         bottomBar = {
@@ -102,7 +113,11 @@ fun MainAppContent(viewModel: MainViewModel) {
                         viewModel.deleteTarget(pkg)
                         selectedTargetForEditing = null
                     },
-                    onBack = { selectedTargetForEditing = null }
+                    onBack = { selectedTargetForEditing = null },
+                    onStartHardBlock = { name, mins, pkgs ->
+                        viewModel.startHardBlock(name, mins, pkgs)
+                        selectedTargetForEditing = null
+                    }
                 )
             } else {
                 when (currentNav) {
@@ -152,9 +167,17 @@ fun MainAppContent(viewModel: MainViewModel) {
 
                     NavDestination.CONFIG -> {
                         ConfigScreen(
-                            currentAccent = currentAccent,
-                            onSelectAccent = { acc ->
-                                viewModel.setAccent(acc)
+                            currentTheme = currentTheme,
+                            onSelectTheme = { theme ->
+                                viewModel.setTheme(theme)
+                            },
+                            sessionMinutes = sessionMinutes,
+                            onSelectSessionMinutes = { mins ->
+                                viewModel.setSessionMinutes(mins)
+                            },
+                            showSavedTimeStats = showSavedTimeStats,
+                            onToggleShowSavedTimeStats = { enabled ->
+                                viewModel.toggleShowSavedTimeOnOverlay(enabled)
                             }
                         )
                     }

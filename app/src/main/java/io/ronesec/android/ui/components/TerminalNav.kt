@@ -17,18 +17,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.ronesec.android.ui.theme.LocalTerminalAccent
-import io.ronesec.android.ui.theme.TerminalBackground
-import io.ronesec.android.ui.theme.TerminalBorder
+import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
-import io.ronesec.android.ui.theme.TerminalSurface
-import io.ronesec.android.ui.theme.TerminalTextSecondary
 
 enum class NavDestination(val label: String) {
-    APPS("APPS"),
-    BLOCK("BLOCK"),
-    STATS("STATS"),
-    CONFIG("CONFIG")
+    APPS("ФОКУС"),
+    BLOCK("БЛОК"),
+    STATS("СТАТИСТИКА"),
+    CONFIG("НАСТРОЙКИ")
 }
 
 @Composable
@@ -37,13 +33,14 @@ fun TerminalBottomNav(
     onNavigate: (NavDestination) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val accent = LocalTerminalAccent.current
+    val palette = LocalAppPalette.current
+    val accent = palette.accent
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(TerminalBackground)
-            .border(width = 1.dp, color = TerminalBorder)
+            .background(palette.background)
+            .border(width = 1.dp, color = palette.border)
             .padding(horizontal = 8.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
@@ -55,7 +52,7 @@ fun TerminalBottomNav(
                 modifier = Modifier
                     .clickable { onNavigate(destination) }
                     .background(
-                        if (isSelected) TerminalSurface else Color.Transparent,
+                        if (isSelected) palette.surface else Color.Transparent,
                         shape = RoundedCornerShape(4.dp)
                     )
                     .then(
@@ -65,12 +62,12 @@ fun TerminalBottomNav(
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = if (isSelected) "[${destination.label}]" else destination.label,
+                    text = destination.label,
                     fontFamily = TerminalFontFamily,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 12.sp,
                     letterSpacing = 0.1.sp,
-                    color = if (isSelected) accent else TerminalTextSecondary
+                    color = if (isSelected) accent else palette.textSecondary
                 )
             }
         }

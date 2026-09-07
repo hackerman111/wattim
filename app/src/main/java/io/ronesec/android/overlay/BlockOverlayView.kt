@@ -22,11 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ronesec.android.ui.components.TerminalButton
-import io.ronesec.android.ui.theme.LocalTerminalAccent
-import io.ronesec.android.ui.theme.TerminalBackground
+import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
-import io.ronesec.android.ui.theme.TerminalTextPrimary
-import io.ronesec.android.ui.theme.TerminalTextSecondary
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
@@ -39,7 +36,8 @@ fun BlockOverlayContent(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val accent = LocalTerminalAccent.current
+    val palette = LocalAppPalette.current
+    val accent = palette.accent
 
     var remainingSeconds by remember(until) {
         val rem = if (until != null) Duration.between(Instant.now(), until).seconds else 0L
@@ -62,7 +60,7 @@ fun BlockOverlayContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(TerminalBackground)
+            .background(palette.background)
     ) {
         Column(
             modifier = Modifier
@@ -72,11 +70,11 @@ fun BlockOverlayContent(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "BLOCKED",
+                text = "ПРИЛОЖЕНИЕ ЗАБЛОКИРОВАНО",
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                letterSpacing = 0.2.sp,
+                fontSize = 17.sp,
+                letterSpacing = 0.15.sp,
                 color = accent
             )
 
@@ -87,7 +85,7 @@ fun BlockOverlayContent(
                     fontWeight = FontWeight.Bold,
                     fontSize = 36.sp,
                     letterSpacing = 0.08.sp,
-                    color = TerminalTextPrimary
+                    color = palette.textPrimary
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -98,12 +96,12 @@ fun BlockOverlayContent(
                     fontWeight = FontWeight.Normal,
                     fontSize = 13.sp,
                     letterSpacing = 0.15.sp,
-                    color = TerminalTextSecondary
+                    color = palette.textSecondary
                 )
             }
 
             TerminalButton(
-                text = "CLOSE",
+                text = "ВЕРНУТЬСЯ НА ГЛАВНЫЙ ЭКРАН",
                 onClick = onClose,
                 isPrimary = false,
                 modifier = Modifier.fillMaxWidth()

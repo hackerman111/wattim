@@ -75,7 +75,7 @@ fun AddAppDialog(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "SELECT APP TO PROTECT",
+                    text = "ВЫБЕРИТЕ ПРИЛОЖЕНИЕ",
                     fontFamily = TerminalFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
@@ -88,7 +88,7 @@ fun AddAppDialog(
                 TerminalInputField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = "SEARCH APPS",
+                    label = "ПОИСК ПО НАЗВАНИЮ",
                     maxLength = 40,
                     maxLines = 1
                 )
@@ -126,7 +126,7 @@ fun AddAppDialog(
                             }
 
                             Text(
-                                text = "[ ADD ]",
+                                text = "ДОБАВИТЬ",
                                 fontFamily = TerminalFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
@@ -139,7 +139,7 @@ fun AddAppDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 TerminalButton(
-                    text = "CANCEL",
+                    text = "ОТМЕНА",
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth()
                 )

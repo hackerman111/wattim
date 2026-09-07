@@ -11,11 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.ronesec.android.ui.theme.LocalTerminalAccent
-import io.ronesec.android.ui.theme.TerminalBorder
+import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
-import io.ronesec.android.ui.theme.TerminalSurfaceElevated
-import io.ronesec.android.ui.theme.TerminalTextSecondary
 
 @Composable
 fun TerminalBadge(
@@ -23,14 +20,15 @@ fun TerminalBadge(
     isActive: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val accent = LocalTerminalAccent.current
-    val borderColor = if (isActive) accent.copy(alpha = 0.6f) else TerminalBorder
-    val textColor = if (isActive) accent else TerminalTextSecondary
+    val palette = LocalAppPalette.current
+    val accent = palette.accent
+    val borderColor = if (isActive) accent.copy(alpha = 0.6f) else palette.border
+    val textColor = if (isActive) accent else palette.textSecondary
 
     Box(
         modifier = modifier
             .border(1.dp, borderColor, RoundedCornerShape(3.dp))
-            .background(TerminalSurfaceElevated, RoundedCornerShape(3.dp))
+            .background(palette.surfaceElevated, RoundedCornerShape(3.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
         Text(

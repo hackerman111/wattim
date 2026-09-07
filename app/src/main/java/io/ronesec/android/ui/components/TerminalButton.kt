@@ -13,11 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.ronesec.android.ui.theme.LocalTerminalAccent
-import io.ronesec.android.ui.theme.TerminalBorder
+import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
-import io.ronesec.android.ui.theme.TerminalSurface
-import io.ronesec.android.ui.theme.TerminalTextPrimary
 
 @Composable
 fun TerminalButton(
@@ -27,22 +24,23 @@ fun TerminalButton(
     isPrimary: Boolean = false,
     enabled: Boolean = true
 ) {
-    val accent = LocalTerminalAccent.current
-    val borderColor = if (isPrimary) accent else TerminalBorder
-    val textColor = if (isPrimary) accent else TerminalTextPrimary
+    val palette = LocalAppPalette.current
+    val accent = palette.accent
+    val borderColor = if (isPrimary) accent else palette.border
+    val textColor = if (isPrimary) accent else palette.textPrimary
 
     Surface(
         modifier = modifier.clickable(enabled = enabled, onClick = onClick),
         shape = RoundedCornerShape(4.dp),
-        border = BorderStroke(1.dp, if (enabled) borderColor else TerminalBorder.copy(alpha = 0.5f)),
-        color = TerminalSurface
+        border = BorderStroke(1.dp, if (enabled) borderColor else palette.border.copy(alpha = 0.5f)),
+        color = palette.surface
     ) {
         Box(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "[ $text ]",
+                text = text,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,

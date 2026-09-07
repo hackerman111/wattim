@@ -20,6 +20,9 @@ interface OpenAttemptDao {
     @Query("SELECT * FROM open_attempts WHERE packageName = :packageName ORDER BY timestamp DESC")
     fun getByPackageFlow(packageName: String): Flow<List<OpenAttemptEntity>>
 
+    @Query("SELECT COUNT(*) FROM open_attempts WHERE packageName = :packageName AND timestamp >= :sinceTimestamp")
+    suspend fun countAttemptsByPackageSince(packageName: String, sinceTimestamp: Long): Int
+
     @Query("SELECT COUNT(*) FROM open_attempts WHERE timestamp >= :sinceTimestamp")
     suspend fun countSince(sinceTimestamp: Long): Int
 
@@ -28,4 +31,16 @@ interface OpenAttemptDao {
 
     @Query("SELECT COUNT(*) FROM open_attempts WHERE timestamp >= :sinceTimestamp AND outcome = 'ABANDONED'")
     suspend fun countAbandonedSince(sinceTimestamp: Long): Int
+
+    @Query("SELECT COUNT(*) FROM open_attempts WHERE outcome = 'ABANDONED' OR outcome = 'BLOCKED'")
+    suspend fun countAllAvoided(): Int
+
+    @Query("SELECT COUNT(*) FROM open_attempts WHERE timestamp >= :sinceTimestamp AND (outcome = 'ABANDONED' OR outcome = 'BLOCKED')")
+    suspend fun countAvoidedSince(sinceTimestamp: Long): Int
+
+    @Query("SELECT COUNT(*) FROM open_attempts WHERE outcome = 'ABANDONED' OR outcome = 'BLOCKED'")
+    fun getAllAvoidedCountFlow(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM open_attempts WHERE timestamp >= :sinceTimestamp AND (outcome = 'ABANDONED' OR outcome = 'BLOCKED')")
+    fun getAvoidedCountSinceFlow(sinceTimestamp: Long): Flow<Int>
 }

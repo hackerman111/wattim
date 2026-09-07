@@ -6,25 +6,34 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 
-val LocalTerminalAccent = staticCompositionLocalOf { AccentCyan }
+val LocalAppPalette = staticCompositionLocalOf { AppTheme.NORD.palette }
+val LocalTerminalAccent = staticCompositionLocalOf { AppTheme.NORD.palette.accent }
 
 @Composable
 fun RonesecTheme(
-    accent: TerminalAccent = TerminalAccent.CYAN,
+    theme: AppTheme = AppTheme.NORD,
+    accent: TerminalAccent? = null,
     content: @Composable () -> Unit
 ) {
+    val palette = if (accent != null) {
+        theme.palette.copy(accent = accent.color)
+    } else {
+        theme.palette
+    }
+
     val colorScheme = darkColorScheme(
-        primary = accent.color,
-        onPrimary = TerminalBackground,
-        surface = TerminalSurface,
-        onSurface = TerminalTextPrimary,
-        background = TerminalBackground,
-        onBackground = TerminalTextPrimary,
-        outline = TerminalBorder
+        primary = palette.accent,
+        onPrimary = palette.background,
+        surface = palette.surface,
+        onSurface = palette.textPrimary,
+        background = palette.background,
+        onBackground = palette.textPrimary,
+        outline = palette.border
     )
 
     CompositionLocalProvider(
-        LocalTerminalAccent provides accent.color
+        LocalAppPalette provides palette,
+        LocalTerminalAccent provides palette.accent
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

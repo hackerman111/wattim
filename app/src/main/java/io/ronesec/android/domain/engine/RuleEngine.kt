@@ -58,7 +58,7 @@ class RuleEngine {
 
         // 3. Quick Return Grace period?
         val lastExit = state.lastExitTimes[packageName]
-        if (lastExit != null) {
+        if (lastExit != null && target.intervention.quickReturnGraceMs > 0L) {
             val elapsedMs = now.toEpochMilli() - lastExit.toEpochMilli()
             if (elapsedMs in 0 until target.intervention.quickReturnGraceMs) {
                 return Decision.Allow

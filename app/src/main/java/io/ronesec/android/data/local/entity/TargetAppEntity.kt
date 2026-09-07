@@ -16,7 +16,10 @@ data class TargetAppEntity(
     val animation: AnimationType,
     val durationMs: Long,
     val reinterventionMs: Long?,
-    val quickReturnGraceMs: Long
+    val quickReturnGraceMs: Long,
+    val exponentialGrowthEnabled: Boolean = false,
+    val growthPercent: Int = 20,
+    val growthPeriodMinutes: Int = 60
 ) {
     fun toDomain(): TargetApp = TargetApp(
         packageName = packageName,
@@ -27,7 +30,10 @@ data class TargetAppEntity(
             animation = animation,
             durationMs = durationMs,
             reinterventionMs = reinterventionMs,
-            quickReturnGraceMs = quickReturnGraceMs
+            quickReturnGraceMs = quickReturnGraceMs,
+            exponentialGrowthEnabled = exponentialGrowthEnabled,
+            growthPercent = growthPercent,
+            growthPeriodMinutes = growthPeriodMinutes
         )
     )
 
@@ -40,7 +46,10 @@ data class TargetAppEntity(
             animation = domain.intervention.animation,
             durationMs = domain.intervention.durationMs,
             reinterventionMs = domain.intervention.reinterventionMs,
-            quickReturnGraceMs = domain.intervention.quickReturnGraceMs
+            quickReturnGraceMs = domain.intervention.quickReturnGraceMs,
+            exponentialGrowthEnabled = domain.intervention.exponentialGrowthEnabled,
+            growthPercent = domain.intervention.growthPercent,
+            growthPeriodMinutes = domain.intervention.growthPeriodMinutes
         )
     }
 }

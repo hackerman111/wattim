@@ -16,12 +16,11 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.ronesec.android.ui.theme.LocalTerminalAccent
-import io.ronesec.android.ui.theme.TerminalBorder
+import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
-import io.ronesec.android.ui.theme.TerminalSurface
-import io.ronesec.android.ui.theme.TerminalTextPrimary
-import io.ronesec.android.ui.theme.TerminalTextSecondary
+
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 
 @Composable
 fun TerminalInputField(
@@ -30,9 +29,12 @@ fun TerminalInputField(
     modifier: Modifier = Modifier,
     label: String? = null,
     maxLength: Int = 80,
-    maxLines: Int = 3
+    maxLines: Int = 3,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
-    val accent = LocalTerminalAccent.current
+    val palette = LocalAppPalette.current
+    val accent = palette.accent
 
     Column(modifier = modifier) {
         if (label != null) {
@@ -40,7 +42,7 @@ fun TerminalInputField(
                 text = label.uppercase(),
                 fontFamily = TerminalFontFamily,
                 fontSize = 12.sp,
-                color = TerminalTextSecondary,
+                color = palette.textSecondary,
                 modifier = Modifier.padding(bottom = 6.dp)
             )
         }
@@ -48,8 +50,8 @@ fun TerminalInputField(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, TerminalBorder, RoundedCornerShape(4.dp))
-                .background(TerminalSurface, RoundedCornerShape(4.dp))
+                .border(1.dp, palette.border, RoundedCornerShape(4.dp))
+                .background(palette.surface, RoundedCornerShape(4.dp))
                 .padding(12.dp)
         ) {
             BasicTextField(
@@ -62,10 +64,13 @@ fun TerminalInputField(
                 textStyle = TextStyle(
                     fontFamily = TerminalFontFamily,
                     fontSize = 15.sp,
-                    color = TerminalTextPrimary
+                    color = palette.textPrimary
                 ),
                 cursorBrush = SolidColor(accent),
+                keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions,
                 maxLines = maxLines,
+                singleLine = maxLines == 1,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -74,7 +79,7 @@ fun TerminalInputField(
             text = "${value.length} / $maxLength",
             fontFamily = TerminalFontFamily,
             fontSize = 11.sp,
-            color = TerminalTextSecondary,
+            color = palette.textSecondary,
             modifier = Modifier
                 .align(Alignment.End)
                 .padding(top = 4.dp)

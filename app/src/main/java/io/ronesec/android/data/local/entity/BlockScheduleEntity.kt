@@ -3,6 +3,8 @@ package io.ronesec.android.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.ronesec.android.domain.model.BlockSchedule
+import io.ronesec.android.domain.model.ScheduleAppOverride
+import io.ronesec.android.domain.model.ScheduleType
 import java.time.DayOfWeek
 import java.time.LocalTime
 
@@ -17,7 +19,9 @@ data class BlockScheduleEntity(
     val endHour: Int,
     val endMinute: Int,
     val packages: String, // Comma-separated package names
-    val enabled: Boolean
+    val enabled: Boolean,
+    val scheduleType: String = "HARD_BLOCK",
+    val appOverridesJson: String? = null
 ) {
     fun toDomain(): BlockSchedule = BlockSchedule(
         id = id,
@@ -26,7 +30,13 @@ data class BlockScheduleEntity(
         start = LocalTime.of(startHour, startMinute),
         end = LocalTime.of(endHour, endMinute),
         packages = if (packages.isBlank()) emptySet() else packages.split(",").toSet(),
-        enabled = enabled
+        enabled = enabled,
+        scheduleType = try {
+            ScheduleType.valueOf(scheduleType)
+        } catch (e: Exception) {
+            ScheduleType.HARD_BLOCK
+        },
+        appOverrides = parseAppOverrides(appOverridesJson)
     )
 
     companion object {
@@ -39,7 +49,49 @@ data class BlockScheduleEntity(
             endHour = domain.end.hour,
             endMinute = domain.end.minute,
             packages = domain.packages.joinToString(","),
-            enabled = domain.enabled
+            enabled = domain.enabled,
+            scheduleType = domain.scheduleType.name,
+            appOverridesJson = serializeAppOverrides(domain.appOverrides)
         )
+
+        fun parseAppOverrides(json: String?): Map<String, ScheduleAppOverride> {
+            if (json.isNullOrBlank()) return emptyMap()
+            val result = mutableMapOf<String, ScheduleAppOverride>()
+            val entryRegex = Regex("\"([^\"]+)\"\\s*:\\s*\\{([^}]*)\\}")
+            val durationRegex = Regex("\"durationMs\"\\s*:\\s*(\\d+)")
+            val reinterventionRegex = Regex("\"reinterventionMs\"\\s*:\\s*(\\d+)")
+
+            entryRegex.findAll(json).forEach { match ->
+                val pkg = match.groupValues[1]
+                val content = match.groupValues[2]
+                val duration = durationRegex.find(content)?.groupValues?.get(1)?.toLongOrNull()
+                val reintervention = reinterventionRegex.find(content)?.groupValues?.get(1)?.toLongOrNull()
+                result[pkg] = ScheduleAppOverride(durationMs = duration, reinterventionMs = reintervention)
+            }
+            return result
+        }
+
+        fun serializeAppOverrides(overrides: Map<String, ScheduleAppOverride>): String? {
+            if (overrides.isEmpty()) return null
+            return buildString {
+                append("{")
+                var firstEntry = true
+                for ((pkg, override) in overrides) {
+                    if (!firstEntry) append(",")
+                    firstEntry = false
+                    append("\"").append(pkg).append("\":{")
+                    val fields = mutableListOf<String>()
+                    if (override.durationMs != null) {
+                        fields.add("\"durationMs\":${override.durationMs}")
+                    }
+                    if (override.reinterventionMs != null) {
+                        fields.add("\"reinterventionMs\":${override.reinterventionMs}")
+                    }
+                    append(fields.joinToString(","))
+                    append("}")
+                }
+                append("}")
+            }
+        }
     }
 }

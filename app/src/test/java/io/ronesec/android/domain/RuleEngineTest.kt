@@ -160,4 +160,40 @@ class RuleEngineTest {
         val decision = ruleEngine.evaluate(instagram.packageName, baseTime, state, zoneId)
         assertTrue(decision is Decision.Block)
     }
+
+    @Test
+    fun `scheduled block handles overnight schedule spanning midnight`() {
+        val schedule = BlockSchedule(
+            id = 2,
+            name = "NIGHT_FOCUS",
+            days = setOf(DayOfWeek.MONDAY),
+            start = LocalTime.of(22, 0),
+            end = LocalTime.of(6, 0),
+            packages = setOf(instagram.packageName),
+            enabled = true
+        )
+        val state = RuntimeState(
+            targets = mapOf(instagram.packageName to instagram),
+            blockSchedules = listOf(schedule)
+        )
+
+        // Monday 23:30 UTC is within 22:00 - 06:00
+        val lateNightTime = Instant.parse("2026-09-07T23:30:00Z")
+        val decision = ruleEngine.evaluate(instagram.packageName, lateNightTime, state, zoneId)
+        assertTrue(decision is Decision.Block)
+    }
+
+    @Test
+    fun `quick return grace 0 triggers Intervention immediately upon return`() {
+        val zeroGraceConfig = instagramConfig.copy(quickReturnGraceMs = 0L)
+        val zeroGraceApp = instagram.copy(intervention = zeroGraceConfig)
+        val lastExit = baseTime
+        val state = RuntimeState(
+            targets = mapOf(zeroGraceApp.packageName to zeroGraceApp),
+            lastExitTimes = mapOf(zeroGraceApp.packageName to lastExit)
+        )
+        // Returned immediately (1ms later)
+        val decision = ruleEngine.evaluate(zeroGraceApp.packageName, baseTime.plusMillis(1), state, zoneId)
+        assertTrue(decision is Decision.Intervention)
+    }
 }

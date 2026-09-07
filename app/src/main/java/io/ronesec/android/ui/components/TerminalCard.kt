@@ -9,20 +9,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.ronesec.android.ui.theme.TerminalBorder
-import io.ronesec.android.ui.theme.TerminalSurface
+import io.ronesec.android.ui.theme.LocalAppPalette
 
 @Composable
 fun TerminalCard(
     modifier: Modifier = Modifier,
-    border: BorderStroke = BorderStroke(1.dp, TerminalBorder),
+    border: BorderStroke? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val palette = LocalAppPalette.current
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(4.dp),
-        border = border,
-        color = TerminalSurface
+        border = border ?: BorderStroke(1.dp, palette.border),
+        color = palette.surface
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

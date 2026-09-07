@@ -40,9 +40,14 @@ class RonesecRepository private constructor(
     private val _runtimeState = MutableStateFlow(RuntimeState())
     val runtimeState = _runtimeState.asStateFlow()
 
+    private val activeGrantsMap = java.util.concurrent.ConcurrentHashMap<String, AccessGrant>()
     private val lastExitMap = java.util.concurrent.ConcurrentHashMap<String, Instant>()
 
     init {
+        scope.launch {
+            accessGrantDao.clearAll()
+        }
+
         // Collect database updates into in-memory hot cache
         scope.launch {
             targetAppDao.getAllFlow().collect { entities ->
@@ -54,7 +59,9 @@ class RonesecRepository private constructor(
         scope.launch {
             accessGrantDao.getAllFlow().collect { entities ->
                 val grants = entities.associate { it.packageName to it.toDomain() }
-                _runtimeState.value = _runtimeState.value.copy(activeGrants = grants)
+                activeGrantsMap.clear()
+                activeGrantsMap.putAll(grants)
+                _runtimeState.value = _runtimeState.value.copy(activeGrants = HashMap(activeGrantsMap))
             }
         }
 
@@ -75,8 +82,11 @@ class RonesecRepository private constructor(
     }
 
     fun getHotRuntimeState(): RuntimeState {
-        // Merge in-memory exit timestamps for immediate Grace evaluation
-        return _runtimeState.value.copy(lastExitTimes = HashMap(lastExitMap))
+        // Merge in-memory active grants and exit timestamps for immediate Grace evaluation
+        return _runtimeState.value.copy(
+            activeGrants = HashMap(activeGrantsMap),
+            lastExitTimes = HashMap(lastExitMap)
+        )
     }
 
     fun getTargetsFlow(): Flow<List<TargetApp>> {
@@ -111,6 +121,27 @@ class RonesecRepository private constructor(
         return openAttemptDao.getSinceFlow(sinceTimestamp).map { list -> list.map { it.toDomain() } }
     }
 
+    fun getAllAttemptsFlow(): Flow<List<OpenAttempt>> {
+        return openAttemptDao.getAllFlow().map { list -> list.map { it.toDomain() } }
+    }
+
+    fun getAllAvoidedCountFlow(): Flow<Int> {
+        return openAttemptDao.getAllAvoidedCountFlow()
+    }
+
+    fun getAvoidedCountSinceFlow(sinceTimestamp: Long): Flow<Int> {
+        return openAttemptDao.getAvoidedCountSinceFlow(sinceTimestamp)
+    }
+
+    suspend fun getAvoidedCountAllTime(): Int = openAttemptDao.countAllAvoided()
+
+    suspend fun getAvoidedCountSince(sinceTimestamp: Long): Int = openAttemptDao.countAvoidedSince(sinceTimestamp)
+
+    suspend fun getRecentAttemptsCount(packageName: String, periodMinutes: Int): Int {
+        val sinceTimestamp = System.currentTimeMillis() - periodMinutes * 60_000L
+        return openAttemptDao.countAttemptsByPackageSince(packageName, sinceTimestamp)
+    }
+
     suspend fun grantAccess(packageName: String, reinterventionMs: Long?) {
         val now = Instant.now()
         val expiresAt = reinterventionMs?.let { now.plusMillis(it) }
@@ -119,15 +150,27 @@ class RonesecRepository private constructor(
             createdAt = now,
             expiresAt = expiresAt
         )
+        activeGrantsMap[packageName] = grant
+        _runtimeState.value = _runtimeState.value.copy(activeGrants = HashMap(activeGrantsMap))
         accessGrantDao.insertOrUpdate(AccessGrantEntity.fromDomain(grant))
     }
 
     suspend fun revokeAccess(packageName: String) {
+        activeGrantsMap.remove(packageName)
+        _runtimeState.value = _runtimeState.value.copy(activeGrants = HashMap(activeGrantsMap))
         accessGrantDao.deleteByPackage(packageName)
     }
 
     fun recordExit(packageName: String, exitTime: Instant = Instant.now()) {
         lastExitMap[packageName] = exitTime
+        activeGrantsMap.remove(packageName)
+        _runtimeState.value = _runtimeState.value.copy(
+            activeGrants = HashMap(activeGrantsMap),
+            lastExitTimes = HashMap(lastExitMap)
+        )
+        scope.launch {
+            accessGrantDao.deleteByPackage(packageName)
+        }
     }
 
     suspend fun startHardBlock(name: String, durationMinutes: Int, packages: Set<String>): Long {
@@ -165,6 +208,10 @@ class RonesecRepository private constructor(
 
     fun getSettingFlow(key: String): Flow<String?> {
         return settingsDao.getFlow(key).distinctUntilChanged()
+    }
+
+    suspend fun getSetting(key: String): String? {
+        return settingsDao.get(key)
     }
 
     suspend fun setSetting(key: String, value: String) {

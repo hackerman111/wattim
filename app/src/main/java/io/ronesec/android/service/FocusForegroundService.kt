@@ -27,16 +27,16 @@ class FocusForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForegroundWithNotification("Protection active")
+        startForegroundWithNotification("Защита активна")
 
         val repository = (application as RonesecApplication).repository
         scope.launch {
             repository.getTargetsFlow().collectLatest { targets ->
                 val activeCount = targets.count { it.enabled }
                 val text = if (activeCount > 0) {
-                    "Protection active · $activeCount apps"
+                    "Защита активна · $activeCount прилож."
                 } else {
-                    "Protection idle · 0 apps protected"
+                    "Защита в ожидании · 0 прилож."
                 }
                 updateNotification(text)
             }
@@ -80,7 +80,7 @@ class FocusForegroundService : Service() {
         )
 
         return NotificationCompat.Builder(this, RonesecApplication.CHANNEL_ID_PROTECTION)
-            .setContentTitle("RONESEC")
+            .setContentTitle("WATTIM")
             .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setContentIntent(pendingIntent)

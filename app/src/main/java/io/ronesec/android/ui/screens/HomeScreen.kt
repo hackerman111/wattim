@@ -27,11 +27,8 @@ import io.ronesec.android.domain.model.TargetApp
 import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
 import io.ronesec.android.ui.components.TerminalCard
-import io.ronesec.android.ui.theme.LocalTerminalAccent
-import io.ronesec.android.ui.theme.TerminalBackground
+import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
-import io.ronesec.android.ui.theme.TerminalTextPrimary
-import io.ronesec.android.ui.theme.TerminalTextSecondary
 import io.ronesec.android.ui.viewmodel.InstalledAppInfo
 import io.ronesec.android.ui.viewmodel.TodayStats
 import java.time.LocalTime
@@ -48,7 +45,8 @@ fun HomeScreen(
     onAddApp: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val accent = LocalTerminalAccent.current
+    val palette = LocalAppPalette.current
+    val accent = palette.accent
     var showAddDialog by remember { mutableStateOf(false) }
 
     val currentTimeString = remember {
@@ -70,7 +68,7 @@ fun HomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(TerminalBackground)
+            .background(palette.background)
             .padding(16.dp)
     ) {
         // Top Header
@@ -80,10 +78,10 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "FOCUS",
+                text = "wattim",
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 letterSpacing = 0.2.sp,
                 color = accent
             )
@@ -93,11 +91,11 @@ fun HomeScreen(
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.Normal,
                 fontSize = 14.sp,
-                color = TerminalTextSecondary
+                color = palette.textSecondary
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Protected Section Header
         Row(
@@ -106,12 +104,12 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "PROTECTED",
+                text = "ПОД ЗАЩИТОЙ",
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
                 letterSpacing = 0.15.sp,
-                color = TerminalTextSecondary
+                color = palette.textSecondary
             )
 
             Text(
@@ -129,10 +127,10 @@ fun HomeScreen(
         if (targets.isEmpty()) {
             TerminalCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "NO APPS CONFIGURED",
+                    text = "НЕТ ЗАЩИЩАЕМЫХ ПРИЛОЖЕНИЙ",
                     fontFamily = TerminalFontFamily,
                     fontSize = 13.sp,
-                    color = TerminalTextSecondary
+                    color = palette.textSecondary
                 )
             }
         } else {
@@ -168,7 +166,7 @@ fun HomeScreen(
                                 text = "$indexFormatted  ",
                                 fontFamily = TerminalFontFamily,
                                 fontSize = 13.sp,
-                                color = TerminalTextSecondary
+                                color = palette.textSecondary
                             )
                             Column {
                                 Text(
@@ -176,19 +174,19 @@ fun HomeScreen(
                                     fontFamily = TerminalFontFamily,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 15.sp,
-                                    color = TerminalTextPrimary
+                                    color = palette.textPrimary
                                 )
                                 Text(
-                                    text = "${target.intervention.durationMs / 1000}s · ${target.intervention.animation.name}",
+                                    text = "${target.intervention.durationMs / 1000} сек · ${target.intervention.animation.displayName}",
                                     fontFamily = TerminalFontFamily,
                                     fontSize = 11.sp,
-                                    color = TerminalTextSecondary
+                                    color = palette.textSecondary
                                 )
                             }
                         }
 
                         TerminalBadge(
-                            text = if (target.enabled) "ACTIVE" else "OFF",
+                            text = if (target.enabled) "ВКЛ" else "ВЫКЛ",
                             isActive = target.enabled,
                             modifier = Modifier.clickable {
                                 onToggleTarget(target, !target.enabled)
@@ -204,12 +202,12 @@ fun HomeScreen(
         // Today mindfulness stats card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "TODAY",
+                text = "СЕГОДНЯ",
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
                 letterSpacing = 0.15.sp,
-                color = TerminalTextSecondary,
+                color = palette.textSecondary,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
@@ -222,14 +220,14 @@ fun HomeScreen(
                         text = "${todayStats.openAttempts}",
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
-                        color = TerminalTextPrimary
+                        fontSize = 26.sp,
+                        color = palette.textPrimary
                     )
                     Text(
-                        text = "OPEN",
+                        text = "ОТКРЫТИЙ",
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
-                        color = TerminalTextSecondary
+                        color = palette.textSecondary
                     )
                 }
 
@@ -238,14 +236,14 @@ fun HomeScreen(
                         text = "${todayStats.closed}",
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
+                        fontSize = 26.sp,
                         color = accent
                     )
                     Text(
-                        text = "CLOSED",
+                        text = "ЗАКРЫТО",
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
-                        color = TerminalTextSecondary
+                        color = palette.textSecondary
                     )
                 }
 
@@ -254,14 +252,14 @@ fun HomeScreen(
                         text = "${todayStats.avoidedPercent}%",
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
-                        color = TerminalTextPrimary
+                        fontSize = 26.sp,
+                        color = palette.textPrimary
                     )
                     Text(
-                        text = "AVOIDED",
+                        text = "СПАСЕНО",
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
-                        color = TerminalTextSecondary
+                        color = palette.textSecondary
                     )
                 }
             }
@@ -271,7 +269,7 @@ fun HomeScreen(
 
         // Add App Button
         TerminalButton(
-            text = "+ ADD APP",
+            text = "+ ДОБАВИТЬ ПРИЛОЖЕНИЕ",
             onClick = { showAddDialog = true },
             isPrimary = true,
             modifier = Modifier.fillMaxWidth()
