@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -189,7 +191,9 @@ fun InterventionOverlayContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 48.dp),
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -276,14 +280,21 @@ fun InterventionOverlayContent(
                 }
             }
 
-            // Action buttons: Strictly visible ONLY when animation has COMPLETED
+            // Action buttons: immediate exit during breathing, or close/continue when complete
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (currentPhase == AnimationPhase.COMPLETE) {
+                if (currentPhase == AnimationPhase.INHALE || currentPhase == AnimationPhase.EXHALE) {
+                    TerminalButton(
+                        text = "ВЫЙТИ",
+                        onClick = onClose,
+                        isPrimary = false,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else if (currentPhase == AnimationPhase.COMPLETE) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -294,7 +305,6 @@ fun InterventionOverlayContent(
                             isPrimary = false,
                             modifier = Modifier.weight(1f)
                         )
-
                         TerminalButton(
                             text = "ПРОДОЛЖИТЬ",
                             onClick = onContinue,
