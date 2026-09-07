@@ -1,5 +1,6 @@
 package io.ronesec.android.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +15,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,6 +34,7 @@ import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
 import io.ronesec.android.ui.viewmodel.InstalledAppInfo
 import io.ronesec.android.ui.viewmodel.TodayStats
+import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -43,11 +47,32 @@ fun HomeScreen(
     onSelectTarget: (TargetApp) -> Unit,
     onToggleTarget: (TargetApp, Boolean) -> Unit,
     onAddApp: (String, String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    protectionPausedUntil: Long? = null,
+    onPauseProtection: (Int) -> Unit = {},
+    onResumeProtection: () -> Unit = {}
 ) {
     val palette = LocalAppPalette.current
     val accent = palette.accent
     var showAddDialog by remember { mutableStateOf(false) }
+
+    var remainingSeconds by remember(protectionPausedUntil) {
+        val rem = if (protectionPausedUntil != null && protectionPausedUntil > 0L) {
+            ((protectionPausedUntil - System.currentTimeMillis()) / 1000L).coerceAtLeast(0L)
+        } else 0L
+        mutableLongStateOf(rem)
+    }
+
+    LaunchedEffect(protectionPausedUntil) {
+        if (protectionPausedUntil != null && protectionPausedUntil > 0L) {
+            while (remainingSeconds > 0) {
+                delay(1000L)
+                remainingSeconds = ((protectionPausedUntil - System.currentTimeMillis()) / 1000L).coerceAtLeast(0L)
+            }
+        }
+    }
+
+    val isPaused = protectionPausedUntil != null && (protectionPausedUntil == -1L || (protectionPausedUntil > System.currentTimeMillis() && remainingSeconds > 0))
 
     val currentTimeString = remember {
         LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
@@ -133,6 +158,7 @@ fun HomeScreen(
                     color = palette.textSecondary
                 )
             }
+            Spacer(modifier = Modifier.weight(1f))
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -260,6 +286,95 @@ fun HomeScreen(
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
                         color = palette.textSecondary
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Protection pause status card
+        if (isPaused) {
+            TerminalCard(
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, palette.error)
+            ) {
+                Text(
+                    text = "ЗАЩИТА ПРИОСТАНОВЛЕНА",
+                    fontFamily = TerminalFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    letterSpacing = 0.15.sp,
+                    color = palette.error,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+
+                if (protectionPausedUntil == -1L) {
+                    Text(
+                        text = "Защита отключена до ручного включения.",
+                        fontFamily = TerminalFontFamily,
+                        fontSize = 13.sp,
+                        color = palette.textSecondary,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                } else {
+                    val formattedTime = String.format(Locale.US, "%02d:%02d", remainingSeconds / 60, remainingSeconds % 60)
+                    Text(
+                        text = "Осталось: $formattedTime",
+                        fontFamily = TerminalFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                        color = palette.textPrimary,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
+
+                TerminalButton(
+                    text = "ВОЗОБНОВИТЬ ЗАЩИТУ",
+                    onClick = onResumeProtection,
+                    isPrimary = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        } else {
+            TerminalCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "ПРИОСТАНОВИТЬ ЗАЩИТУ",
+                    fontFamily = TerminalFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    letterSpacing = 0.15.sp,
+                    color = palette.textSecondary,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+
+                Text(
+                    text = "Временно отключить перехват для всех приложений:",
+                    fontFamily = TerminalFontFamily,
+                    fontSize = 12.sp,
+                    color = palette.textSecondary,
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TerminalBadge(
+                        text = "15м",
+                        modifier = Modifier.clickable { onPauseProtection(15) }
+                    )
+                    TerminalBadge(
+                        text = "30м",
+                        modifier = Modifier.clickable { onPauseProtection(30) }
+                    )
+                    TerminalBadge(
+                        text = "1ч",
+                        modifier = Modifier.clickable { onPauseProtection(60) }
+                    )
+                    TerminalBadge(
+                        text = "До включения",
+                        modifier = Modifier.clickable { onPauseProtection(-1) }
                     )
                 }
             }

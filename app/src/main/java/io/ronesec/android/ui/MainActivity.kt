@@ -74,6 +74,7 @@ fun MainAppContent(viewModel: MainViewModel) {
     val currentTheme by viewModel.currentTheme.collectAsState()
     val sessionMinutes by viewModel.sessionMinutes.collectAsState()
     val showSavedTimeStats by viewModel.showSavedTimeOnOverlay.collectAsState()
+    val protectionPausedUntil by viewModel.protectionPausedUntil.collectAsState()
 
     var currentNav by remember { mutableStateOf(NavDestination.APPS) }
     var selectedTargetForEditing by remember { mutableStateOf<TargetApp?>(null) }
@@ -126,6 +127,9 @@ fun MainAppContent(viewModel: MainViewModel) {
                             targets = targets,
                             todayStats = todayStats,
                             installedApps = installedApps,
+                            protectionPausedUntil = protectionPausedUntil,
+                            onPauseProtection = viewModel::pauseProtection,
+                            onResumeProtection = viewModel::resumeProtection,
                             onSelectTarget = { target ->
                                 selectedTargetForEditing = target
                             },

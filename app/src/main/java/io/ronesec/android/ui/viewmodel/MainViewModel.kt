@@ -138,9 +138,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .map { it == null || it == "true" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val protectionPausedUntil: StateFlow<Long?> = repository.getProtectionPausedUntilFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     fun toggleShowSavedTimeOnOverlay(enabled: Boolean) {
         viewModelScope.launch {
             repository.setSetting("show_saved_time_stats", enabled.toString())
+        }
+    }
+
+    fun pauseProtection(durationMinutes: Int) {
+        viewModelScope.launch {
+            repository.pauseProtection(durationMinutes)
+        }
+    }
+
+    fun resumeProtection() {
+        viewModelScope.launch {
+            repository.resumeProtection()
         }
     }
 
