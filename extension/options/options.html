@@ -141,13 +141,20 @@
               </div>
             </div>
 
-            <!-- Re-intervention threshold -->
+            <!-- Re-intervention threshold with manual keyboard input & unit selection -->
             <div class="form-group">
-              <label class="form-label" for="sliderReintervention">
-                Таймер повторного вопроса (Re-intervention): <strong id="valReintervention">15</strong> мин
+              <label class="form-label" for="inputReinterventionVal">
+                Таймер повторного вопроса (Re-intervention):
               </label>
-              <input type="range" class="input-slider" id="sliderReintervention" min="5" max="60" value="15" step="5">
-              <span class="form-hint">Если вы непрерывно проводите на сайте больше этого времени, пауза включится снова.</span>
+              <div class="reintervention-input-row">
+                <input type="number" class="input-text input-number" id="inputReinterventionVal" min="5" max="86400" value="15">
+                <select class="input-select" id="selectReinterventionUnit">
+                  <option value="seconds">секунд</option>
+                  <option value="minutes" selected>минут</option>
+                  <option value="hours">часов</option>
+                </select>
+              </div>
+              <span class="form-hint">Задайте точное время с клавиатуры в секундах, минутах или часах. По истечении этого времени на сайте включится повторная пауза.</span>
             </div>
           </div>
 

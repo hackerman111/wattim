@@ -12,6 +12,9 @@ export const DEFAULT_STORAGE = {
     baseDelaySeconds: 10,
     maxDelaySeconds: 120,
     avgSessionMinutes: 10,
+    reInterventionValue: 15,
+    reInterventionUnit: 'minutes', // 'seconds' | 'minutes' | 'hours'
+    reInterventionSeconds: 900,
     reInterventionMinutes: 15,
     phrases: [
       'Сделай глубокий вдох...',
@@ -202,4 +205,21 @@ export async function setStorage(items) {
       chrome.storage.local.set(items, resolve);
     });
   }
+}
+
+/**
+ * Safely extracts the re-intervention threshold in seconds.
+ * 
+ * @param {Object} settings
+ * @returns {number} Seconds (minimum 5, default 900)
+ */
+export function getReinterventionSeconds(settings) {
+  if (!settings) return 900;
+  if (typeof settings.reInterventionSeconds === 'number' && settings.reInterventionSeconds > 0) {
+    return Math.max(5, settings.reInterventionSeconds);
+  }
+  if (typeof settings.reInterventionMinutes === 'number' && settings.reInterventionMinutes > 0) {
+    return Math.max(5, settings.reInterventionMinutes * 60);
+  }
+  return 900;
 }

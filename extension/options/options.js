@@ -27,8 +27,8 @@ const presetChips = document.querySelectorAll('.chip');
 const sliderDelay = document.getElementById('sliderDelay');
 const valDelay = document.getElementById('valDelay');
 const animRadios = document.querySelectorAll('input[name="animStyle"]');
-const sliderReintervention = document.getElementById('sliderReintervention');
-const valReintervention = document.getElementById('valReintervention');
+const inputReinterventionVal = document.getElementById('inputReinterventionVal');
+const selectReinterventionUnit = document.getElementById('selectReinterventionUnit');
 const previewCanvas = document.getElementById('previewCanvas');
 const previewPhase = document.getElementById('previewPhase');
 const inputNewPhrase = document.getElementById('inputNewPhrase');
@@ -191,8 +191,15 @@ function initBreathingTab() {
   sliderDelay.value = settings.baseDelaySeconds || 10;
   valDelay.textContent = sliderDelay.value;
 
-  sliderReintervention.value = settings.reInterventionMinutes || 15;
-  valReintervention.textContent = sliderReintervention.value;
+  sliderDelay.addEventListener('input', () => {
+    valDelay.textContent = sliderDelay.value;
+  });
+
+  sliderDelay.addEventListener('change', () => {
+    settings.baseDelaySeconds = parseInt(sliderDelay.value, 10);
+    renderBackoffTable();
+    saveChanges();
+  });
 
   // Selected animation radio
   animRadios.forEach(radio => {
@@ -206,24 +213,46 @@ function initBreathingTab() {
     });
   });
 
-  sliderDelay.addEventListener('input', () => {
-    valDelay.textContent = sliderDelay.value;
-  });
+  // Re-intervention input & unit
+  let reVal = settings.reInterventionValue;
+  let reUnit = settings.reInterventionUnit;
 
-  sliderDelay.addEventListener('change', () => {
-    settings.baseDelaySeconds = parseInt(sliderDelay.value, 10);
-    renderBackoffTable();
+  if (!reVal) {
+    if (settings.reInterventionSeconds) {
+      if (settings.reInterventionSeconds % 60 === 0) {
+        reVal = settings.reInterventionSeconds / 60;
+        reUnit = 'minutes';
+      } else {
+        reVal = settings.reInterventionSeconds;
+        reUnit = 'seconds';
+      }
+    } else {
+      reVal = settings.reInterventionMinutes || 15;
+      reUnit = 'minutes';
+    }
+  }
+
+  inputReinterventionVal.value = reVal;
+  selectReinterventionUnit.value = reUnit || 'minutes';
+
+  function handleReinterventionChange() {
+    const rawNum = Math.max(1, parseInt(inputReinterventionVal.value, 10) || 15);
+    const chosenUnit = selectReinterventionUnit.value;
+    inputReinterventionVal.value = rawNum;
+
+    let seconds = rawNum;
+    if (chosenUnit === 'minutes') seconds = rawNum * 60;
+    else if (chosenUnit === 'hours') seconds = rawNum * 3600;
+
+    settings.reInterventionValue = rawNum;
+    settings.reInterventionUnit = chosenUnit;
+    settings.reInterventionSeconds = seconds;
+    settings.reInterventionMinutes = Math.max(1, Math.round(seconds / 60));
     saveChanges();
-  });
+  }
 
-  sliderReintervention.addEventListener('input', () => {
-    valReintervention.textContent = sliderReintervention.value;
-  });
-
-  sliderReintervention.addEventListener('change', () => {
-    settings.reInterventionMinutes = parseInt(sliderReintervention.value, 10);
-    saveChanges();
-  });
+  inputReinterventionVal.addEventListener('change', handleReinterventionChange);
+  selectReinterventionUnit.addEventListener('change', handleReinterventionChange);
 
   // Phrases
   renderPhrases();

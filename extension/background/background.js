@@ -15,6 +15,7 @@ import {
   DEFAULT_STORAGE,
   initStorageWithDefaults,
   calculateUpdatedStats,
+  getReinterventionSeconds,
   getStorage,
   setStorage
 } from '../common/storage.js';
@@ -154,6 +155,7 @@ export async function evaluateNavigation(url) {
     delay,
     attempts: recentAttempts,
     growthPercent: (storage.backoff && storage.backoff.growthPercent) || 20,
+    reInterventionSeconds: getReinterventionSeconds(storage.settings),
     settings: storage.settings,
     stats: storage.stats
   };
@@ -196,9 +198,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     case 'GRANT_PASS': {
-      const { domain, durationMinutes = 15 } = message;
+      const { domain, durationSeconds, durationMinutes } = message;
+      const sec = (durationSeconds !== undefined && durationSeconds !== null)
+        ? Number(durationSeconds)
+        : (Number(durationMinutes) || 15) * 60;
       if (domain) {
-        const expiry = now + (Number(durationMinutes) || 15) * 60 * 1000;
+        const expiry = now + Math.max(5, sec) * 1000;
         sessionPasses.set(domain, expiry);
       }
       sendResponse({ success: true });

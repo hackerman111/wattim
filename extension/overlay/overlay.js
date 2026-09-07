@@ -241,10 +241,18 @@
     }
   }
 
+  function formatDuration(totalSec) {
+    if (totalSec >= 3600 && totalSec % 3600 === 0) return `${totalSec / 3600} ч`;
+    if (totalSec >= 60 && totalSec % 60 === 0) return `${totalSec / 60} мин`;
+    if (totalSec >= 60) return `${Math.floor(totalSec / 60)}м ${totalSec % 60}с`;
+    return `${totalSec} сек`;
+  }
+
   /**
    * Mounts the in-page Shadow DOM overlay onto the current document.
    */
   async function showOverlay(data) {
+    const configuredSeconds = data.reInterventionSeconds || 900;
     const themeName = (data.settings && data.settings.theme) || 'nord';
     const palette = THEME_PALETTES[themeName] || THEME_PALETTES.nord;
     const phrases = (data.settings && data.settings.phrases) || ['Сделай глубокий вдох...'];
@@ -340,7 +348,7 @@
               <button class="btn btn-continue" id="btnContinue" style="display: none;">
                 <span>🌿</span>
                 <span>ПРОДОЛЖИТЬ НА САЙТ</span>
-                <span class="btn-subtext">(без перезагрузки)</span>
+                <span class="btn-subtext">(допуск на ${formatDuration(configuredSeconds)} · без перезагрузки)</span>
               </button>
             </div>
             <div class="emergency-wrapper">
@@ -436,12 +444,12 @@
     /**
      * Unmounts overlay with smooth fade-out (Zero Reload).
      */
-    const handleContinue = (durationMinutes = 15) => {
+    const handleContinue = (durationSeconds = configuredSeconds) => {
       if (animator) animator.stop();
       chrome.runtime.sendMessage({
         type: 'GRANT_PASS',
         domain: data.targetDomain || window.location.hostname,
-        durationMinutes
+        durationSeconds
       });
 
       backdrop.classList.add('fade-out');
@@ -453,7 +461,7 @@
     };
 
     if (btnExit) btnExit.addEventListener('click', handleExit);
-    if (btnContinue) btnContinue.addEventListener('click', () => handleContinue(15));
+    if (btnContinue) btnContinue.addEventListener('click', () => handleContinue(configuredSeconds));
 
     // Emergency Modal handlers
     if (btnEmergencyTrigger && emergencyModal) {
@@ -462,19 +470,19 @@
       btnEmergencyCancel.addEventListener('click', () => { emergencyModal.style.display = 'none'; });
       btnEmergencyOnce.addEventListener('click', () => {
         emergencyModal.style.display = 'none';
-        handleContinue(15);
+        handleContinue(configuredSeconds);
       });
     }
 
     // Start dwell time monitor for Re-intervention
-    startDwellSentinel(data.targetDomain || window.location.hostname);
+    startDwellSentinel(data.targetDomain || window.location.hostname, configuredSeconds);
   }
 
   /**
    * Monitors active dwell time and triggers Re-intervention if user stays too long.
    */
-  function startDwellSentinel(domain) {
-    const CHECK_INTERVAL = 30 * 1000;
+  function startDwellSentinel(domain, durationSeconds = 900) {
+    const CHECK_INTERVAL = Math.max(3000, Math.min(15000, Math.floor((durationSeconds || 900) * 1000 / 3)));
     const intervalId = setInterval(() => {
       if (document.visibilityState !== 'visible') return;
 

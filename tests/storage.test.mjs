@@ -4,7 +4,8 @@ import {
   initStorageWithDefaults,
   normalizeDomain,
   findTargetDomain,
-  calculateUpdatedStats
+  calculateUpdatedStats,
+  getReinterventionSeconds
 } from '../extension/common/storage.js';
 
 console.log('--- Testing Storage Module ---');
@@ -87,6 +88,15 @@ console.log('--- Testing Storage Module ---');
   assert.equal(updated.history.length, 1);
   assert.equal(updated.history[0].domain, 'youtube.com');
   console.log('✓ calculateUpdatedStats passed');
+}
+
+// 6. getReinterventionSeconds
+{
+  assert.equal(getReinterventionSeconds({ reInterventionSeconds: 45 }), 45);
+  assert.equal(getReinterventionSeconds({ reInterventionMinutes: 10 }), 600);
+  assert.equal(getReinterventionSeconds({ reInterventionSeconds: 30, reInterventionMinutes: 5 }), 30); // prioritizes seconds
+  assert.equal(getReinterventionSeconds({}), 900); // default 15 min (900s)
+  console.log('✓ getReinterventionSeconds passed');
 }
 
 console.log('All storage tests passed successfully!');

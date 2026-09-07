@@ -269,6 +269,24 @@ body {
   height: 6px;
 }
 
+.reintervention-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.reintervention-input-row .input-number {
+  width: 130px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+
+.reintervention-input-row .input-select {
+  flex-grow: 1;
+}
+
 /* Buttons */
 .btn {
   padding: 10px 18px;
