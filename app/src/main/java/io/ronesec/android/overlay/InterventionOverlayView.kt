@@ -2,11 +2,13 @@ package io.ronesec.android.overlay
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,8 +21,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,7 +54,6 @@ import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InterventionOverlayContent(
     targetAppName: String,
@@ -335,12 +334,33 @@ fun InterventionOverlayContent(
             }
         }
 
-        if (showEmergencyConfirmDialog) {
-            BasicAlertDialog(
-                onDismissRequest = { showEmergencyConfirmDialog = false }
+        AnimatedVisibility(
+            visible = showEmergencyConfirmDialog,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.75f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        showEmergencyConfirmDialog = false
+                    }
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            // Consume clicks to prevent dismissing dialog when clicking content
+                        },
                     shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(1.dp, palette.border),
                     color = palette.surface

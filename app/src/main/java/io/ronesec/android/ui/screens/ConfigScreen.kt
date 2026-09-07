@@ -1,6 +1,7 @@
 package io.ronesec.android.ui.screens
 
 import android.content.Context
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -308,6 +309,42 @@ fun ConfigScreen(
                     )
                 }
             }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Google Play Protect & Restricted Settings Card
+        TerminalCard(
+            modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, palette.accent.copy(alpha = 0.5f))
+        ) {
+            Text(
+                text = "БЛОКИРОВКА НАСТРОЕК СИСТЕМОЙ ИЛИ GOOGLE?",
+                fontFamily = TerminalFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                letterSpacing = 0.1.sp,
+                color = palette.accent,
+                modifier = Modifier.padding(bottom = 6.dp)
+            )
+            Text(
+                text = "Google Play Защита или система могут предупреждать о «потенциально опасном приложении» из-за механики отображения поверх других окон. При этом wattim на 100% офлайн и не имеет сетевых разрешений.\n\n" +
+                        "Если пункт спец. возможностей заблокирован («Ограниченная настройка» на Android 13+):\n" +
+                        "1. Перейдите в настройки приложения wattim в системе (кнопка ниже)\n" +
+                        "2. Нажмите меню (⋮) в верхнем правом углу\n" +
+                        "3. Выберите «Разрешить ограниченные настройки»",
+                fontFamily = TerminalFontFamily,
+                fontSize = 11.sp,
+                lineHeight = 16.sp,
+                color = palette.textSecondary,
+                modifier = Modifier.padding(bottom = 10.dp)
+            )
+            TerminalButton(
+                text = "ОТКРЫТЬ НАСТРОЙКИ WATTIM В ANDROID",
+                onClick = { context.startActivity(PermissionHelper.getAppSettingsIntent(context)) },
+                isPrimary = false,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         Spacer(modifier = Modifier.height(20.dp))

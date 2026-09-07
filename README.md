@@ -1,155 +1,242 @@
-# wattim 🌿
+# wattim
 
 <div align="center">
 
-<img src="wattim.png" alt="wattim logo" width="140" />
+<img src="wattim.png" alt="wattim logo" width="120" />
 
-### Осознанный цифровой детокс и защита от думскроллинга для Android
+**Mindful breathing pauses before opening distracting apps and websites.**  
+*Native Android (Jetpack Compose) + Browser Extension (Manifest V3)*
 
-[![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.9%2B-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose%20M3-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![Size](https://img.shields.io/badge/APK%20Size-2.4%20MB-brightgreen?style=for-the-badge)](https://github.com)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+**English** · [Русский](README_RU.md)
 
-*Помогает разорвать петлю импульсивного открытия соцсетей с помощью дыхательных пауз, экспоненциального сдерживания и осознанности.*
+[![Android](https://img.shields.io/badge/Android-10.0%2B%20(API%2029%2B)-3DDC84?style=flat-square&logo=android&logoColor=white)](https://developer.android.com)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Extension](https://img.shields.io/badge/Extension-Manifest%20V3-brightgreen?style=flat-square&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/)
+[![Offline](https://img.shields.io/badge/Network-100%25%20Offline-blue?style=flat-square)](#privacy-and-security)
+[![License](https://img.shields.io/badge/License-MIT-gray?style=flat-square)](LICENSE)
 
-[Скачать wattim.apk (2.4 MB)](./wattim.apk) · [Особенности](#-ключевые-возможности) · [Архитектура](#-архитектура-и-технологии) · [Сборка](#-сборка-проекта)
+[Download APK (2.4 MB)](./wattim.apk) · [How it works](#how-it-works) · [Features](#features) · [Android](#android-client) · [Extension](#browser-extension) · [Build](#build-and-test)
 
 </div>
 
 ---
 
-## 🎯 О проекте
+## Overview
 
-**wattim** — это минималистичное, полностью приватное и бескомпромиссно эффективное приложение для Android, вдохновленное концепцией *one sec*, но с расширенными возможностями тонкой настройки, экспоненциального сдерживания и хакерской эстетикой терминала.
+**wattim** is a lightweight tool that introduces intentional friction when launching habit-forming apps and websites (an open-source alternative to *one sec*).
 
-Каждый раз, когда вы по привычке открываете TikTok, Instagram или YouTube, приложение мгновенно активирует осознанную паузу («Вдох и Выдох»). Эта короткая задержка прерывает выброс дофамина, возвращает контроль над вниманием и сберегает недели реальной жизни.
+Instead of permanently blocking apps, wattim interrupts the automatic impulse: whenever you launch a targeted app or visit a domain, a full-screen overlay presents a brief breathing cycle ("Inhale → Hold → Exhale → Rest"). This short delay gives your prefrontal cortex time to kick in so you can decide whether you actually want to use the app right now.
 
----
+### Monorepo Structure
 
-## ✨ Ключевые возможности
-
-### 🧘 Осознанные интервенции и дыхательные практики
-- **3 типа анимации с частотой 60 FPS**: плавная заливка экрана (`FILL`), пульсирующая сфера осознанности (`PULSE`) и частичный вихрь (`ZEN ORBIT`).
-- **Индивидуальная настройка**: фразы осознанности, длительность задержки (от 1 до 120 сек) и время повторного вопроса (re-intervention).
-- **Кнопка быстрого выхода**: передумали заходить в приложение? Кнопка **«ВЫЙТИ»** доступна прямо во время вдоха и выдоха — мгновенно возвращает на домашний экран и записывает сбереженное время в статистику.
-
-### ⚡ Экстренный вход с защитой от импульсов
-- **Защита подтверждением «Вы уверены?»**: исключает случайное нажатие на автомате.
-- **Гибкий выбор действий**:
-  - `Войти разово` — пропустить дыхательную паузу прямо сейчас.
-  - `Приостановить защиту приложения` — временно отключить интервенции для этого приложения на **15 мин**, **30 мин**, **60 мин** или **до ручного включения**.
-  - `Вернуться к дыханию` — продолжить осознанную паузу.
-
-### ⏸️ Глобальное управление защитой на главном экране
-- Быстрая пауза всей защиты устройства в один клик: на **15 минут**, **30 минут**, **1 час** или **бессрочно**.
-- Информативная карточка с **живым обратным отсчетом времени** (`Осталось: MM:SS`) и кнопкой мгновенного возобновления защиты.
-
-### 📈 Экспоненциальный рост времени ожидания (Exponential Backoff)
-- **Прогрессивное усложнение**: при частых попытках открыть приложение в течение заданного окна (например, за 1 час), длительность дыхательной паузы экспоненциально растет на заданный процент:
-  $$T = T_{\text{базовое}} \times \left(1 + \frac{\text{рост}}{100}\right)^N$$
-  *(например, 10с $\to$ 12с $\to$ 14.4с $\to$ 17.3с $\to$ 24.9с)*.
-- **Интерактивный калькулятор**: таблица предпросчета прямо в настройках приложения, наглядно показывающая задержку для первых 10 последовательных открытий.
-- **Экспоненциальные реинтервенции**: если вы залипли внутри приложения, каждый следующий повторный перехват прогрессивно увеличивает паузу, мягко выталкивая вас обратно в реальный мир.
-
-### 📅 Гибкие расписания блокировок и интервенций
-- Поддержка точного времени до минут (`09:30` $\to$ `18:15`) и выбор дней недели.
-- **Два режима работы**:
-  - **Полная блокировка (Hard Block)**: приложения вообще не открываются в рабочие или ночные часы.
-  - **Особые интервенции (Custom Intervention)**: приложения открываются, но с персональными секундами паузы и частотой перехвата для каждого выбранного приложения.
-- Полное редактирование любого существующего расписания.
-
-### 📱 Поддержка безрамочных экранов (True Edge-to-Edge)
-- Поддержка вырезов под камеру и «челок» (`LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES`).
-- Дыхательная анимация и фон заливают **100% физической матрицы экрана** от края до края стекла, под фронтальную камеру и жестовую панель.
-- Текст и кнопки защищены безопасными системными отступами (`systemBarsPadding`).
-
-### 🎨 6 авторских цветовых тем
-- 🧊 **Nord** (Арктическая элегантность)
-- 🌸 **Catppuccin Mocha** (Пастельный уют)
-- 🧛 **Dracula** (Глубокий вампирский контраст)
-- 🍂 **Gruvbox Dark** (Ретро-терминал с теплыми акцентами)
-- 🌃 **Tokyo Night** (Неоновый киберпанк)
-- ⚡ **Cyber Terminal** (Изумрудная матрица)
-
-### 📊 Статистика сбереженной жизни
-- Подсчет общего количества побед над импульсивными открытиями.
-- Расчет сохраненного времени: часы и дни жизни, не потраченные впустую (с настраиваемой средней длительностью сессии).
-- Мотивирующие уведомления прямо на экране интервенции (*«🌱 Вы уже сберегли 2 дня 4 часа жизни»*).
+The project is structured as a monorepo with two standalone clients:
+- **`app/`** — Native Android client (Kotlin, Jetpack Compose, Room, Accessibility Service, `WindowManager` overlay).
+- **`extension/`** — Browser extension for Chromium-based browsers and Firefox (Manifest V3, closed Shadow DOM overlay without page reload, zero dependencies).
 
 ---
 
-## 🔒 Приватность и Безопасность
-
-- **100% Offline**: приложению не требуется разрешение на доступ в интернет (`INTERNET` permission отсутствует).
-- **Без аналитики и трекеров**: никаких сторонних SDK, Firebase или сбора телеметрии.
-- **Локальное хранение**: все правила, статистика и расписания хранятся исключительно в локальной SQLite/Room базе данных вашего устройства.
-- **Минимальный вес**: благодаря оптимизации ProGuard/R8 и отказу от тяжелых зависимостей размер релизного APK составляет всего **2.4 МБ**.
-
----
-
-## 🏗️ Архитектура и технологии
-
-Приложение построено по канонам современной Android-разработки (MVI / Clean Architecture):
+## How It Works
 
 ```
-app/
- ├── data/
- │    ├── local/
- │    │    ├── dao/          # Room DAO (TargetApp, OpenAttempt, Block, Settings)
- │    │    └── entity/       # Сущности базы данных Room (v2)
- │    └── repository/        # RonesecRepository (Single Source of Truth, StateFlow)
- ├── domain/
- │    ├── animation/         # 60 FPS Canvas-анимации дыхания (Fill, Pulse, Orbit)
- │    ├── engine/            # RuleEngine (детерминированная оценка правил доступа)
- │    └── model/             # Доменные модели (TargetApp, BlockSchedule, Decision)
- ├── overlay/
- │    ├── OverlayController  # WindowManager Type Application Overlay + Insets
- │    └── InterventionView   # Compose-интерфейс поверх других приложений
- ├── service/
- │    ├── AppMonitorService  # AccessibilityService (мониторинг открытий приложений)
- │    └── FocusForeground    # Foreground Service для высокого приоритета в памяти
- └── ui/
-      ├── screens/           # Jetpack Compose экраны (Home, Blocks, Apps, Settings)
-      ├── components/        # Терминальные компоненты (кнопки, карточки, бейджи)
-      └── theme/             # Динамическая система тем (AppTheme, AppPalette)
+[User opens targeted app / site]
+               │
+               ▼
+     Detection & Interception
+               │
+               ▼
+   ┌───────────────────────┐
+   │  Intervention Screen  │
+   │  (60 FPS breath cycle)│
+   └───────────┬───────────┘
+               │
+        ┌──────┴──────┐
+        ▼             ▼
+    [ EXIT ]     [ CONTINUE ]
+  (Immediate    (Access granted
+   return to     only after full
+  home screen)    breath cycle)
+```
+
+1. **Interception**: A background monitor detects foreground window changes on Android or tab navigation in the browser.
+2. **Intervention**: A breathing animation renders over the screen. Underlying page interactions are blocked, and media audio/video is muted.
+3. **Choice**:
+   - **"Exit" button**: Available at any second — immediately returns to the home screen or closes the tab, recording a saved impulse to local stats.
+   - **"Continue" button**: Becomes clickable only after the breathing timer finishes.
+4. **Session Watchdog (Re-intervention)**: If you stay inside the app longer than your configured threshold (e.g. 15 minutes), the intervention triggers again.
+
+---
+
+## Features
+
+### Exponential Backoff
+If you frequently re-open a protected app within a short window (1 hour by default), the pause duration progressively increases:
+
+$$T = T_{\text{base}} \times \left(1 + \frac{r}{100}\right)^N$$
+
+Where:
+- $T_{\text{base}}$ — Base duration (default: 10s);
+- $r$ — Growth percentage per attempt (default: 20%);
+- $N$ — Number of re-open attempts within the current time window.
+
+| Attempt ($N$) | Pause Duration (Base 10s, +20%) |
+| :---: | :--- |
+| **1st** | 10.0s |
+| **2nd** | 12.0s |
+| **3rd** | 14.4s |
+| **4th** | 17.3s |
+| **5th** | 20.7s |
+| **10th** | 51.6s |
+
+An interactive calculation table is embedded directly in the settings for the first 10 steps.
+
+### Schedules & Block Modes
+- **Hard Block**: Completely prevents opening targeted apps during configured hours (e.g. work hours or bedtime) without an option to bypass through breathing.
+- **Custom Intervention**: Configure custom pause durations and re-intervention frequencies per specific app or domain.
+- **Days & Minute Precision**: Select specific days of the week (Mon–Sun) with minute-level precision (`09:30` → `18:15`).
+
+### Emergency Access & Global Pause
+- **One-time Pass**: Quick confirmation to skip the pause in urgent situations.
+- **Temporary Suspension**: Pause protection for an individual app or globally across the entire device for **15 min**, **30 min**, **1 hour**, or **until manually resumed**.
+- **Status Widget**: Home screen card with a live countdown timer and instant resumption button.
+
+### 6 Terminal Themes
+Both Android and the browser extension share identical aesthetic themes:
+- `Nord` — Arctic cool palette.
+- `Catppuccin Mocha` — High-contrast pastel dark palette.
+- `Dracula` — Classic purple and cyan contrast.
+- `Gruvbox Dark` — Retro warm terminal tones.
+- `Tokyo Night` — Neon cyberpunk accents.
+- `Cyber Terminal` — Monochrome matrix green.
+
+### 3 Canvas Animation Styles (60 FPS)
+- **Pulse**: Breathing pulsating sphere with inhale/exhale rhythm.
+- **Fill**: Smooth vertical ambient wave fill.
+- **Zen Orbit**: Particle orbiting with dynamic expansion and contraction.
+
+---
+
+## Privacy and Security
+
+- **Zero Network Permissions**: `android.permission.INTERNET` is completely omitted from `AndroidManifest.xml`. The Android app cannot physically communicate with the network.
+- **Zero Telemetry or Trackers**: No Firebase, Google Play Services, Crashlytics, AppMetrica, or ad SDKs.
+- **Local Storage Only**:
+  - Android: Local SQLite database via Room (`app/data/local/`).
+  - Browser: `chrome.storage.local`, never synced to remote servers.
+- **Lightweight Binary**: Release APK is R8-optimized and measures just **2.4 MB**.
+
+---
+
+## Android Client
+
+### Requirements
+- Android 10.0+ (API 29+)
+- ABIs: ARM64, ARMv7, x86_64
+
+### Required Permissions
+Two system permissions are required for intervention functionality:
+1. **Accessibility Service (`AppMonitorService`)** — Listens to window state change events (`TYPE_WINDOW_STATE_CHANGED`) to identify foreground app launches. It does not inspect screen text or capture user input.
+2. **Display Over Other Apps (`SYSTEM_ALERT_WINDOW`)** — Required to display the full-screen intervention view over target apps (`WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY`).
+
+### Installing the APK
+1. Download [wattim.apk](./wattim.apk) onto your device.
+2. Allow installation from unknown sources if prompted.
+3. Grant the required permissions during the initial setup wizard.
+
+> **Note (Google Play Protect & Android 13+ Restricted Settings):**  
+> Google Play Protect or Android may flag the app as potentially unwanted because it requests overlay and accessibility permissions (mechanics commonly monitored by security scanners). wattim is completely offline and requests zero network access.  
+> If the Accessibility toggle is greyed out (*"Restricted setting. For your security, this setting is currently unavailable"*):  
+> 1. Go to **Android Settings** → **Apps** → **wattim**.  
+> 2. Tap the three dots **(⋮)** in the top-right corner.  
+> 3. Select **"Allow restricted settings"** and confirm with your PIN/biometrics.  
+> 4. Return to wattim to turn on the service.
+
+---
+
+## Browser Extension
+
+Compatible with Chromium-based browsers (Google Chrome, Brave, Microsoft Edge, Vivaldi) and Mozilla Firefox.
+
+### Overlay Architecture
+- **Closed Shadow DOM (`mode: "closed"`)**: The intervention overlay is injected into the active tab within an isolated shadow root, preventing styling conflicts with web pages.
+- **No Page Reload**: Clicking "Continue" removes the overlay element directly, restoring tab interaction and media playback without discarding state or reloading.
+- **Media Muting**: Video and audio elements are automatically paused during the breathing phase.
+
+### Installation in Chromium (Chrome, Brave, Edge)
+1. Navigate to `chrome://extensions` (or `brave://extensions` / `edge://extensions`).
+2. Toggle on **"Developer mode"** in the top-right corner.
+3. Click **"Load unpacked"**.
+4. Select the `extension/` directory from this repository.
+
+### Installation in Firefox
+1. Navigate to `about:debugging#/runtime/this-firefox`.
+2. Click **"Load Temporary Add-on..."**.
+3. Select the `extension/manifest.json` file.
+
+---
+
+## Repository Structure
+
+```
+.
+├── app/                              # Native Android app (Kotlin + Jetpack Compose)
+│   ├── src/main/
+│   │   ├── AndroidManifest.xml       # Manifest (strictly offline, no INTERNET)
+│   │   └── java/io/ronesec/android/
+│   │       ├── data/                 # Room DAO, Entities, Repository
+│   │       ├── domain/               # RuleEngine, animations, intervention logic
+│   │       ├── overlay/              # WindowManager overlay + Edge-to-Edge insets
+│   │       ├── service/              # AppMonitorService (Accessibility Service)
+│   │       └── ui/                   # Jetpack Compose M3 screens, themes, components
+│   └── src/test/                     # Unit & acceptance tests
+│
+├── extension/                        # Browser extension (Manifest V3, Vanilla JS)
+│   ├── manifest.json                 # Extension declaration (Chromium + Firefox)
+│   ├── background/                   # Service worker & RuleEngine
+│   ├── overlay/                      # Content script & Shadow DOM injector
+│   ├── intervention/                 # Breathing screen & 60 FPS Canvas animations
+│   ├── sentinel/                     # In-page idle and duration watchdog
+│   ├── popup/                        # Quick action popup (status, pause, add domain)
+│   └── options/                      # Settings page, domain lists, schedules
+│
+├── tests/                            # Extension automated test suite (Node.js)
+│   ├── test-rule-engine.mjs          # Rule engine & backoff calculations
+│   ├── test-storage.mjs              # Schema migrations & storage integrity
+│   └── run-all.mjs                   # Unified test runner
+│
+├── wattim.apk                        # Pre-built release APK (2.4 MB)
+└── build.gradle.kts                  # Root Gradle build script
 ```
 
 ---
 
-## 🚀 Установка и Сборка
+## Build and Test
 
-### Установка готового APK
-1. Скачайте файл [wattim.apk](./wattim.apk) на ваш Android-смартфон.
-2. Разрешите установку из неизвестных источников.
-3. При первом запуске выдайте два системных разрешения:
-   - **Служба специальных возможностей (Accessibility Service)** — для детекции запуска выбранных приложений.
-   - **Отображение поверх других приложений (Overlay Permission)** — для показа дыхательной паузы.
+### Android
 
-### Сборка из исходного кода
-
-Требования:
-- JDK 17+
-- Android SDK (API 34)
+Prerequisites: JDK 17, Android SDK (API 34).
 
 ```bash
-# Клонирование репозитория
-git clone https://github.com/your-repo/wattim.git
-cd wattim
-
-# Запуск unit-тестов
+# Run unit tests
 ./gradlew test
 
-# Сборка оптимизированного релизного APK
+# Build optimized release APK
 ./gradlew assembleRelease
 
-# Готовый APK будет расположен по пути:
+# The compiled APK is generated at:
 # app/build/outputs/apk/release/app-release.apk
 ```
 
+### Browser Extension
+
+Prerequisites: Node.js 18+.
+
+```bash
+# Run complete test suite (syntax, RuleEngine, storage, manifest integrity)
+npm test
+```
+
 ---
 
-## 📄 Лицензия
+## License
 
-Распространяется под лицензией MIT. Свободно для использования, изучения и модификации.
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.

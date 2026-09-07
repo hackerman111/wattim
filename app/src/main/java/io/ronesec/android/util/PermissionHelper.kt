@@ -83,4 +83,11 @@ object PermissionHelper {
             }
         }
     }
+
+    fun getAppSettingsIntent(context: Context): Intent {
+        return Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:${context.packageName}")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+    }
 }

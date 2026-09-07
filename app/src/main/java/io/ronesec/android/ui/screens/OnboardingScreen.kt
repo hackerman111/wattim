@@ -1,5 +1,6 @@
 package io.ronesec.android.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,11 +65,12 @@ fun OnboardingScreen(
         modifier = modifier
             .fillMaxSize()
             .background(palette.background)
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Column {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = "WATTIM НАСТРОЙКА",
                 fontFamily = TerminalFontFamily,
@@ -87,7 +91,7 @@ fun OnboardingScreen(
                 color = palette.textSecondary
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             when (step) {
                 1 -> {
@@ -170,7 +174,45 @@ fun OnboardingScreen(
                     }
                 }
             }
+
+            if (step <= 2) {
+                Spacer(modifier = Modifier.height(16.dp))
+                TerminalCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, palette.accent.copy(alpha = 0.5f))
+                ) {
+                    Text(
+                        text = "ПРЕДУПРЕЖДЕНИЕ GOOGLE / СИСТЕМЫ",
+                        fontFamily = TerminalFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        letterSpacing = 0.1.sp,
+                        color = palette.accent,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    Text(
+                        text = "Google Play Защита или Android могут предупреждать о «потенциально опасном приложении» из-за механики открытия оверлея поверх других окон.\n\n" +
+                                "wattim полностью офлайн и не имеет доступа в интернет. Если переключатель спец. возможностей заблокирован («Ограниченная настройка» на Android 13+):\n" +
+                                "1. Откройте «Настройки» → «Приложения» → «wattim» (кнопка ниже)\n" +
+                                "2. Нажмите три точки (⋮) в правом верхнем углу\n" +
+                                "3. Выберите «Разрешить ограниченные настройки»",
+                        fontFamily = TerminalFontFamily,
+                        fontSize = 11.sp,
+                        lineHeight = 16.sp,
+                        color = palette.textSecondary,
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                    TerminalButton(
+                        text = "ОТКРЫТЬ НАСТРОЙКИ WATTIM",
+                        onClick = { context.startActivity(PermissionHelper.getAppSettingsIntent(context)) },
+                        isPrimary = false,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Action button
         Column(modifier = Modifier.fillMaxWidth()) {

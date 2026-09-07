@@ -186,6 +186,37 @@ class AcceptanceCriteriaTest {
         assertTrue(decision is Decision.Block)
     }
 
+    // Emergency Access: Разовый вход или временное снятие защиты разрешает доступ к приложению
+    @Test
+    fun `Emergency Access with 15 minute pause unblocks target app`() {
+        val target = TargetApp("com.instagram.android", "Instagram", true, InterventionConfig())
+        val emergencyPauseMs = 15 * 60_000L
+        val grant = AccessGrant(target.packageName, now, now.plusMillis(emergencyPauseMs))
+        val state = RuntimeState(
+            targets = mapOf(target.packageName to target),
+            activeGrants = mapOf(target.packageName to grant)
+        )
+
+        // 10 minutes in: Still allowed under 15m emergency grant
+        val decision = ruleEngine.evaluate(target.packageName, now.plusSeconds(600), state)
+        assertEquals(Decision.Allow, decision)
+
+        // 16 minutes in: Emergency grant expired -> requires intervention again
+        val expiredDecision = ruleEngine.evaluate(target.packageName, now.plusSeconds(960), state)
+        assertTrue(expiredDecision is Decision.Intervention)
+    }
+
+    @Test
+    fun `Emergency Access disabling target permanently allows access`() {
+        val target = TargetApp("com.instagram.android", "Instagram", false, InterventionConfig())
+        val state = RuntimeState(
+            targets = mapOf(target.packageName to target)
+        )
+
+        val decision = ruleEngine.evaluate(target.packageName, now.plusSeconds(100), state)
+        assertEquals(Decision.Allow, decision)
+    }
+
     // AC-13 & AC-14: 100% offline, zero telemetry, NO INTERNET permission in Manifest
     @Test
     fun `AC-13 and AC-14 AndroidManifest does not contain INTERNET permission`() {
