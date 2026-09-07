@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="nord">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wattim 🌿 — Настройки и управление</title>
+  <link rel="stylesheet" href="../common/theme.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-icon">🌿</span>
+        <div class="brand-details">
+          <span class="brand-title">wattim</span>
+          <span class="brand-subtitle">mindful detox</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="tab-targets">
+          <span class="nav-icon">🌐</span>
+          <span class="nav-label">Сайты</span>
+        </button>
+        <button class="nav-item" data-tab="tab-breathing">
+          <span class="nav-icon">🧘</span>
+          <span class="nav-label">Дыхание</span>
+        </button>
+        <button class="nav-item" data-tab="tab-backoff">
+          <span class="nav-icon">📈</span>
+          <span class="nav-label">Бэкофф</span>
+        </button>
+        <button class="nav-item" data-tab="tab-schedules">
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">Расписания</span>
+        </button>
+        <button class="nav-item" data-tab="tab-themes">
+          <span class="nav-icon">🎨</span>
+          <span class="nav-label">Темы</span>
+        </button>
+        <button class="nav-item" data-tab="tab-stats">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Статистика</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-badge" id="globalStatusBadge">
+          <span class="status-dot dot-active" id="sidebarDot"></span>
+          <span id="sidebarStatusText">Защита активна</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      <!-- Toast notification -->
+      <div class="toast" id="toastMessage">Изменения сохранены</div>
+
+      <!-- TAB 1: TARGET SITES -->
+      <section class="tab-pane active" id="tab-targets">
+        <div class="pane-header">
+          <h1 class="pane-title">Отслеживаемые сайты</h1>
+          <p class="pane-desc">При попытке открыть любой из этих сайтов сработает осознанная дыхательная пауза.</p>
+        </div>
+
+        <!-- Add Target Form -->
+        <div class="card card-add-target">
+          <div class="add-target-row">
+            <input type="text" class="input-text" id="inputNewDomain" placeholder="например, youtube.com или *.reddit.com" autofocus>
+            <button class="btn btn-primary" id="btnAddDomain">+ Добавить</button>
+          </div>
+          <!-- Presets -->
+          <div class="preset-chips">
+            <span class="preset-label">Популярные соцсети:</span>
+            <button class="chip" data-domain="youtube.com">YouTube</button>
+            <button class="chip" data-domain="instagram.com">Instagram</button>
+            <button class="chip" data-domain="reddit.com">Reddit</button>
+            <button class="chip" data-domain="x.com">X (Twitter)</button>
+            <button class="chip" data-domain="vk.com">VKontakte</button>
+            <button class="chip" data-domain="tiktok.com">TikTok</button>
+            <button class="chip" data-domain="twitch.tv">Twitch</button>
+            <button class="chip" data-domain="facebook.com">Facebook</button>
+          </div>
+        </div>
+
+        <!-- Targets List -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Список защищенных ресурсов</h2>
+            <span class="badge" id="targetsCountBadge">0 сайтов</span>
+          </div>
+          <div class="targets-list" id="targetsList">
+            <!-- Rendered by options.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: BREATHING SETTINGS -->
+      <section class="tab-pane" id="tab-breathing">
+        <div class="pane-header">
+          <h1 class="pane-title">Параметры осознанной паузы</h1>
+          <p class="pane-desc">Настройте визуальный стиль дыхания, длительность и мотивирующие фразы.</p>
+        </div>
+
+        <div class="grid-2-cols">
+          <!-- Left: Controls -->
+          <div class="card">
+            <h2 class="card-title">Базовые параметры</h2>
+
+            <!-- Duration Slider -->
+            <div class="form-group">
+              <label class="form-label" for="sliderDelay">
+                Базовое время дыхания: <strong id="valDelay">10</strong> сек
+              </label>
+              <input type="range" class="input-slider" id="sliderDelay" min="3" max="120" value="10">
+              <span class="form-hint">Рекомендуется от 7 до 15 секунд для эффективного снятия импульса.</span>
+            </div>
+
+            <!-- Animation Style Selector -->
+            <div class="form-group">
+              <label class="form-label">Тип анимации дыхания:</label>
+              <div class="radio-group" id="animationSelector">
+                <label class="radio-card">
+                  <input type="radio" name="animStyle" value="PULSE" checked>
+                  <span class="radio-title">PULSE</span>
+                  <span class="radio-desc">Пульсирующая сфера осознанности</span>
+                </label>
+                <label class="radio-card">
+                  <input type="radio" name="animStyle" value="FILL">
+                  <span class="radio-title">FILL</span>
+                  <span class="radio-desc">Плавная заливка экрана волной</span>
+                </label>
+                <label class="radio-card">
+                  <input type="radio" name="animStyle" value="ZEN_ORBIT">
+                  <span class="radio-title">ZEN ORBIT</span>
+                  <span class="radio-desc">Орбитальная частица с гармоническим шлейфом</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Re-intervention threshold -->
+            <div class="form-group">
+              <label class="form-label" for="sliderReintervention">
+                Таймер повторного вопроса (Re-intervention): <strong id="valReintervention">15</strong> мин
+              </label>
+              <input type="range" class="input-slider" id="sliderReintervention" min="5" max="60" value="15" step="5">
+              <span class="form-hint">Если вы непрерывно проводите на сайте больше этого времени, пауза включится снова.</span>
+            </div>
+          </div>
+
+          <!-- Right: Live Canvas Preview -->
+          <div class="card preview-card">
+            <h2 class="card-title">Предпросмотр анимации (60 FPS)</h2>
+            <div class="preview-canvas-container">
+              <canvas id="previewCanvas"></canvas>
+            </div>
+            <div class="preview-phase-indicator" id="previewPhase">Фаза: Вдох...</div>
+          </div>
+        </div>
+
+        <!-- Mindful Phrases List -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Фразы осознанности</h2>
+          </div>
+          <div class="add-target-row">
+            <input type="text" class="input-text" id="inputNewPhrase" placeholder="Добавьте свою вдохновляющую фразу...">
+            <button class="btn btn-primary" id="btnAddPhrase">+ Добавить фразу</button>
+          </div>
+          <ul class="phrases-list" id="phrasesList">
+            <!-- Rendered by options.js -->
+          </ul>
+        </div>
+      </section>
+
+      <!-- TAB 3: EXPONENTIAL BACKOFF -->
+      <section class="tab-pane" id="tab-backoff">
+        <div class="pane-header">
+          <h1 class="pane-title">Экспоненциальный рост задержки</h1>
+          <p class="pane-desc">Увеличивает время дыхательной паузы при частых попытках открыть сайт, делая компульсивный серфинг невыносимо медленным.</p>
+        </div>
+
+        <div class="card">
+          <!-- Toggle -->
+          <div class="toggle-row">
+            <label class="toggle-switch">
+              <input type="checkbox" id="checkBackoffEnabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="toggle-label">
+              <strong>Активировать экспоненциальный рост (Exponential Backoff)</strong>
+              <span>Каждое следующее открытие сайта в течение окна увеличивает задержку на заданный процент.</span>
+            </div>
+          </div>
+
+          <!-- Backoff params -->
+          <div class="backoff-controls" id="backoffControlsArea">
+            <div class="form-group">
+              <label class="form-label" for="sliderGrowth">
+                Процент роста за попытку: +<strong id="valGrowth">20</strong>%
+              </label>
+              <input type="range" class="input-slider" id="sliderGrowth" min="10" max="100" value="20" step="5">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="sliderWindow">
+                Окно сброса счетчика попыток: <strong id="valWindow">60</strong> минут
+              </label>
+              <input type="range" class="input-slider" id="sliderWindow" min="15" max="240" value="60" step="15">
+              <span class="form-hint">Если не открывать сайт в течение этого времени, пауза вернется к базовой.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Table -->
+        <div class="card">
+          <h2 class="card-title">Интерактивный калькулятор прогрессии задержек</h2>
+          <p class="form-hint">Наглядно демонстрирует расчетное время паузы для первых 10 последовательных открытий:</p>
+          <div class="table-responsive">
+            <table class="data-table" id="backoffTable">
+              <thead>
+                <tr>
+                  <th>Попытка</th>
+                  <th>Формула расчета</th>
+                  <th>Длительность паузы</th>
+                  <th>Сложность</th>
+                </tr>
+              </thead>
+              <tbody id="backoffTableBody">
+                <!-- Calculated dynamically in options.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SCHEDULES -->
+      <section class="tab-pane" id="tab-schedules">
+        <div class="pane-header">
+          <h1 class="pane-title">Расписания блокировок</h1>
+          <p class="pane-desc">Настройте рабочие часы или ночное время для строгой блокировки или персональных интервенций.</p>
+        </div>
+
+        <!-- Add Schedule Card -->
+        <div class="card">
+          <h2 class="card-title">+ Создать расписание</h2>
+          <div class="schedule-form-grid">
+            <div class="form-group">
+              <label class="form-label" for="schedName">Название:</label>
+              <input type="text" class="input-text" id="schedName" placeholder="например, Рабочий фокус">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Режим:</label>
+              <select class="input-select" id="schedMode">
+                <option value="hard_block">Hard Block (полная блокировка без возможности входа)</option>
+                <option value="custom_intervention">Особая интервенция (задать отдельное время дыхания)</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="schedCustomDelayGroup" style="display: none;">
+              <label class="form-label" for="schedDelay">Длительность дыхания (сек):</label>
+              <input type="number" class="input-text" id="schedDelay" value="30" min="5" max="120">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Интервал времени:</label>
+              <div class="time-range-row">
+                <input type="time" class="input-time" id="schedStart" value="09:00">
+                <span>—</span>
+                <input type="time" class="input-time" id="schedEnd" value="18:00">
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Дни недели:</label>
+              <div class="days-selector" id="schedDaysSelector">
+                <label class="day-chip"><input type="checkbox" value="1" checked> Пн</label>
+                <label class="day-chip"><input type="checkbox" value="2" checked> Вт</label>
+                <label class="day-chip"><input type="checkbox" value="3" checked> Ср</label>
+                <label class="day-chip"><input type="checkbox" value="4" checked> Чт</label>
+                <label class="day-chip"><input type="checkbox" value="5" checked> Пт</label>
+                <label class="day-chip"><input type="checkbox" value="6"> Сб</label>
+                <label class="day-chip"><input type="checkbox" value="0"> Вс</label>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <button class="btn btn-primary" id="btnSaveSchedule">Сохранить расписание</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Schedules List -->
+        <div class="card">
+          <h2 class="card-title">Активные расписания</h2>
+          <div class="schedules-list" id="schedulesList">
+            <!-- Rendered by options.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: THEMES -->
+      <section class="tab-pane" id="tab-themes">
+        <div class="pane-header">
+          <h1 class="pane-title">Цветовые темы</h1>
+          <p class="pane-desc">Выберите одну из 6 авторских терминальных палитр из Android-приложения wattim.</p>
+        </div>
+
+        <div class="themes-grid" id="themesGrid">
+          <!-- Rendered by options.js -->
+        </div>
+      </section>
+
+      <!-- TAB 6: STATS -->
+      <section class="tab-pane" id="tab-stats">
+        <div class="pane-header">
+          <h1 class="pane-title">Статистика сбереженной жизни</h1>
+          <p class="pane-desc">Каждый раз, когда вы нажимаете кнопку «ВЫЙТИ» во время дыхания, вы возвращаете себе драгоценное время.</p>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-icon">🎯</span>
+            <span class="kpi-value" id="kpiImpulses">0</span>
+            <span class="kpi-label">Предотвращенных импульсов</span>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-icon">⏳</span>
+            <span class="kpi-value" id="kpiMinutes">0</span>
+            <span class="kpi-label">Минут жизни сбережено</span>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-icon">🌱</span>
+            <span class="kpi-value" id="kpiHours">0.0</span>
+            <span class="kpi-label">Часов чистого времени</span>
+          </div>
+        </div>
+
+        <!-- Average session settings -->
+        <div class="card">
+          <h2 class="card-title">Параметры подсчета</h2>
+          <div class="form-group">
+            <label class="form-label" for="inputAvgSession">
+              Средняя длительность одной залипающей сессии: <strong id="valAvgSession">10</strong> минут
+            </label>
+            <input type="range" class="input-slider" id="sliderAvgSession" min="5" max="60" value="10" step="5">
+            <span class="form-hint">Используется для оценки сбереженного времени при каждом нажатии «ВЫЙТИ».</span>
+          </div>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="card card-danger">
+          <h2 class="card-title">Сброс статистики</h2>
+          <p class="form-hint">Очистит историю всех побед над импульсивным серфингом.</p>
+          <button class="btn btn-danger" id="btnResetStats">Сбросить всю статистику</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>
