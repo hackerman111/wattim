@@ -1,0 +1,111 @@
+/**
+ * wattim Browser Extension - Theme Stylesheet
+ * 6 author palettes matching the Android app aesthetic.
+ */
+
+:root {
+  /* Default: Nord */
+  --bg-primary: #2e3440;
+  --bg-surface: #3b4252;
+  --bg-surface-elevated: #434c5e;
+  --text-primary: #eceff4;
+  --text-muted: #d8dee9;
+  --text-faint: #4c566a;
+  --accent: #88c0d0;
+  --accent-glow: rgba(136, 192, 208, 0.25);
+  --accent-secondary: #81a1c1;
+  --success: #a3be8c;
+  --error: #bf616a;
+  --border: #4c566a;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+[data-theme="nord"] {
+  --bg-primary: #2e3440;
+  --bg-surface: #3b4252;
+  --bg-surface-elevated: #434c5e;
+  --text-primary: #eceff4;
+  --text-muted: #d8dee9;
+  --text-faint: #4c566a;
+  --accent: #88c0d0;
+  --accent-glow: rgba(136, 192, 208, 0.25);
+  --accent-secondary: #81a1c1;
+  --success: #a3be8c;
+  --error: #bf616a;
+  --border: #4c566a;
+}
+
+[data-theme="catppuccin"] {
+  --bg-primary: #1e1e2e;
+  --bg-surface: #313244;
+  --bg-surface-elevated: #45475a;
+  --text-primary: #cdd6f4;
+  --text-muted: #a6adc8;
+  --text-faint: #585b70;
+  --accent: #cba6f7;
+  --accent-glow: rgba(203, 166, 247, 0.25);
+  --accent-secondary: #b4befe;
+  --success: #a6e3a1;
+  --error: #f38ba8;
+  --border: #45475a;
+}
+
+[data-theme="dracula"] {
+  --bg-primary: #282a36;
+  --bg-surface: #44475a;
+  --bg-surface-elevated: #6272a4;
+  --text-primary: #f8f8f2;
+  --text-muted: #6272a4;
+  --text-faint: #44475a;
+  --accent: #bd93f9;
+  --accent-glow: rgba(189, 147, 249, 0.25);
+  --accent-secondary: #ff79c6;
+  --success: #50fa7b;
+  --error: #ff5555;
+  --border: #6272a4;
+}
+
+[data-theme="gruvbox"] {
+  --bg-primary: #282828;
+  --bg-surface: #3c3836;
+  --bg-surface-elevated: #504945;
+  --text-primary: #ebdbb2;
+  --text-muted: #d5c4a1;
+  --text-faint: #665c54;
+  --accent: #fabd2f;
+  --accent-glow: rgba(250, 189, 47, 0.25);
+  --accent-secondary: #fe8019;
+  --success: #b8bb26;
+  --error: #fb4934;
+  --border: #504945;
+}
+
+[data-theme="tokyo_night"] {
+  --bg-primary: #1a1b26;
+  --bg-surface: #24283b;
+  --bg-surface-elevated: #2f354f;
+  --text-primary: #c0caf5;
+  --text-muted: #a9b1d6;
+  --text-faint: #565f89;
+  --accent: #7aa2f7;
+  --accent-glow: rgba(122, 162, 247, 0.25);
+  --accent-secondary: #bb9af7;
+  --success: #9ece6a;
+  --error: #f7768e;
+  --border: #414868;
+}
+
+[data-theme="cyber_terminal"] {
+  --bg-primary: #0a0e14;
+  --bg-surface: #131924;
+  --bg-surface-elevated: #1f2737;
+  --text-primary: #e6edf3;
+  --text-muted: #8b949e;
+  --text-faint: #30363d;
+  --accent: #00ff66;
+  --accent-glow: rgba(0, 255, 102, 0.25);
+  --accent-secondary: #00cc55;
+  --success: #00ff66;
+  --error: #ff3344;
+  --border: #238636;
+}
