@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.sp
 import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
 import io.ronesec.android.ui.components.TerminalCard
+import io.ronesec.android.ui.i18n.AppLanguage
+import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.theme.AppTheme
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
@@ -46,6 +48,8 @@ import io.ronesec.android.util.PermissionHelper
 fun ConfigScreen(
     currentTheme: AppTheme,
     onSelectTheme: (AppTheme) -> Unit,
+    currentLanguage: AppLanguage = AppLanguage.SYSTEM,
+    onSelectLanguage: (AppLanguage) -> Unit = {},
     sessionMinutes: Int,
     onSelectSessionMinutes: (Int) -> Unit,
     showSavedTimeStats: Boolean = true,
@@ -55,6 +59,7 @@ fun ConfigScreen(
     val context = LocalContext.current
     val palette = LocalAppPalette.current
     val accent = palette.accent
+    val strings = LocalAppStrings.current
 
     var isAccessibilityOk by remember { mutableStateOf(false) }
     var isOverlayOk by remember { mutableStateOf(false) }
@@ -78,7 +83,7 @@ fun ConfigScreen(
             .verticalScroll(rememberScrollState())
     ) {
         Text(
-            text = "НАСТРОЙКИ",
+            text = strings.settingsTitle,
             fontFamily = TerminalFontFamily,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
@@ -88,10 +93,44 @@ fun ConfigScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // Language Selection Card
+        TerminalCard(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = strings.languageSection,
+                fontFamily = TerminalFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 12.sp,
+                letterSpacing = 0.1.sp,
+                color = palette.textSecondary,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AppLanguage.entries.forEach { lang ->
+                    val isSelected = lang == currentLanguage
+                    TerminalButton(
+                        text = when (lang) {
+                            AppLanguage.SYSTEM -> "AUTO"
+                            AppLanguage.EN -> "ENGLISH"
+                            AppLanguage.RU -> "РУССКИЙ"
+                        },
+                        onClick = { onSelectLanguage(lang) },
+                        isPrimary = isSelected,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
         // Theme Selection Card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "ЦВЕТОВАЯ ТЕМА",
+                text = strings.themeSection,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
@@ -143,7 +182,7 @@ fun ConfigScreen(
                         }
 
                         if (isSelected) {
-                            TerminalBadge(text = "АКТИВНА", isActive = true)
+                            TerminalBadge(text = strings.activeBadge, isActive = true)
                         }
                     }
                 }
@@ -155,7 +194,7 @@ fun ConfigScreen(
         // Session Duration Estimation Card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "СРЕДНЯЯ ДЛИТЕЛЬНОСТЬ СЕССИИ",
+                text = strings.sessionDurationSection,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
@@ -164,7 +203,7 @@ fun ConfigScreen(
                 modifier = Modifier.padding(bottom = 6.dp)
             )
             Text(
-                text = "Используется для точного расчета сэкономленного времени при закрытии приложений",
+                text = strings.sessionDurationDesc,
                 fontFamily = TerminalFontFamily,
                 fontSize = 11.sp,
                 color = palette.textSecondary,
@@ -178,7 +217,7 @@ fun ConfigScreen(
                 listOf(5, 7, 10, 15).forEach { mins ->
                     val isSelected = mins == sessionMinutes
                     TerminalButton(
-                        text = "$mins мин",
+                        text = "$mins ${strings.minutesUnit}",
                         onClick = { onSelectSessionMinutes(mins) },
                         isPrimary = isSelected,
                         modifier = Modifier.weight(1f)
@@ -198,7 +237,7 @@ fun ConfigScreen(
             ) {
                 Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                     Text(
-                        text = "СТАТИСТИКА НА ЭКРАНЕ ПАУЗЫ",
+                        text = strings.statsOnOverlaySection,
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp,
@@ -207,7 +246,7 @@ fun ConfigScreen(
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                     Text(
-                        text = "Показывать строку «Вы сберегли уже...» поверх анимации осознанности",
+                        text = strings.statsOnOverlayDesc,
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
                         lineHeight = 15.sp,
@@ -217,12 +256,12 @@ fun ConfigScreen(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     TerminalBadge(
-                        text = "ВКЛ",
+                        text = strings.onLabel,
                         isActive = showSavedTimeStats,
                         modifier = Modifier.clickable { onToggleShowSavedTimeStats(true) }
                     )
                     TerminalBadge(
-                        text = "ВЫКЛ",
+                        text = strings.offLabel,
                         isActive = !showSavedTimeStats,
                         modifier = Modifier.clickable { onToggleShowSavedTimeStats(false) }
                     )
@@ -235,7 +274,7 @@ fun ConfigScreen(
         // Permission Watchdog Status Card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "СИСТЕМНЫЕ РАЗРЕШЕНИЯ",
+                text = strings.systemPermissionsSection,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
@@ -251,15 +290,15 @@ fun ConfigScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("СПЕЦИАЛЬНЫЕ ВОЗМОЖНОСТИ", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textPrimary)
-                    Text("Обнаружение запуска приложений", fontFamily = TerminalFontFamily, fontSize = 11.sp, color = palette.textSecondary)
+                    Text(strings.permAccessibility, fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textPrimary)
+                    Text(strings.permAccessibilityDesc, fontFamily = TerminalFontFamily, fontSize = 11.sp, color = palette.textSecondary)
                 }
 
                 if (isAccessibilityOk) {
-                    TerminalBadge(text = "ГОТОВО", isActive = true)
+                    TerminalBadge(text = strings.readyBadge, isActive = true)
                 } else {
                     TerminalButton(
-                        text = "ВКЛЮЧИТЬ",
+                        text = strings.enableButton,
                         onClick = { context.startActivity(PermissionHelper.getAccessibilitySettingsIntent()) },
                         isPrimary = true
                     )
@@ -273,15 +312,15 @@ fun ConfigScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("ОКНО ПОВЕРХ ДРУГИХ", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textPrimary)
-                    Text("Экран осознанной паузы", fontFamily = TerminalFontFamily, fontSize = 11.sp, color = palette.textSecondary)
+                    Text(strings.permOverlay, fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textPrimary)
+                    Text(strings.permOverlayDesc, fontFamily = TerminalFontFamily, fontSize = 11.sp, color = palette.textSecondary)
                 }
 
                 if (isOverlayOk) {
-                    TerminalBadge(text = "ГОТОВО", isActive = true)
+                    TerminalBadge(text = strings.readyBadge, isActive = true)
                 } else {
                     TerminalButton(
-                        text = "ВКЛЮЧИТЬ",
+                        text = strings.enableButton,
                         onClick = { context.startActivity(PermissionHelper.getOverlaySettingsIntent(context)) },
                         isPrimary = true
                     )
@@ -295,15 +334,15 @@ fun ConfigScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("РАБОТА В ФОНЕ", fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textPrimary)
-                    Text("Защита от выгрузки системой", fontFamily = TerminalFontFamily, fontSize = 11.sp, color = palette.textSecondary)
+                    Text(strings.permBattery, fontFamily = TerminalFontFamily, fontSize = 13.sp, color = palette.textPrimary)
+                    Text(strings.permBatteryDesc, fontFamily = TerminalFontFamily, fontSize = 11.sp, color = palette.textSecondary)
                 }
 
                 if (isBatteryOk) {
-                    TerminalBadge(text = "ГОТОВО", isActive = true)
+                    TerminalBadge(text = strings.readyBadge, isActive = true)
                 } else {
                     TerminalButton(
-                        text = "ВКЛЮЧИТЬ",
+                        text = strings.enableButton,
                         onClick = { context.startActivity(PermissionHelper.getBatteryOptimizationSettingsIntent(context)) },
                         isPrimary = true
                     )
@@ -319,7 +358,7 @@ fun ConfigScreen(
             border = BorderStroke(1.dp, palette.accent.copy(alpha = 0.5f))
         ) {
             Text(
-                text = "БЛОКИРОВКА НАСТРОЕК СИСТЕМОЙ ИЛИ GOOGLE?",
+                text = strings.googleWarningTitle,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
@@ -328,11 +367,7 @@ fun ConfigScreen(
                 modifier = Modifier.padding(bottom = 6.dp)
             )
             Text(
-                text = "Google Play Защита или система могут предупреждать о «потенциально опасном приложении» из-за механики отображения поверх других окон. При этом wattim на 100% офлайн и не имеет сетевых разрешений.\n\n" +
-                        "Если пункт спец. возможностей заблокирован («Ограниченная настройка» на Android 13+):\n" +
-                        "1. Перейдите в настройки приложения wattim в системе (кнопка ниже)\n" +
-                        "2. Нажмите меню (⋮) в верхнем правом углу\n" +
-                        "3. Выберите «Разрешить ограниченные настройки»",
+                text = strings.googleWarningDesc,
                 fontFamily = TerminalFontFamily,
                 fontSize = 11.sp,
                 lineHeight = 16.sp,
@@ -340,7 +375,7 @@ fun ConfigScreen(
                 modifier = Modifier.padding(bottom = 10.dp)
             )
             TerminalButton(
-                text = "ОТКРЫТЬ НАСТРОЙКИ WATTIM В ANDROID",
+                text = strings.openAppSettingsButton,
                 onClick = { context.startActivity(PermissionHelper.getAppSettingsIntent(context)) },
                 isPrimary = false,
                 modifier = Modifier.fillMaxWidth()
@@ -352,7 +387,7 @@ fun ConfigScreen(
         // Privacy & Architecture Card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "БЕЗОПАСНОСТЬ И ПРИВАТНОСТЬ",
+                text = strings.privacySection,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
@@ -362,7 +397,7 @@ fun ConfigScreen(
             )
 
             Text(
-                text = "• 100% ОФФЛАЙН (БЕЗ ДОСТУПА В ИНТЕРНЕТ)\n• ПОЛНОЕ ОТСУТСТВИЕ ТЕЛЕМЕТРИИ\n• ВСЕ ДАННЫЕ В ЛОКАЛЬНОЙ БАЗЕ УСТРОЙСТВА",
+                text = strings.privacyBullets,
                 fontFamily = TerminalFontFamily,
                 fontSize = 12.sp,
                 lineHeight = 20.sp,

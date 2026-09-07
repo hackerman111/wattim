@@ -12,6 +12,7 @@ import io.ronesec.android.domain.model.BlockSchedule
 import io.ronesec.android.domain.model.BlockSession
 import io.ronesec.android.domain.model.OpenAttempt
 import io.ronesec.android.domain.model.TargetApp
+import io.ronesec.android.ui.i18n.AppLanguage
 import io.ronesec.android.ui.theme.AppTheme
 import io.ronesec.android.ui.theme.TerminalAccent
 import io.ronesec.android.util.PermissionHelper
@@ -37,8 +38,10 @@ data class TodayStats(
     val continued: Int = 0,
     val closed: Int = 0,
     val avoidedPercent: Int = 0,
+    val savedMinutes: Long = 0,
     val savedTimeFormatted: String = "0 мин.",
     val allTimeAvoided: Int = 0,
+    val allTimeSavedMinutes: Long = 0,
     val allTimeSavedFormatted: String = "0 мин."
 )
 
@@ -105,8 +108,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             continued = continued,
             closed = closed,
             avoidedPercent = avoided,
+            savedMinutes = todayMinutes,
             savedTimeFormatted = formatSavedTime(todayMinutes),
             allTimeAvoided = allAvoided,
+            allTimeSavedMinutes = allMinutes,
             allTimeSavedFormatted = formatSavedTime(allMinutes)
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TodayStats())
@@ -129,6 +134,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val currentTheme: StateFlow<AppTheme> = repository.getSettingFlow("app_theme")
         .map { AppTheme.fromId(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTheme.NORD)
+
+    val appLanguage: StateFlow<AppLanguage> = repository.getSettingFlow("app_language")
+        .map { code ->
+            AppLanguage.entries.find { it.code == code } ?: AppLanguage.SYSTEM
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppLanguage.SYSTEM)
+
+    fun setAppLanguage(language: AppLanguage) {
+        viewModelScope.launch {
+            repository.setSetting("app_language", language.code)
+        }
+    }
 
     val currentAccent: StateFlow<TerminalAccent> = currentTheme
         .map { TerminalAccent.fromName(it.palette.accent.toString()) }

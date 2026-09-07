@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +21,10 @@ import io.ronesec.android.domain.model.TargetApp
 import io.ronesec.android.service.FocusForegroundService
 import io.ronesec.android.ui.components.NavDestination
 import io.ronesec.android.ui.components.TerminalBottomNav
+import io.ronesec.android.ui.i18n.AppLanguage
+import io.ronesec.android.ui.i18n.EnStrings
+import io.ronesec.android.ui.i18n.LocalAppStrings
+import io.ronesec.android.ui.i18n.RuStrings
 import io.ronesec.android.ui.screens.BlocksScreen
 import io.ronesec.android.ui.screens.ConfigScreen
 import io.ronesec.android.ui.screens.HomeScreen
@@ -28,6 +33,7 @@ import io.ronesec.android.ui.screens.StatsScreen
 import io.ronesec.android.ui.screens.TargetSettingsScreen
 import io.ronesec.android.ui.theme.RonesecTheme
 import io.ronesec.android.ui.viewmodel.MainViewModel
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
@@ -40,18 +46,32 @@ class MainActivity : ComponentActivity() {
         setContent {
             val currentTheme by viewModel.currentTheme.collectAsState()
             val permissionsGranted by viewModel.permissionsGranted.collectAsState()
+            val appLanguage by viewModel.appLanguage.collectAsState()
 
-            RonesecTheme(theme = currentTheme) {
-                var forceShowMain by remember { mutableStateOf(false) }
+            val currentStrings = remember(appLanguage) {
+                when (appLanguage) {
+                    AppLanguage.EN -> EnStrings
+                    AppLanguage.RU -> RuStrings
+                    AppLanguage.SYSTEM -> {
+                        val lang = Locale.getDefault().language
+                        if (lang.equals("ru", ignoreCase = true)) RuStrings else EnStrings
+                    }
+                }
+            }
 
-                if (!permissionsGranted && !forceShowMain) {
-                    OnboardingScreen(
-                        onComplete = {
-                            forceShowMain = true
-                        }
-                    )
-                } else {
-                    MainAppContent(viewModel = viewModel)
+            CompositionLocalProvider(LocalAppStrings provides currentStrings) {
+                RonesecTheme(theme = currentTheme) {
+                    var forceShowMain by remember { mutableStateOf(false) }
+
+                    if (!permissionsGranted && !forceShowMain) {
+                        OnboardingScreen(
+                            onComplete = {
+                                forceShowMain = true
+                            }
+                        )
+                    } else {
+                        MainAppContent(viewModel = viewModel)
+                    }
                 }
             }
         }
@@ -75,6 +95,7 @@ fun MainAppContent(viewModel: MainViewModel) {
     val sessionMinutes by viewModel.sessionMinutes.collectAsState()
     val showSavedTimeStats by viewModel.showSavedTimeOnOverlay.collectAsState()
     val protectionPausedUntil by viewModel.protectionPausedUntil.collectAsState()
+    val appLanguage by viewModel.appLanguage.collectAsState()
 
     var currentNav by remember { mutableStateOf(NavDestination.APPS) }
     var selectedTargetForEditing by remember { mutableStateOf<TargetApp?>(null) }
@@ -174,6 +195,10 @@ fun MainAppContent(viewModel: MainViewModel) {
                             currentTheme = currentTheme,
                             onSelectTheme = { theme ->
                                 viewModel.setTheme(theme)
+                            },
+                            currentLanguage = appLanguage,
+                            onSelectLanguage = { lang ->
+                                viewModel.setAppLanguage(lang)
                             },
                             sessionMinutes = sessionMinutes,
                             onSelectSessionMinutes = { mins ->

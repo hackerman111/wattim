@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">wattim</string>
-    <string name="accessibility_service_description">Необходимо wattim для обнаружения запуска защищаемых приложений и включения осознанной паузы.</string>
-    <string name="channel_name_protection">wattim: Защита фокуса</string>
-    <string name="channel_desc_protection">Отображает текущий статус защиты приложений</string>
+    <string name="accessibility_service_description">Required by wattim to detect launches of protected apps and trigger mindful breathing pauses.</string>
+    <string name="channel_name_protection">wattim: Focus Protection</string>
+    <string name="channel_desc_protection">Displays foreground protection service status</string>
+    <string name="notif_protection_active">Protection active</string>
+    <string name="notif_protection_active_count">Protection active · %d apps</string>
+    <string name="notif_protection_idle">Protection standby · 0 apps</string>
 </resources>

@@ -30,6 +30,7 @@ import io.ronesec.android.domain.model.TargetApp
 import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
 import io.ronesec.android.ui.components.TerminalCard
+import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
 import io.ronesec.android.ui.viewmodel.InstalledAppInfo
@@ -54,6 +55,7 @@ fun HomeScreen(
 ) {
     val palette = LocalAppPalette.current
     val accent = palette.accent
+    val strings = LocalAppStrings.current
     var showAddDialog by remember { mutableStateOf(false) }
 
     var remainingSeconds by remember(protectionPausedUntil) {
@@ -129,7 +131,7 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "ПОД ЗАЩИТОЙ",
+                text = strings.protectedSection,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
@@ -152,7 +154,7 @@ fun HomeScreen(
         if (targets.isEmpty()) {
             TerminalCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "НЕТ ЗАЩИЩАЕМЫХ ПРИЛОЖЕНИЙ",
+                    text = strings.noProtectedApps,
                     fontFamily = TerminalFontFamily,
                     fontSize = 13.sp,
                     color = palette.textSecondary
@@ -203,7 +205,7 @@ fun HomeScreen(
                                     color = palette.textPrimary
                                 )
                                 Text(
-                                    text = "${target.intervention.durationMs / 1000} сек · ${target.intervention.animation.displayName}",
+                                    text = "${target.intervention.durationMs / 1000} ${strings.secondsShort} · ${strings.animationName(target.intervention.animation)}",
                                     fontFamily = TerminalFontFamily,
                                     fontSize = 11.sp,
                                     color = palette.textSecondary
@@ -212,7 +214,7 @@ fun HomeScreen(
                         }
 
                         TerminalBadge(
-                            text = if (target.enabled) "ВКЛ" else "ВЫКЛ",
+                            text = if (target.enabled) strings.onLabel else strings.offLabel,
                             isActive = target.enabled,
                             modifier = Modifier.clickable {
                                 onToggleTarget(target, !target.enabled)
@@ -228,7 +230,7 @@ fun HomeScreen(
         // Today mindfulness stats card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "СЕГОДНЯ",
+                text = strings.todayHeader,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
@@ -250,7 +252,7 @@ fun HomeScreen(
                         color = palette.textPrimary
                     )
                     Text(
-                        text = "ОТКРЫТИЙ",
+                        text = strings.attemptsUnit.uppercase(),
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
                         color = palette.textSecondary
@@ -266,7 +268,7 @@ fun HomeScreen(
                         color = accent
                     )
                     Text(
-                        text = "ЗАКРЫТО",
+                        text = strings.victoriesUnit.uppercase(),
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
                         color = palette.textSecondary
@@ -282,7 +284,7 @@ fun HomeScreen(
                         color = palette.textPrimary
                     )
                     Text(
-                        text = "СПАСЕНО",
+                        text = strings.savedUnit.uppercase(),
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
                         color = palette.textSecondary
@@ -300,7 +302,7 @@ fun HomeScreen(
                 border = BorderStroke(1.dp, palette.error)
             ) {
                 Text(
-                    text = "ЗАЩИТА ПРИОСТАНОВЛЕНА",
+                    text = strings.protectionPausedTitle,
                     fontFamily = TerminalFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
@@ -311,7 +313,7 @@ fun HomeScreen(
 
                 if (protectionPausedUntil == -1L) {
                     Text(
-                        text = "Защита отключена до ручного включения.",
+                        text = strings.pauseForever,
                         fontFamily = TerminalFontFamily,
                         fontSize = 13.sp,
                         color = palette.textSecondary,
@@ -320,7 +322,7 @@ fun HomeScreen(
                 } else {
                     val formattedTime = String.format(Locale.US, "%02d:%02d", remainingSeconds / 60, remainingSeconds % 60)
                     Text(
-                        text = "Осталось: $formattedTime",
+                        text = "${strings.remainingPrefix} $formattedTime",
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.sp,
@@ -330,7 +332,7 @@ fun HomeScreen(
                 }
 
                 TerminalButton(
-                    text = "ВОЗОБНОВИТЬ ЗАЩИТУ",
+                    text = strings.resumeButton,
                     onClick = onResumeProtection,
                     isPrimary = true,
                     modifier = Modifier.fillMaxWidth()
@@ -339,7 +341,7 @@ fun HomeScreen(
         } else {
             TerminalCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "ПРИОСТАНОВИТЬ ЗАЩИТУ",
+                    text = strings.pauseProtectionTitle,
                     fontFamily = TerminalFontFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 12.sp,
@@ -349,7 +351,7 @@ fun HomeScreen(
                 )
 
                 Text(
-                    text = "Временно отключить перехват для всех приложений:",
+                    text = strings.pauseProtectionTitle,
                     fontFamily = TerminalFontFamily,
                     fontSize = 12.sp,
                     color = palette.textSecondary,
@@ -361,19 +363,19 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     TerminalBadge(
-                        text = "15м",
+                        text = strings.pause15m,
                         modifier = Modifier.clickable { onPauseProtection(15) }
                     )
                     TerminalBadge(
-                        text = "30м",
+                        text = strings.pause30m,
                         modifier = Modifier.clickable { onPauseProtection(30) }
                     )
                     TerminalBadge(
-                        text = "1ч",
+                        text = strings.pause1h,
                         modifier = Modifier.clickable { onPauseProtection(60) }
                     )
                     TerminalBadge(
-                        text = "До включения",
+                        text = strings.pauseForever,
                         modifier = Modifier.clickable { onPauseProtection(-1) }
                     )
                 }
@@ -384,7 +386,7 @@ fun HomeScreen(
 
         // Add App Button
         TerminalButton(
-            text = "+ ДОБАВИТЬ ПРИЛОЖЕНИЕ",
+            text = strings.addAppButton,
             onClick = { showAddDialog = true },
             isPrimary = true,
             modifier = Modifier.fillMaxWidth()

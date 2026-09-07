@@ -52,6 +52,7 @@ import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
 import io.ronesec.android.ui.components.TerminalCard
 import io.ronesec.android.ui.components.TerminalInputField
+import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
 import java.util.Locale
@@ -67,6 +68,7 @@ fun TargetSettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val palette = LocalAppPalette.current
+    val strings = LocalAppStrings.current
     val accent = palette.accent
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -113,7 +115,7 @@ fun TargetSettingsScreen(
                         growthPercent = growthPercent,
                         growthPeriodMinutes = growthPeriodMinutes
                     ),
-                    savedTimeText = "Предпросмотр: вы сберегли 2 дня жизни",
+                    savedTimeText = strings.previewSavedTime,
                     onEmergencyAccess = { _, _ -> showPreview = false },
                     onClose = { showPreview = false },
                     onContinue = { showPreview = false }
@@ -158,13 +160,13 @@ fun TargetSettingsScreen(
             ) {
                 Column {
                     Text(
-                        text = "СТАТУС ЗАЩИТЫ",
+                        text = strings.targetProtectionStatus,
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
                         color = palette.textSecondary
                     )
                     Text(
-                        text = if (enabled) "АКТИВЕН" else "ОТКЛЮЧЕН",
+                        text = if (enabled) strings.targetStatusActive else strings.targetStatusDisabled,
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
@@ -173,7 +175,7 @@ fun TargetSettingsScreen(
                 }
 
                 TerminalBadge(
-                    text = if (enabled) "ВКЛ" else "ВЫКЛ",
+                    text = if (enabled) strings.onLabel else strings.offLabel,
                     isActive = enabled,
                     modifier = Modifier.clickable { enabled = !enabled }
                 )
@@ -185,7 +187,7 @@ fun TargetSettingsScreen(
         // Phrase Editor
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "ФРАЗА ОСОЗНАННОСТИ",
+                text = strings.targetMindfulnessPhrase,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 11.sp,
@@ -211,7 +213,7 @@ fun TargetSettingsScreen(
         // Animation Choice & Duration Card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "ТИП АНИМАЦИИ",
+                text = strings.targetAnimationType,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 11.sp,
@@ -228,7 +230,7 @@ fun TargetSettingsScreen(
                 ).forEach { anim ->
                     val isSelected = anim == selectedAnimation
                     TerminalButton(
-                        text = anim.displayName,
+                        text = strings.animationName(anim),
                         onClick = { selectedAnimation = anim },
                         isPrimary = isSelected,
                         modifier = Modifier.fillMaxWidth()
@@ -239,7 +241,7 @@ fun TargetSettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "ДЛИТЕЛЬНОСТЬ ПАУЗЫ (ВДОХ И ВЫДОХ)",
+                text = strings.targetPauseDuration,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 11.sp,
@@ -317,7 +319,7 @@ fun TargetSettingsScreen(
                 }
 
                 Text(
-                    text = "СЕК",
+                    text = if (strings.secondsUnitShort == "с") "СЕК" else "SEC",
                     fontFamily = TerminalFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
@@ -332,7 +334,12 @@ fun TargetSettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                listOf(-5f to "-5с", -1f to "-1с", 1f to "+1с", 5f to "+5с").forEach { (delta, label) ->
+                listOf(
+                    -5f to "-5${strings.secondsUnitShort}",
+                    -1f to "-1${strings.secondsUnitShort}",
+                    1f to "+1${strings.secondsUnitShort}",
+                    5f to "+5${strings.secondsUnitShort}"
+                ).forEach { (delta, label) ->
                     TerminalButton(
                         text = label,
                         onClick = {
@@ -357,7 +364,7 @@ fun TargetSettingsScreen(
                 listOf(3, 5, 8, 10, 15, 20, 30).forEach { sec ->
                     val isSelected = durationSeconds.toInt() == sec
                     TerminalBadge(
-                        text = "${sec}с",
+                        text = "$sec${strings.secondsUnitShort}",
                         isActive = isSelected,
                         modifier = Modifier.clickable {
                             durationInput = sec.toString()
@@ -370,7 +377,7 @@ fun TargetSettingsScreen(
             Spacer(modifier = Modifier.height(14.dp))
 
             TerminalButton(
-                text = "ПРЕДПРОСМОТР АНИМАЦИИ",
+                text = strings.targetPreviewAnimation,
                 onClick = { showPreview = true },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -381,7 +388,7 @@ fun TargetSettingsScreen(
         // Remind Again (Re-intervention) Card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "ПОВТОРНЫЙ ПЕРЕХВАТ",
+                text = strings.targetReintercept,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 11.sp,
@@ -394,11 +401,11 @@ fun TargetSettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 val intervals = listOf(
-                    "ВЫКЛ" to null,
-                    "1м" to 60_000L,
-                    "3м" to 180_000L,
-                    "5м" to 300_000L,
-                    "10м" to 600_000L
+                    strings.offLabel to null,
+                    "1${strings.minutesShort}" to 60_000L,
+                    "3${strings.minutesShort}" to 180_000L,
+                    "5${strings.minutesShort}" to 300_000L,
+                    "10${strings.minutesShort}" to 600_000L
                 )
                 intervals.forEach { (lbl, ms) ->
                     val isSelected = !isCustomReintervention && remindAgainMs == ms
@@ -413,7 +420,7 @@ fun TargetSettingsScreen(
                 }
 
                 TerminalBadge(
-                    text = "СВОЁ",
+                    text = strings.targetCustomOption,
                     isActive = isCustomReintervention,
                     modifier = Modifier.clickable {
                         isCustomReintervention = true
@@ -429,7 +436,7 @@ fun TargetSettingsScreen(
                 val curMins = customMinutesInput.filter { it.isDigit() }.toLongOrNull() ?: 0L
                 val curSecs = customSecondsInput.filter { it.isDigit() }.toLongOrNull() ?: 0L
                 val currentEffectiveMs = curMins * 60_000L + curSecs * 1000L
-                val displayTime = TimeFormatUtils.formatDurationRu(currentEffectiveMs)
+                val displayTime = strings.formatDuration(currentEffectiveMs)
 
                 fun applyAdjustment(deltaMs: Long) {
                     focusManager.clearFocus()
@@ -465,7 +472,7 @@ fun TargetSettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "СВОЙ ИНТЕРВАЛ",
+                            text = strings.targetCustomInterval,
                             fontFamily = TerminalFontFamily,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -490,7 +497,7 @@ fun TargetSettingsScreen(
                         // Minutes column
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "МИНУТЫ",
+                                text = strings.minutesLabel,
                                 fontFamily = TerminalFontFamily,
                                 fontSize = 10.sp,
                                 color = palette.textSecondary,
@@ -554,7 +561,7 @@ fun TargetSettingsScreen(
                                                 false
                                             }
                                         }
-                                )
+                                 )
                             }
 
                             Spacer(modifier = Modifier.height(6.dp))
@@ -564,12 +571,12 @@ fun TargetSettingsScreen(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 TerminalButton(
-                                    text = "-1м",
+                                    text = "-1${strings.minutesShort}",
                                     onClick = { applyAdjustment(-60_000L) },
                                     modifier = Modifier.weight(1f)
                                 )
                                 TerminalButton(
-                                    text = "+1м",
+                                    text = "+1${strings.minutesShort}",
                                     onClick = { applyAdjustment(60_000L) },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -579,7 +586,7 @@ fun TargetSettingsScreen(
                         // Seconds column
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "СЕКУНДЫ",
+                                text = strings.secondsLabel,
                                 fontFamily = TerminalFontFamily,
                                 fontSize = 10.sp,
                                 color = palette.textSecondary,
@@ -654,12 +661,12 @@ fun TargetSettingsScreen(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 TerminalButton(
-                                    text = "-15с",
+                                    text = "-15${strings.secondsUnitShort}",
                                     onClick = { applyAdjustment(-15_000L) },
                                     modifier = Modifier.weight(1f)
                                 )
                                 TerminalButton(
-                                    text = "+15с",
+                                    text = "+15${strings.secondsUnitShort}",
                                     onClick = { applyAdjustment(15_000L) },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -670,7 +677,7 @@ fun TargetSettingsScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = "БЫСТРЫЙ ВЫБОР",
+                        text = strings.targetQuickPresets,
                         fontFamily = TerminalFontFamily,
                         fontSize = 10.sp,
                         color = palette.textSecondary,
@@ -682,11 +689,11 @@ fun TargetSettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         listOf(
-                            "30с" to 30_000L,
-                            "45с" to 45_000L,
-                            "2м" to 120_000L,
-                            "15м" to 900_000L,
-                            "30м" to 1800_000L
+                            "30${strings.secondsUnitShort}" to 30_000L,
+                            "45${strings.secondsUnitShort}" to 45_000L,
+                            "2${strings.minutesShort}" to 120_000L,
+                            "15${strings.minutesShort}" to 900_000L,
+                            "30${strings.minutesShort}" to 1800_000L
                         ).forEach { (lbl, ms) ->
                             TerminalBadge(
                                 text = lbl,
@@ -701,7 +708,7 @@ fun TargetSettingsScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             val descText = if (remindAgainMs == null && !isCustomReintervention) {
-                "Повторный вопрос во время непрерывной работы приложения отключен."
+                strings.targetReinterceptOffDesc
             } else {
                 val effectiveMs = if (isCustomReintervention) {
                     val m = customMinutesInput.filter { it.isDigit() }.toLongOrNull() ?: 0L
@@ -710,8 +717,8 @@ fun TargetSettingsScreen(
                 } else {
                     remindAgainMs ?: 0L
                 }
-                val timeStr = TimeFormatUtils.formatDurationRu(effectiveMs)
-                "Через $timeStr непрерывного использования появится экран с вопросом «Хотите продолжить?»."
+                val timeStr = strings.formatDuration(effectiveMs)
+                strings.targetReinterceptOnDesc(timeStr)
             }
 
             Text(
@@ -728,7 +735,7 @@ fun TargetSettingsScreen(
         // Quick Return Grace Card
         TerminalCard(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "БЫСТРЫЙ ВОЗВРАТ (БЕЗ ПАУЗЫ)",
+                text = strings.targetQuickReturn,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 11.sp,
@@ -741,12 +748,12 @@ fun TargetSettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 val graces = listOf(
-                    0L to "0с",
-                    15L to "15с",
-                    30L to "30с",
-                    60L to "1м",
-                    120L to "2м",
-                    300L to "5м"
+                    0L to "0${strings.secondsUnitShort}",
+                    15L to "15${strings.secondsUnitShort}",
+                    30L to "30${strings.secondsUnitShort}",
+                    60L to "1${strings.minutesShort}",
+                    120L to "2${strings.minutesShort}",
+                    300L to "5${strings.minutesShort}"
                 )
                 graces.forEach { (sec, lbl) ->
                     val isSelected = quickReturnGraceSec == sec
@@ -762,9 +769,9 @@ fun TargetSettingsScreen(
 
             Text(
                 text = if (quickReturnGraceSec == 0L)
-                    "0с — новая анимация будет показываться сразу при каждом выходе и повторном входе."
+                    strings.targetQuickReturn0s
                 else
-                    "Если вернуться в приложение в течение $quickReturnGraceSec сек, пауза показываться не будет.",
+                    strings.targetQuickReturnGrace(quickReturnGraceSec),
                 fontFamily = TerminalFontFamily,
                 fontSize = 11.sp,
                 lineHeight = 16.sp,
@@ -782,7 +789,7 @@ fun TargetSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "ЭКСПОНЕНЦИАЛЬНЫЙ РОСТ",
+                    text = strings.targetExponentialGrowth,
                     fontFamily = TerminalFontFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 11.sp,
@@ -790,7 +797,7 @@ fun TargetSettingsScreen(
                 )
 
                 TerminalBadge(
-                    text = if (exponentialGrowthEnabled) "ВКЛ" else "ВЫКЛ",
+                    text = if (exponentialGrowthEnabled) strings.onLabel else strings.offLabel,
                     isActive = exponentialGrowthEnabled,
                     modifier = Modifier.clickable { exponentialGrowthEnabled = !exponentialGrowthEnabled }
                 )
@@ -799,7 +806,7 @@ fun TargetSettingsScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Увеличение времени паузы при частых повторных открытиях приложения за выбранный период.",
+                text = strings.targetExponentialGrowthDesc,
                 fontFamily = TerminalFontFamily,
                 fontSize = 11.sp,
                 lineHeight = 16.sp,
@@ -816,7 +823,7 @@ fun TargetSettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "ПРОЦЕНТ РОСТА НА КАЖДОЕ ОТКРЫТИЕ",
+                        text = strings.targetGrowthPercent,
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 11.sp,
@@ -870,7 +877,7 @@ fun TargetSettingsScreen(
 
                 // Секция «ПЕРИОД УЧЕТА ЗАПУСКОВ»
                 Text(
-                    text = "ПЕРИОД УЧЕТА (СКОЛЬЗЯЩЕЕ ОКНО)",
+                    text = strings.targetRollingWindow,
                     fontFamily = TerminalFontFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 11.sp,
@@ -884,11 +891,11 @@ fun TargetSettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     val periods = listOf(
-                        "15м" to 15,
-                        "30м" to 30,
-                        "1ч" to 60,
-                        "2ч" to 120,
-                        "24ч" to 1440
+                        "15${strings.minutesShort}" to 15,
+                        "30${strings.minutesShort}" to 30,
+                        "1${strings.hoursShort}" to 60,
+                        "2${strings.hoursShort}" to 120,
+                        "24${strings.hoursShort}" to 1440
                     )
                     periods.forEach { (lbl, mins) ->
                         val isSelected = growthPeriodMinutes == mins
@@ -904,7 +911,7 @@ fun TargetSettingsScreen(
 
                 // Секция «ИНТЕРАКТИВНЫЙ ПРЕДПРОСЧЕТ (ПЕРВЫЕ 10 ОТКРЫТИЙ)»
                 Text(
-                    text = "ПРЕДПРОСЧЕТ ЗАДЕРЖКИ ПРИ $growthPercent% РОСТА:",
+                    text = strings.targetProjectionTitle(growthPercent),
                     fontFamily = TerminalFontFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 11.sp,
@@ -939,13 +946,13 @@ fun TargetSettingsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "$k-е открытие",
+                                        text = strings.targetOpenNumber(k),
                                         fontFamily = TerminalFontFamily,
                                         fontSize = 11.sp,
                                         color = palette.textSecondary
                                     )
                                     Text(
-                                        text = String.format(Locale.US, "%.1f сек", timeSec),
+                                        text = String.format(Locale.US, "%.1f %s", timeSec, strings.secondsShort),
                                         fontFamily = TerminalFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
@@ -968,13 +975,13 @@ fun TargetSettingsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "$k-е открытие",
+                                        text = strings.targetOpenNumber(k),
                                         fontFamily = TerminalFontFamily,
                                         fontSize = 11.sp,
                                         color = palette.textSecondary
                                     )
                                     Text(
-                                        text = String.format(Locale.US, "%.1f сек", timeSec),
+                                        text = String.format(Locale.US, "%.1f %s", timeSec, strings.secondsShort),
                                         fontFamily = TerminalFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
@@ -989,7 +996,7 @@ fun TargetSettingsScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Расчет отталкивается от базового времени ${baseSec.toInt()}с (или времени из активного расписания).",
+                    text = strings.targetProjectionBaseHint(baseSec.toInt()),
                     fontFamily = TerminalFontFamily,
                     fontSize = 10.sp,
                     lineHeight = 14.sp,
@@ -1003,7 +1010,7 @@ fun TargetSettingsScreen(
 
             TerminalCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "БЫСТРАЯ БЛОКИРОВКА ПРИЛОЖЕНИЯ",
+                    text = strings.targetQuickLock,
                     fontFamily = TerminalFontFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 11.sp,
@@ -1011,7 +1018,7 @@ fun TargetSettingsScreen(
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
                 Text(
-                    text = "Заблокировать «${target.displayName}» прямо сейчас на выбранное время:",
+                    text = strings.targetQuickLockDesc(target.displayName),
                     fontFamily = TerminalFontFamily,
                     fontSize = 11.sp,
                     color = palette.textSecondary,
@@ -1023,16 +1030,16 @@ fun TargetSettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val durations = listOf(
-                        "15м" to 15,
-                        "30м" to 30,
-                        "1ч" to 60,
-                        "2ч" to 120
+                        "15${strings.minutesShort}" to 15,
+                        "30${strings.minutesShort}" to 30,
+                        "1${strings.hoursShort}" to 60,
+                        "2${strings.hoursShort}" to 120
                     )
                     durations.forEach { (lbl, mins) ->
                         TerminalButton(
                             text = lbl,
                             onClick = {
-                                onStartHardBlock("Фокус: ${target.displayName}", mins, setOf(target.packageName))
+                                onStartHardBlock(strings.targetQuickLockFocusPrefix(target.displayName), mins, setOf(target.packageName))
                             },
                             modifier = Modifier.weight(1f)
                         )
@@ -1045,7 +1052,7 @@ fun TargetSettingsScreen(
 
         // Save Button
         TerminalButton(
-            text = "СОХРАНИТЬ ИЗМЕНЕНИЯ",
+            text = strings.saveChangesButton,
             onClick = {
                 focusManager.clearFocus()
                 keyboardController?.hide()
@@ -1060,7 +1067,7 @@ fun TargetSettingsScreen(
                 val updated = target.copy(
                     enabled = enabled,
                     intervention = target.intervention.copy(
-                        phrase = phrase.trim().ifEmpty { "Сделайте глубокий вдох" },
+                        phrase = phrase.trim().ifEmpty { strings.targetDefaultPhrase },
                         durationMs = finalDurationMs,
                         animation = selectedAnimation,
                         reinterventionMs = finalReinterventionMs,
@@ -1081,7 +1088,7 @@ fun TargetSettingsScreen(
 
         // Delete Button
         TerminalButton(
-            text = "УДАЛИТЬ ИЗ ЗАЩИТЫ",
+            text = strings.removeFromProtectionButton,
             onClick = {
                 onDelete(target.packageName)
                 onBack()

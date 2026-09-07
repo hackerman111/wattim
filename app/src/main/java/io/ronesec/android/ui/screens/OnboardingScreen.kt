@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
 import io.ronesec.android.ui.components.TerminalCard
+import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
 import io.ronesec.android.util.PermissionHelper
@@ -39,6 +40,7 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
     val palette = LocalAppPalette.current
+    val strings = LocalAppStrings.current
 
     var isAccessibilityOk by remember { mutableStateOf(false) }
     var isOverlayOk by remember { mutableStateOf(false) }
@@ -72,7 +74,7 @@ fun OnboardingScreen(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "WATTIM НАСТРОЙКА",
+                text = strings.onboardingTitle,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
@@ -83,7 +85,7 @@ fun OnboardingScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = if (step <= 3) "0$step / 03" else "СИСТЕМА ГОТОВА",
+                text = if (step <= 3) "0$step / 03" else strings.systemReadyTitle,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
@@ -96,7 +98,7 @@ fun OnboardingScreen(
             when (step) {
                 1 -> {
                     Text(
-                        text = "СПЕЦИАЛЬНЫЕ ВОЗМОЖНОСТИ",
+                        text = strings.stepAccessibilityTitle,
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
@@ -104,7 +106,7 @@ fun OnboardingScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Необходимо для отслеживания запуска защищаемых приложений в реальном времени.",
+                        text = strings.stepAccessibilityDesc,
                         fontFamily = TerminalFontFamily,
                         fontSize = 14.sp,
                         lineHeight = 22.sp,
@@ -114,7 +116,7 @@ fun OnboardingScreen(
 
                 2 -> {
                     Text(
-                        text = "ОТОБРАЖЕНИЕ ПОВЕРХ ДРУГИХ ПРИЛОЖЕНИЙ",
+                        text = strings.stepOverlayTitle,
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
@@ -122,7 +124,7 @@ fun OnboardingScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Необходимо для показа полноэкранного экрана осознанности и дыхания перед входом.",
+                        text = strings.stepOverlayDesc,
                         fontFamily = TerminalFontFamily,
                         fontSize = 14.sp,
                         lineHeight = 22.sp,
@@ -132,7 +134,7 @@ fun OnboardingScreen(
 
                 3 -> {
                     Text(
-                        text = "РАБОТА В ФОНЕ (БАТАРЕЯ)",
+                        text = strings.stepBatteryTitle,
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
@@ -140,7 +142,7 @@ fun OnboardingScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Отключите оптимизацию батареи для wattim, чтобы Android не останавливал службу защиты.",
+                        text = strings.stepBatteryDesc,
                         fontFamily = TerminalFontFamily,
                         fontSize = 14.sp,
                         lineHeight = 22.sp,
@@ -154,22 +156,22 @@ fun OnboardingScreen(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Специальные возможности", fontFamily = TerminalFontFamily, color = palette.textPrimary)
-                            TerminalBadge("OK", isActive = true)
+                            Text(strings.permAccessibility, fontFamily = TerminalFontFamily, color = palette.textPrimary)
+                            TerminalBadge(strings.readyBadge, isActive = true)
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Отображение поверх окон", fontFamily = TerminalFontFamily, color = palette.textPrimary)
-                            TerminalBadge("OK", isActive = true)
+                            Text(strings.permOverlay, fontFamily = TerminalFontFamily, color = palette.textPrimary)
+                            TerminalBadge(strings.readyBadge, isActive = true)
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Работа без ограничений", fontFamily = TerminalFontFamily, color = palette.textPrimary)
-                            TerminalBadge("OK", isActive = true)
+                            Text(strings.permBattery, fontFamily = TerminalFontFamily, color = palette.textPrimary)
+                            TerminalBadge(strings.readyBadge, isActive = true)
                         }
                     }
                 }
@@ -182,7 +184,7 @@ fun OnboardingScreen(
                     border = BorderStroke(1.dp, palette.accent.copy(alpha = 0.5f))
                 ) {
                     Text(
-                        text = "ПРЕДУПРЕЖДЕНИЕ GOOGLE / СИСТЕМЫ",
+                        text = strings.googleWarningTitle,
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
@@ -191,11 +193,7 @@ fun OnboardingScreen(
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
                     Text(
-                        text = "Google Play Защита или Android могут предупреждать о «потенциально опасном приложении» из-за механики открытия оверлея поверх других окон.\n\n" +
-                                "wattim полностью офлайн и не имеет доступа в интернет. Если переключатель спец. возможностей заблокирован («Ограниченная настройка» на Android 13+):\n" +
-                                "1. Откройте «Настройки» → «Приложения» → «wattim» (кнопка ниже)\n" +
-                                "2. Нажмите три точки (⋮) в правом верхнем углу\n" +
-                                "3. Выберите «Разрешить ограниченные настройки»",
+                        text = strings.googleWarningDesc,
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
                         lineHeight = 16.sp,
@@ -203,7 +201,7 @@ fun OnboardingScreen(
                         modifier = Modifier.padding(bottom = 10.dp)
                     )
                     TerminalButton(
-                        text = "ОТКРЫТЬ НАСТРОЙКИ WATTIM",
+                        text = strings.openAppSettingsButton,
                         onClick = { context.startActivity(PermissionHelper.getAppSettingsIntent(context)) },
                         isPrimary = false,
                         modifier = Modifier.fillMaxWidth()
@@ -219,7 +217,7 @@ fun OnboardingScreen(
             when (step) {
                 1 -> {
                     TerminalButton(
-                        text = "ОТКРЫТЬ СПЕЦ. ВОЗМОЖНОСТИ",
+                        text = strings.openAccessibilityButton,
                         onClick = { context.startActivity(PermissionHelper.getAccessibilitySettingsIntent()) },
                         isPrimary = true,
                         modifier = Modifier.fillMaxWidth()
@@ -228,7 +226,7 @@ fun OnboardingScreen(
 
                 2 -> {
                     TerminalButton(
-                        text = "РАЗРЕШИТЬ ОТОБРАЖЕНИЕ",
+                        text = strings.allowOverlayButton,
                         onClick = { context.startActivity(PermissionHelper.getOverlaySettingsIntent(context)) },
                         isPrimary = true,
                         modifier = Modifier.fillMaxWidth()
@@ -237,7 +235,7 @@ fun OnboardingScreen(
 
                 3 -> {
                     TerminalButton(
-                        text = "ОТКЛЮЧИТЬ ОПТИМИЗАЦИЮ БАТАРЕИ",
+                        text = strings.disableBatteryOptButton,
                         onClick = { context.startActivity(PermissionHelper.getBatteryOptimizationSettingsIntent(context)) },
                         isPrimary = true,
                         modifier = Modifier.fillMaxWidth()
@@ -246,7 +244,7 @@ fun OnboardingScreen(
 
                 else -> {
                     TerminalButton(
-                        text = "ПЕРЕЙТИ В WATTIM",
+                        text = strings.startWattimButton,
                         onClick = onComplete,
                         isPrimary = true,
                         modifier = Modifier.fillMaxWidth()
@@ -257,7 +255,7 @@ fun OnboardingScreen(
             if (step <= 3) {
                 Spacer(modifier = Modifier.height(12.dp))
                 TerminalButton(
-                    text = "ПРОВЕРИТЬ СТАТУС",
+                    text = strings.checkStatusButton,
                     onClick = { refresh() },
                     isPrimary = false,
                     modifier = Modifier.fillMaxWidth()

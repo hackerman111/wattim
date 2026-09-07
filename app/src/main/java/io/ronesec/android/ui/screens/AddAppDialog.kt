@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ronesec.android.ui.components.TerminalButton
 import io.ronesec.android.ui.components.TerminalInputField
+import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.theme.LocalTerminalAccent
 import io.ronesec.android.ui.theme.TerminalBackground
 import io.ronesec.android.ui.theme.TerminalBorder
@@ -47,6 +48,7 @@ fun AddAppDialog(
     onSelectApp: (InstalledAppInfo) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
     var searchQuery by remember { mutableStateOf("") }
     val accent = LocalTerminalAccent.current
 
@@ -75,7 +77,7 @@ fun AddAppDialog(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "ВЫБЕРИТЕ ПРИЛОЖЕНИЕ",
+                    text = strings.selectAppTitle,
                     fontFamily = TerminalFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
@@ -88,7 +90,7 @@ fun AddAppDialog(
                 TerminalInputField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = "ПОИСК ПО НАЗВАНИЮ",
+                    label = strings.searchAppsPlaceholder.uppercase(),
                     maxLength = 40,
                     maxLines = 1
                 )
@@ -126,7 +128,7 @@ fun AddAppDialog(
                             }
 
                             Text(
-                                text = "ДОБАВИТЬ",
+                                text = strings.addAppItemButton,
                                 fontFamily = TerminalFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
@@ -139,7 +141,7 @@ fun AddAppDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 TerminalButton(
-                    text = "ОТМЕНА",
+                    text = strings.cancelButton,
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth()
                 )

@@ -28,7 +28,12 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.compose.runtime.CompositionLocalProvider
 import io.ronesec.android.domain.model.InterventionConfig
+import io.ronesec.android.ui.i18n.AppLanguage
+import io.ronesec.android.ui.i18n.AppStrings
+import io.ronesec.android.ui.i18n.LocalAppStrings
+import io.ronesec.android.ui.i18n.resolveAppStrings
 import io.ronesec.android.ui.theme.AppTheme
 import io.ronesec.android.ui.theme.RonesecTheme
 import java.time.Instant
@@ -197,6 +202,7 @@ class OverlayController(private val context: Context) {
         config: InterventionConfig,
         savedTimeText: String? = null,
         theme: AppTheme = AppTheme.NORD,
+        appStrings: AppStrings = resolveAppStrings(AppLanguage.SYSTEM),
         onEmergencyAccess: ((durationMs: Long?, disableTarget: Boolean) -> Unit)? = null,
         onClose: () -> Unit,
         onContinue: () -> Unit
@@ -238,26 +244,28 @@ class OverlayController(private val context: Context) {
             }
 
             setContent {
-                RonesecTheme(theme = theme) {
-                    InterventionOverlayContent(
-                        targetAppName = targetAppName,
-                        config = config,
-                        savedTimeText = savedTimeText,
-                        onEmergencyAccess = if (onEmergencyAccess != null) {
-                            { durationMs, disableTarget ->
+                CompositionLocalProvider(LocalAppStrings provides appStrings) {
+                    RonesecTheme(theme = theme) {
+                        InterventionOverlayContent(
+                            targetAppName = targetAppName,
+                            config = config,
+                            savedTimeText = savedTimeText,
+                            onEmergencyAccess = if (onEmergencyAccess != null) {
+                                { durationMs, disableTarget ->
+                                    dismiss()
+                                    onEmergencyAccess(durationMs, disableTarget)
+                                }
+                            } else null,
+                            onClose = {
                                 dismiss()
-                                onEmergencyAccess(durationMs, disableTarget)
+                                onClose()
+                            },
+                            onContinue = {
+                                dismiss()
+                                onContinue()
                             }
-                        } else null,
-                        onClose = {
-                            dismiss()
-                            onClose()
-                        },
-                        onContinue = {
-                            dismiss()
-                            onContinue()
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -271,6 +279,7 @@ class OverlayController(private val context: Context) {
         sessionName: String,
         until: Instant?,
         theme: AppTheme = AppTheme.NORD,
+        appStrings: AppStrings = resolveAppStrings(AppLanguage.SYSTEM),
         onClose: () -> Unit
     ) {
         dismiss()
@@ -309,15 +318,17 @@ class OverlayController(private val context: Context) {
             }
 
             setContent {
-                RonesecTheme(theme = theme) {
-                    BlockOverlayContent(
-                        sessionName = sessionName,
-                        until = until,
-                        onClose = {
-                            dismiss()
-                            onClose()
-                        }
-                    )
+                CompositionLocalProvider(LocalAppStrings provides appStrings) {
+                    RonesecTheme(theme = theme) {
+                        BlockOverlayContent(
+                            sessionName = sessionName,
+                            until = until,
+                            onClose = {
+                                dismiss()
+                                onClose()
+                            }
+                        )
+                    }
                 }
             }
         }

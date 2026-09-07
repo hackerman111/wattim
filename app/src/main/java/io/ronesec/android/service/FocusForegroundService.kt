@@ -27,16 +27,16 @@ class FocusForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForegroundWithNotification("Защита активна")
+        startForegroundWithNotification(getString(R.string.notif_protection_active))
 
         val repository = (application as RonesecApplication).repository
         scope.launch {
             repository.getTargetsFlow().collectLatest { targets ->
                 val activeCount = targets.count { it.enabled }
                 val text = if (activeCount > 0) {
-                    "Защита активна · $activeCount прилож."
+                    getString(R.string.notif_protection_active_count, activeCount)
                 } else {
-                    "Защита в ожидании · 0 прилож."
+                    getString(R.string.notif_protection_idle)
                 }
                 updateNotification(text)
             }

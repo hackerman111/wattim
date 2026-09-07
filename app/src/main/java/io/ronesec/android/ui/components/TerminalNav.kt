@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
 
@@ -35,6 +36,7 @@ fun TerminalBottomNav(
 ) {
     val palette = LocalAppPalette.current
     val accent = palette.accent
+    val strings = LocalAppStrings.current
 
     Row(
         modifier = modifier
@@ -47,6 +49,12 @@ fun TerminalBottomNav(
     ) {
         NavDestination.entries.forEach { destination ->
             val isSelected = destination == currentDestination
+            val label = when (destination) {
+                NavDestination.APPS -> strings.navFocus
+                NavDestination.BLOCK -> strings.navBlock
+                NavDestination.STATS -> strings.navStats
+                NavDestination.CONFIG -> strings.navConfig
+            }
 
             Box(
                 modifier = Modifier
@@ -62,7 +70,7 @@ fun TerminalBottomNav(
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = destination.label,
+                    text = label,
                     fontFamily = TerminalFontFamily,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 12.sp,

@@ -48,6 +48,7 @@ import io.ronesec.android.domain.model.AnimationType
 import io.ronesec.android.domain.model.InterventionConfig
 import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
+import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
 import java.util.Locale
@@ -66,6 +67,7 @@ fun InterventionOverlayContent(
 ) {
     val palette = LocalAppPalette.current
     val accent = palette.accent
+    val strings = LocalAppStrings.current
     val animation = remember { FillAnimation() }
 
     var currentProgress by remember { mutableFloatStateOf(0f) }
@@ -225,9 +227,9 @@ fun InterventionOverlayContent(
                 ) {
                     Text(
                         text = when (currentPhase) {
-                            AnimationPhase.INHALE -> "ВДОХ"
-                            AnimationPhase.EXHALE -> "ВЫДОХ"
-                            AnimationPhase.COMPLETE -> "ГОТОВО"
+                            AnimationPhase.INHALE -> strings.phaseInhale.uppercase()
+                            AnimationPhase.EXHALE -> strings.phaseExhale.uppercase()
+                            AnimationPhase.COMPLETE -> strings.readyBadge
                         },
                         fontFamily = TerminalFontFamily,
                         fontWeight = FontWeight.SemiBold,
@@ -295,14 +297,14 @@ fun InterventionOverlayContent(
             ) {
                 if (currentPhase == AnimationPhase.INHALE || currentPhase == AnimationPhase.EXHALE) {
                     TerminalButton(
-                        text = "ВЫЙТИ",
+                        text = strings.exitButton,
                         onClick = onClose,
                         isPrimary = false,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "⚡ ЭКСТРЕННЫЙ ВХОД",
+                        text = "⚡ ${strings.emergencyButton}",
                         fontFamily = TerminalFontFamily,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -318,13 +320,13 @@ fun InterventionOverlayContent(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         TerminalButton(
-                            text = "ЗАКРЫТЬ",
+                            text = strings.cancelButton,
                             onClick = onClose,
                             isPrimary = false,
                             modifier = Modifier.weight(1f)
                         )
                         TerminalButton(
-                            text = "ПРОДОЛЖИТЬ",
+                            text = strings.continueButton,
                             onClick = onContinue,
                             isPrimary = true,
                             modifier = Modifier.weight(1f)
@@ -372,7 +374,7 @@ fun InterventionOverlayContent(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "ВЫ УВЕРЕНЫ?",
+                            text = strings.emergencyDialogTitle.uppercase(),
                             fontFamily = TerminalFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
@@ -383,7 +385,7 @@ fun InterventionOverlayContent(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         Text(
-                            text = "Вы действительно хотите пропустить паузу осознанности и войти в приложение?",
+                            text = strings.emergencyDialogDesc,
                             fontFamily = TerminalFontFamily,
                             fontSize = 12.sp,
                             color = palette.textSecondary,
@@ -393,7 +395,7 @@ fun InterventionOverlayContent(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         TerminalButton(
-                            text = "ВОЙТИ РАЗОВО",
+                            text = strings.emergencyEnterOnce.uppercase(),
                             onClick = {
                                 onEmergencyAccess?.invoke(null, false)
                                 showEmergencyConfirmDialog = false
@@ -405,7 +407,7 @@ fun InterventionOverlayContent(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(
-                            text = "ПРИОСТАНОВИТЬ ЗАЩИТУ ДЛЯ $targetAppName:",
+                            text = "${strings.emergencyPauseApp.uppercase()}: $targetAppName",
                             fontFamily = TerminalFontFamily,
                             fontSize = 11.sp,
                             letterSpacing = 0.08.sp,
@@ -420,28 +422,28 @@ fun InterventionOverlayContent(
                             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
                         ) {
                             TerminalBadge(
-                                text = "15м",
+                                text = strings.pause15m,
                                 modifier = Modifier.clickable {
                                     onEmergencyAccess?.invoke(15 * 60_000L, false)
                                     showEmergencyConfirmDialog = false
                                 }
                             )
                             TerminalBadge(
-                                text = "30м",
+                                text = strings.pause30m,
                                 modifier = Modifier.clickable {
                                     onEmergencyAccess?.invoke(30 * 60_000L, false)
                                     showEmergencyConfirmDialog = false
                                 }
                             )
                             TerminalBadge(
-                                text = "60м",
+                                text = strings.pause1h,
                                 modifier = Modifier.clickable {
                                     onEmergencyAccess?.invoke(60 * 60_000L, false)
                                     showEmergencyConfirmDialog = false
                                 }
                             )
                             TerminalBadge(
-                                text = "До включения",
+                                text = strings.pauseForever,
                                 modifier = Modifier.clickable {
                                     onEmergencyAccess?.invoke(null, true)
                                     showEmergencyConfirmDialog = false
@@ -452,7 +454,7 @@ fun InterventionOverlayContent(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         TerminalButton(
-                            text = "ВЕРНУТЬСЯ К ДЫХАНИЮ",
+                            text = strings.emergencyResumeBreath.uppercase(),
                             onClick = { showEmergencyConfirmDialog = false },
                             isPrimary = false,
                             modifier = Modifier.fillMaxWidth()

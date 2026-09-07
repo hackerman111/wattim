@@ -14,11 +14,12 @@ import io.ronesec.android.domain.engine.RuleEngine
 import io.ronesec.android.domain.model.AttemptOutcome
 import io.ronesec.android.domain.model.Decision
 import io.ronesec.android.domain.model.InterventionConfig
-import io.ronesec.android.domain.util.TimeFormatUtils
 import io.ronesec.android.overlay.OverlayController
+import io.ronesec.android.ui.i18n.AppLanguage
+import io.ronesec.android.ui.i18n.AppStrings
+import io.ronesec.android.ui.i18n.resolveAppStrings
 import io.ronesec.android.ui.theme.AppTheme
 import io.ronesec.android.ui.theme.TerminalAccent
-import io.ronesec.android.ui.viewmodel.formatSavedTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -38,6 +39,9 @@ class AppMonitorService : AccessibilityService() {
 
     private var currentForegroundPackage: String? = null
     private var currentTheme: AppTheme = AppTheme.NORD
+    private var currentLanguage: AppLanguage = AppLanguage.SYSTEM
+    private val currentStrings: AppStrings
+        get() = resolveAppStrings(currentLanguage)
     private var reinterventionJob: Job? = null
 
     private val screenOffReceiver = object : BroadcastReceiver() {
@@ -74,6 +78,11 @@ class AppMonitorService : AccessibilityService() {
         scope.launch {
             repository.getSettingFlow("app_theme").collectLatest { themeId ->
                 currentTheme = AppTheme.fromId(themeId)
+            }
+        }
+        scope.launch {
+            repository.getSettingFlow("app_language").collectLatest { langCode ->
+                currentLanguage = AppLanguage.fromCode(langCode)
             }
         }
     }
@@ -157,6 +166,7 @@ class AppMonitorService : AccessibilityService() {
                         sessionName = appLabel,
                         until = decision.until,
                         theme = currentTheme,
+                        appStrings = currentStrings,
                         onClose = {
                             performGlobalAction(GLOBAL_ACTION_HOME)
                             scope.launch(Dispatchers.IO) {
@@ -176,6 +186,7 @@ class AppMonitorService : AccessibilityService() {
                         config = decision.config,
                         savedTimeText = savedText,
                         theme = currentTheme,
+                        appStrings = currentStrings,
                         onEmergencyAccess = { durationMs, disableTarget ->
                             scope.launch(Dispatchers.IO) {
                                 if (disableTarget) {
@@ -228,7 +239,8 @@ class AppMonitorService : AccessibilityService() {
         val sessionMins = sessionMinutesSetting?.toIntOrNull() ?: 7
         val totalSavedMinutes = allAvoided.toLong() * sessionMins
         return if (totalSavedMinutes > 0) {
-            "Вы уже сберегли ${formatSavedTime(totalSavedMinutes)}"
+            val formatted = currentStrings.formatSavedTime(totalSavedMinutes)
+            currentStrings.savedTimeOverlay(formatted)
         } else {
             null
         }
@@ -255,8 +267,8 @@ class AppMonitorService : AccessibilityService() {
     private fun triggerReintervention(targetPackage: String, config: InterventionConfig, cycle: Int) {
         val appLabel = getAppLabel(targetPackage)
         val totalSpentMs = (config.reinterventionMs ?: 0L) * cycle
-        val timeStr = TimeFormatUtils.formatDurationRu(totalSpentMs)
-        val phrase = "Вы уже провели в $appLabel $timeStr.\nХотите продолжить?"
+        val timeStr = currentStrings.formatDuration(totalSpentMs)
+        val phrase = currentStrings.reinterventionPrompt(appLabel, timeStr)
 
         // If exponential growth is enabled, scale duration for this re-intervention:
         val nextDurationMs = if (config.exponentialGrowthEnabled) {
@@ -277,6 +289,7 @@ class AppMonitorService : AccessibilityService() {
                 config = reinterventionConfig,
                 savedTimeText = savedText,
                 theme = currentTheme,
+                appStrings = currentStrings,
                 onEmergencyAccess = { durationMs, disableTarget ->
                     val emergencyTime = Instant.now()
                     scope.launch(Dispatchers.IO) {

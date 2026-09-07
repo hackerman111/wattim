@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ronesec.android.ui.components.TerminalButton
+import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
 import kotlinx.coroutines.delay
@@ -37,6 +38,7 @@ fun BlockOverlayContent(
     modifier: Modifier = Modifier
 ) {
     val palette = LocalAppPalette.current
+    val strings = LocalAppStrings.current
     val accent = palette.accent
 
     var remainingSeconds by remember(until) {
@@ -70,7 +72,7 @@ fun BlockOverlayContent(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "ПРИЛОЖЕНИЕ ЗАБЛОКИРОВАНО",
+                text = strings.blockOverlayTitle,
                 fontFamily = TerminalFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 17.sp,
@@ -101,7 +103,7 @@ fun BlockOverlayContent(
             }
 
             TerminalButton(
-                text = "ВЕРНУТЬСЯ НА ГЛАВНЫЙ ЭКРАН",
+                text = strings.blockOverlayClose,
                 onClick = onClose,
                 isPrimary = false,
                 modifier = Modifier.fillMaxWidth()
