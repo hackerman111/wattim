@@ -94,6 +94,10 @@ fun TargetSettingsScreen(
 
     var quickReturnGraceSec by remember { mutableLongStateOf(target.intervention.quickReturnGraceMs / 1000L) }
 
+    var exponentialGrowthEnabled by remember { mutableStateOf(target.intervention.exponentialGrowthEnabled) }
+    var growthPercent by remember { mutableIntStateOf(target.intervention.growthPercent) }
+    var growthPeriodMinutes by remember { mutableIntStateOf(target.intervention.growthPeriodMinutes) }
+
     var showPreview by remember { mutableStateOf(false) }
 
     if (showPreview) {
@@ -104,7 +108,10 @@ fun TargetSettingsScreen(
                     config = target.intervention.copy(
                         phrase = phrase,
                         durationMs = (durationSeconds * 1000).toLong(),
-                        animation = selectedAnimation
+                        animation = selectedAnimation,
+                        exponentialGrowthEnabled = exponentialGrowthEnabled,
+                        growthPercent = growthPercent,
+                        growthPeriodMinutes = growthPeriodMinutes
                     ),
                     savedTimeText = "Предпросмотр: вы сберегли 2 дня жизни",
                     onClose = { showPreview = false },
@@ -764,6 +771,232 @@ fun TargetSettingsScreen(
             )
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Exponential Growth Card
+        TerminalCard(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "ЭКСПОНЕНЦИАЛЬНЫЙ РОСТ",
+                    fontFamily = TerminalFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp,
+                    color = palette.textSecondary
+                )
+
+                TerminalBadge(
+                    text = if (exponentialGrowthEnabled) "ВКЛ" else "ВЫКЛ",
+                    isActive = exponentialGrowthEnabled,
+                    modifier = Modifier.clickable { exponentialGrowthEnabled = !exponentialGrowthEnabled }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Увеличение времени паузы при частых повторных открытиях приложения за выбранный период.",
+                fontFamily = TerminalFontFamily,
+                fontSize = 11.sp,
+                lineHeight = 16.sp,
+                color = palette.textSecondary
+            )
+
+            if (exponentialGrowthEnabled) {
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Секция «ПРОЦЕНТ РОСТА НА КАЖДОЕ ОТКРЫТИЕ»
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ПРОЦЕНТ РОСТА НА КАЖДОЕ ОТКРЫТИЕ",
+                        fontFamily = TerminalFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 11.sp,
+                        color = palette.textSecondary
+                    )
+                    Text(
+                        text = "+$growthPercent%",
+                        fontFamily = TerminalFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = accent
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Steppers row: [-5%], [-1%], [+1%], [+5%], clamping percent in 1..200
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(-5 to "-5%", -1 to "-1%", 1 to "+1%", 5 to "+5%").forEach { (delta, label) ->
+                        TerminalButton(
+                            text = label,
+                            onClick = {
+                                growthPercent = (growthPercent + delta).coerceIn(1, 200)
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Preset badges row: 10%, 20%, 30%, 50%
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(10, 20, 30, 50).forEach { pct ->
+                        val isSelected = growthPercent == pct
+                        TerminalBadge(
+                            text = "$pct%",
+                            isActive = isSelected,
+                            modifier = Modifier.clickable { growthPercent = pct }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Секция «ПЕРИОД УЧЕТА ЗАПУСКОВ»
+                Text(
+                    text = "ПЕРИОД УЧЕТА (СКОЛЬЗЯЩЕЕ ОКНО)",
+                    fontFamily = TerminalFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp,
+                    color = palette.textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val periods = listOf(
+                        "15м" to 15,
+                        "30м" to 30,
+                        "1ч" to 60,
+                        "2ч" to 120,
+                        "24ч" to 1440
+                    )
+                    periods.forEach { (lbl, mins) ->
+                        val isSelected = growthPeriodMinutes == mins
+                        TerminalBadge(
+                            text = lbl,
+                            isActive = isSelected,
+                            modifier = Modifier.clickable { growthPeriodMinutes = mins }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Секция «ИНТЕРАКТИВНЫЙ ПРЕДПРОСЧЕТ (ПЕРВЫЕ 10 ОТКРЫТИЙ)»
+                Text(
+                    text = "ПРЕДПРОСЧЕТ ЗАДЕРЖКИ ПРИ $growthPercent% РОСТА:",
+                    fontFamily = TerminalFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp,
+                    color = palette.textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val baseSec = durationSeconds
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(palette.surfaceElevated, RoundedCornerShape(6.dp))
+                        .border(1.dp, palette.border, RoundedCornerShape(6.dp))
+                        .padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Left column (1..5)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            for (k in 1..5) {
+                                val timeSec = baseSec * Math.pow(1.0 + growthPercent / 100.0, k.toDouble())
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "$k-е открытие",
+                                        fontFamily = TerminalFontFamily,
+                                        fontSize = 11.sp,
+                                        color = palette.textSecondary
+                                    )
+                                    Text(
+                                        text = String.format(Locale.US, "%.1f сек", timeSec),
+                                        fontFamily = TerminalFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = accent
+                                    )
+                                }
+                            }
+                        }
+
+                        // Right column (6..10)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            for (k in 6..10) {
+                                val timeSec = baseSec * Math.pow(1.0 + growthPercent / 100.0, k.toDouble())
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "$k-е открытие",
+                                        fontFamily = TerminalFontFamily,
+                                        fontSize = 11.sp,
+                                        color = palette.textSecondary
+                                    )
+                                    Text(
+                                        text = String.format(Locale.US, "%.1f сек", timeSec),
+                                        fontFamily = TerminalFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = accent
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Расчет отталкивается от базового времени ${baseSec.toInt()}с (или времени из активного расписания).",
+                    fontFamily = TerminalFontFamily,
+                    fontSize = 10.sp,
+                    lineHeight = 14.sp,
+                    color = palette.textSecondary
+                )
+            }
+        }
+
         if (onStartHardBlock != null) {
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -830,7 +1063,10 @@ fun TargetSettingsScreen(
                         durationMs = finalDurationMs,
                         animation = selectedAnimation,
                         reinterventionMs = finalReinterventionMs,
-                        quickReturnGraceMs = quickReturnGraceSec * 1000L
+                        quickReturnGraceMs = quickReturnGraceSec * 1000L,
+                        exponentialGrowthEnabled = exponentialGrowthEnabled,
+                        growthPercent = growthPercent,
+                        growthPeriodMinutes = growthPeriodMinutes
                     )
                 )
                 onSave(updated)
