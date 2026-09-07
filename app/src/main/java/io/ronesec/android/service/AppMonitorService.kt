@@ -217,7 +217,7 @@ class AppMonitorService : AccessibilityService() {
         }
     }
 
-    private fun scheduleReintervention(targetPackage: String, config: InterventionConfig) {
+    private fun scheduleReintervention(targetPackage: String, config: InterventionConfig, cycle: Int = 1) {
         reinterventionJob?.cancel()
         val delayMs = config.reinterventionMs ?: return
         if (delayMs <= 0) return
@@ -225,7 +225,7 @@ class AppMonitorService : AccessibilityService() {
         reinterventionJob = scope.launch {
             delay(delayMs)
             if (currentForegroundPackage == targetPackage && !overlayController.isShowing) {
-                triggerReintervention(targetPackage, config)
+                triggerReintervention(targetPackage, config, cycle)
             }
         }
     }
@@ -235,10 +235,21 @@ class AppMonitorService : AccessibilityService() {
         reinterventionJob = null
     }
 
-    private fun triggerReintervention(targetPackage: String, config: InterventionConfig) {
+    private fun triggerReintervention(targetPackage: String, config: InterventionConfig, cycle: Int) {
         val appLabel = getAppLabel(targetPackage)
-        val timeStr = TimeFormatUtils.formatDurationRu(config.reinterventionMs ?: 0L)
+        val totalSpentMs = (config.reinterventionMs ?: 0L) * cycle
+        val timeStr = TimeFormatUtils.formatDurationRu(totalSpentMs)
         val phrase = "Вы уже провели в $appLabel $timeStr.\nХотите продолжить?"
+
+        // If exponential growth is enabled, scale duration for this re-intervention:
+        val nextDurationMs = if (config.exponentialGrowthEnabled) {
+            (config.durationMs * (1.0 + config.growthPercent / 100.0))
+                .toLong()
+                .coerceIn(1_000L, 300_000L)
+        } else {
+            config.durationMs
+        }
+        val reinterventionConfig = config.copy(phrase = phrase, durationMs = nextDurationMs)
 
         val repository = (application as RonesecApplication).repository
         scope.launch {
@@ -246,7 +257,7 @@ class AppMonitorService : AccessibilityService() {
 
             overlayController.showIntervention(
                 targetAppName = appLabel,
-                config = config.copy(phrase = phrase),
+                config = reinterventionConfig,
                 savedTimeText = savedText,
                 theme = currentTheme,
                 onClose = {
@@ -265,7 +276,7 @@ class AppMonitorService : AccessibilityService() {
                         repository.grantAccess(targetPackage, config.reinterventionMs)
                         repository.recordAttempt(targetPackage, AttemptOutcome.CONTINUED, continueTime)
                     }
-                    scheduleReintervention(targetPackage, config)
+                    scheduleReintervention(targetPackage, reinterventionConfig, cycle + 1)
                 }
             )
         }
