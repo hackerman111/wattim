@@ -12,29 +12,27 @@ class ForegroundTracker(
     fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        val eventType = event.eventType
         val rawPackage = event.packageName?.toString()
 
-        // TYPE_WINDOW_STATE_CHANGED: primary fast signal for activity / window transitions
-        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            if (rawPackage.isNullOrEmpty()) return
-            if (isSystemOrIgnored(rawPackage)) return
-            if (rawPackage == confirmedPackage) return
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                if (rawPackage.isNullOrEmpty()) return
+                if (isSystemOrIgnored(rawPackage)) return
+                if (rawPackage == confirmedPackage) return
 
-            confirmedPackage = rawPackage
-            onForegroundConfirmed(rawPackage, Instant.now())
-            return
-        }
-
-        // TYPE_WINDOWS_CHANGED: window hierarchy changed
-        // Never treat rawPackage on TYPE_WINDOWS_CHANGED as an unconditional foreground app!
-        // Only accept if package is non-null, valid, and not ignored.
-        if (eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
-            if (rawPackage.isNullOrEmpty()) return
-            if (isSystemOrIgnored(rawPackage)) return
-            if (rawPackage != confirmedPackage) {
                 confirmedPackage = rawPackage
                 onForegroundConfirmed(rawPackage, Instant.now())
+            }
+
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
+                // Window-hierarchy changes are not foreground transitions.
+                // In particular, removing our overlay during GLOBAL_ACTION_HOME can produce
+                // a stale TYPE_WINDOWS_CHANGED event for the previously foreground target.
+                // Promoting that event to foreground after the launcher was already confirmed
+                // creates a fresh target session and re-opens the intervention overlay.
+                //
+                // TYPE_WINDOW_STATE_CHANGED remains the authoritative foreground signal.
+                return
             }
         }
     }
