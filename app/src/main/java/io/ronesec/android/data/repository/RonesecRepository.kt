@@ -101,6 +101,14 @@ class RonesecRepository private constructor(
         return targetAppDao.getAllFlow().map { list -> list.map { it.toDomain() } }
     }
 
+    fun getActiveTargetCountFlow(): Flow<Int> {
+        return targetAppDao.getActiveCountFlow().distinctUntilChanged()
+    }
+
+    fun getAppStatsSinceFlow(sinceTimestamp: Long): Flow<List<io.ronesec.android.data.local.dao.AppAttemptStat>> {
+        return openAttemptDao.getAppStatsSinceFlow(sinceTimestamp)
+    }
+
     suspend fun getTarget(packageName: String): TargetApp? {
         return targetAppDao.getByPackage(packageName)?.toDomain()
     }

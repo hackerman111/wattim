@@ -1,12 +1,19 @@
 package io.ronesec.android.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import io.ronesec.android.domain.model.AttemptOutcome
 import io.ronesec.android.domain.model.OpenAttempt
 import java.time.Instant
 
-@Entity(tableName = "open_attempts")
+@Entity(
+    tableName = "open_attempts",
+    indices = [
+        Index(value = ["packageName", "timestamp"]),
+        Index(value = ["timestamp", "outcome"])
+    ]
+)
 data class OpenAttemptEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

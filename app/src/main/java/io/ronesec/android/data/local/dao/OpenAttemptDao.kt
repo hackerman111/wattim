@@ -43,4 +43,21 @@ interface OpenAttemptDao {
 
     @Query("SELECT COUNT(*) FROM open_attempts WHERE timestamp >= :sinceTimestamp AND (outcome = 'ABANDONED' OR outcome = 'BLOCKED')")
     fun getAvoidedCountSinceFlow(sinceTimestamp: Long): Flow<Int>
+
+    @Query("""
+        SELECT packageName, 
+               COUNT(*) as totalCount, 
+               SUM(CASE WHEN outcome = 'ABANDONED' OR outcome = 'BLOCKED' THEN 1 ELSE 0 END) as avoidedCount 
+        FROM open_attempts 
+        WHERE timestamp >= :sinceTimestamp 
+        GROUP BY packageName 
+        ORDER BY totalCount DESC
+    """)
+    fun getAppStatsSinceFlow(sinceTimestamp: Long): Flow<List<AppAttemptStat>>
 }
+
+data class AppAttemptStat(
+    val packageName: String,
+    val totalCount: Int,
+    val avoidedCount: Int
+)

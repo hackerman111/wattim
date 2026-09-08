@@ -26,7 +26,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.temporal.ChronoUnit
+import java.time.LocalDate
+import java.time.ZoneId
 
 data class InstalledAppInfo(
     val packageName: String,
@@ -69,6 +70,7 @@ fun formatSavedTime(minutes: Long): String {
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = (application as RonesecApplication).repository
+    private val appMetadataRepository = (application as RonesecApplication).appMetadataRepository
     private val packageManager: PackageManager = application.packageManager
 
     val targets: StateFlow<List<TargetApp>> = repository.getTargetsFlow()
@@ -80,8 +82,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val blockSchedules: StateFlow<List<BlockSchedule>> = repository.getSchedulesFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Attempts from start of today
-    private val todayMidnight = Instant.now().truncatedTo(ChronoUnit.DAYS).toEpochMilli()
+    // Attempts from start of today in local time zone
+    private val todayMidnight = LocalDate.now(ZoneId.systemDefault())
+        .atStartOfDay(ZoneId.systemDefault())
+        .toInstant()
+        .toEpochMilli()
 
     val todayAttempts: StateFlow<List<OpenAttempt>> = repository.getRecentAttemptsFlow(todayMidnight)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -114,12 +119,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TodayStats())
 
-    val appStats: StateFlow<List<AppStatRow>> = todayAttempts.map { attempts ->
-        val targetMap = targets.value.associateBy { it.packageName }
+    val appStats: StateFlow<List<AppStatRow>> = combine(todayAttempts, targets) { attempts, targetList ->
+        val targetMap = targetList.associateBy { it.packageName }
         attempts.groupBy { it.packageName }.map { (pkg, list) ->
             val total = list.size
             val closed = list.count { it.outcome == AttemptOutcome.ABANDONED || it.outcome == AttemptOutcome.BLOCKED }
-            val name = targetMap[pkg]?.displayName ?: getAppDisplayName(pkg)
+            val name = targetMap[pkg]?.displayName ?: appMetadataRepository.getAppLabel(pkg)
             AppStatRow(
                 packageName = pkg,
                 displayName = name,
@@ -275,15 +280,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }.sortedBy { it.label.lowercase() }
             _installedApps.value = filtered
-        }
-    }
-
-    private fun getAppDisplayName(pkg: String): String {
-        return try {
-            val info = packageManager.getApplicationInfo(pkg, 0)
-            packageManager.getApplicationLabel(info).toString()
-        } catch (e: Exception) {
-            pkg.substringAfterLast('.')
         }
     }
 }

@@ -20,6 +20,9 @@ import io.ronesec.android.data.local.entity.TargetAppEntity
 import io.ronesec.android.domain.model.AnimationType
 import io.ronesec.android.domain.model.AttemptOutcome
 
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
 class Converters {
     @TypeConverter
     fun fromAnimationType(value: AnimationType): String = value.name
@@ -51,7 +54,7 @@ class Converters {
         BlockScheduleEntity::class,
         AppSettingEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -66,13 +69,22 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_open_attempts_packageName_timestamp` ON `open_attempts` (`packageName`, `timestamp`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_open_attempts_timestamp_outcome` ON `open_attempts` (`timestamp`, `outcome`)")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "ronesec.db"
-                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_2_3)
+                .fallbackToDestructiveMigration()
+                .build().also { INSTANCE = it }
             }
         }
     }

@@ -14,6 +14,9 @@ interface TargetAppDao {
     @Query("SELECT * FROM target_apps ORDER BY displayName ASC")
     fun getAllFlow(): Flow<List<TargetAppEntity>>
 
+    @Query("SELECT COUNT(*) FROM target_apps WHERE enabled = 1")
+    fun getActiveCountFlow(): Flow<Int>
+
     @Query("SELECT * FROM target_apps")
     suspend fun getAll(): List<TargetAppEntity>
 

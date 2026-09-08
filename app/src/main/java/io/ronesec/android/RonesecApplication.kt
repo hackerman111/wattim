@@ -11,10 +11,14 @@ class RonesecApplication : Application() {
     lateinit var repository: RonesecRepository
         private set
 
+    lateinit var appMetadataRepository: io.ronesec.android.data.repository.AppMetadataRepository
+        private set
+
     override fun onCreate() {
         super.onCreate()
         instance = this
         repository = RonesecRepository.getInstance(this)
+        appMetadataRepository = io.ronesec.android.data.repository.AppMetadataRepository(this)
         createNotificationChannels()
     }
 

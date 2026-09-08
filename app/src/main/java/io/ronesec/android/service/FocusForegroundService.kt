@@ -6,7 +6,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import io.ronesec.android.R
@@ -31,8 +30,7 @@ class FocusForegroundService : Service() {
 
         val repository = (application as RonesecApplication).repository
         scope.launch {
-            repository.getTargetsFlow().collectLatest { targets ->
-                val activeCount = targets.count { it.enabled }
+            repository.getActiveTargetCountFlow().collectLatest { activeCount ->
                 val text = if (activeCount > 0) {
                     getString(R.string.notif_protection_active_count, activeCount)
                 } else {
@@ -44,7 +42,7 @@ class FocusForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
@@ -54,15 +52,11 @@ class FocusForegroundService : Service() {
 
     private fun startForegroundWithNotification(contentText: String) {
         val notification = buildNotification(contentText)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
+        startForeground(
+            NOTIFICATION_ID,
+            notification,
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+        )
     }
 
     private fun updateNotification(contentText: String) {
@@ -94,11 +88,7 @@ class FocusForegroundService : Service() {
 
         fun start(context: Context) {
             val intent = Intent(context, FocusForegroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
 
         fun stop(context: Context) {
