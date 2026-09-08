@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.content.ContextCompat
 import io.ronesec.android.RonesecApplication
+import io.ronesec.android.domain.protection.AccessibilitySubscriptionController
 import io.ronesec.android.domain.protection.AudioGuard
 import io.ronesec.android.domain.protection.ForegroundTracker
 import io.ronesec.android.domain.protection.InterventionCoordinator
@@ -39,6 +40,7 @@ class AppMonitorService : AccessibilityService() {
     private lateinit var overlayHost: OverlayHost
     private lateinit var temporalBoundaryScheduler: TemporalBoundaryScheduler
     private lateinit var foregroundTracker: ForegroundTracker
+    private lateinit var subscriptionController: AccessibilitySubscriptionController
     private lateinit var coordinator: InterventionCoordinator
 
     private var currentTheme: AppTheme = AppTheme.NORD
@@ -71,6 +73,8 @@ class AppMonitorService : AccessibilityService() {
         foregroundTracker = ForegroundTracker(packageName) { pkg, time ->
             eventChannel.trySend(ProtectionEvent.ForegroundChanged(pkg, time))
         }
+
+        subscriptionController = AccessibilitySubscriptionController(this)
 
         try {
             ContextCompat.registerReceiver(
@@ -205,23 +209,11 @@ class AppMonitorService : AccessibilityService() {
                 repository.updateTargetEnabled(effect.targetPackage, false)
                 repository.revokeAccess(effect.targetPackage)
             }
-            is ProtectionEffect.UpdateAdaptiveSubscription -> updateAdaptiveSubscription(
+            is ProtectionEffect.UpdateAdaptiveSubscription -> subscriptionController.updateSubscription(
                 effect.targetPackages,
                 effect.isTargetActive
             )
         }
-    }
-
-    private fun updateAdaptiveSubscription(targetPackages: Set<String>, isTargetActive: Boolean) {
-        try {
-            val info = serviceInfo ?: return
-            if (isTargetActive || targetPackages.isEmpty()) {
-                info.packageNames = null
-            } else {
-                info.packageNames = targetPackages.toTypedArray()
-            }
-            serviceInfo = info
-        } catch (_: Exception) {}
     }
 
     override fun onInterrupt() {
