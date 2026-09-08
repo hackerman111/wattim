@@ -1,14 +1,8 @@
 package io.ronesec.android.overlay
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +15,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,26 +27,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.ronesec.android.domain.animation.FillAnimation
 import io.ronesec.android.domain.model.AnimationPhase
-import io.ronesec.android.domain.model.AnimationType
 import io.ronesec.android.domain.model.InterventionConfig
-import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
 import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
 import java.util.Locale
-import kotlin.math.cos
-import kotlin.math.sin
 
 @Composable
 fun InterventionOverlayContent(
@@ -103,99 +88,13 @@ fun InterventionOverlayContent(
             .fillMaxSize()
             .background(palette.background)
     ) {
-        // Dynamic Mindful Breathing Animations on Canvas
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            when (config.animation) {
-                AnimationType.FILL, AnimationType.VERTICAL_SWEEP -> {
-                    // Fluid fill rising from bottom
-                    val fillHeight = size.height * currentProgress
-                    val topY = size.height - fillHeight
-
-                    drawRect(
-                        color = accent.copy(alpha = 0.22f),
-                        topLeft = Offset(0f, topY),
-                        size = Size(size.width, fillHeight)
-                    )
-
-                    if (fillHeight > 0) {
-                        drawLine(
-                            color = accent,
-                            start = Offset(0f, topY),
-                            end = Offset(size.width, topY),
-                            strokeWidth = 2.dp.toPx()
-                        )
-                    }
-                }
-
-                AnimationType.PULSE -> {
-                    // Breathing Sphere / Pulsar
-                    val centerX = size.width / 2f
-                    val centerY = size.height / 2f
-                    val maxRadius = size.width.coerceAtMost(size.height) * 0.40f
-                    val currentRadius = maxRadius * (0.32f + 0.68f * currentProgress)
-
-                    // Outer soft aura
-                    drawCircle(
-                        color = accent.copy(alpha = 0.08f * currentProgress),
-                        radius = currentRadius * 1.35f,
-                        center = Offset(centerX, centerY)
-                    )
-                    // Mid aura
-                    drawCircle(
-                        color = accent.copy(alpha = 0.16f * currentProgress),
-                        radius = currentRadius * 1.15f,
-                        center = Offset(centerX, centerY)
-                    )
-                    // Core breathing sphere
-                    drawCircle(
-                        color = accent.copy(alpha = 0.20f + 0.20f * currentProgress),
-                        radius = currentRadius,
-                        center = Offset(centerX, centerY)
-                    )
-                    // Concentric perimeter ring
-                    drawCircle(
-                        color = accent.copy(alpha = 0.5f + 0.5f * currentProgress),
-                        radius = currentRadius,
-                        center = Offset(centerX, centerY),
-                        style = Stroke(width = 2.5.dp.toPx())
-                    )
-                }
-
-                AnimationType.CIRCLE, AnimationType.HORIZONTAL_SWEEP -> {
-                    // Zen Orbit / Particle Vortex
-                    val centerX = size.width / 2f
-                    val centerY = size.height / 2f
-                    val baseRadius = size.width.coerceAtMost(size.height) * 0.35f
-                    val orbitRadius = baseRadius * (0.45f + 0.55f * currentProgress)
-                    val particleCount = 20
-                    val rotationAngle = (elapsedMillisState / 20f) % 360f
-
-                    // Soft orbital guide
-                    drawCircle(
-                        color = accent.copy(alpha = 0.12f * (0.5f + 0.5f * currentProgress)),
-                        radius = orbitRadius,
-                        center = Offset(centerX, centerY),
-                        style = Stroke(width = 1.5.dp.toPx())
-                    )
-
-                    // Orbiting luminous particles
-                    for (i in 0 until particleCount) {
-                        val angleDeg = (i * (360.0 / particleCount) + rotationAngle).toFloat()
-                        val angleRad = Math.toRadians(angleDeg.toDouble())
-                        val px = (centerX + orbitRadius * cos(angleRad)).toFloat()
-                        val py = (centerY + orbitRadius * sin(angleRad)).toFloat()
-                        val fraction = (i.toFloat() / particleCount)
-                        val particleAlpha = (0.25f + 0.75f * fraction) * (0.4f + 0.6f * currentProgress)
-
-                        drawCircle(
-                            color = accent.copy(alpha = particleAlpha),
-                            radius = (2.5.dp.toPx() + 2.dp.toPx() * currentProgress),
-                            center = Offset(px, py)
-                        )
-                    }
-                }
-            }
-        }
+        // Dynamic Mindful Breathing Animations on Canvas (draw phase state reads)
+        InterventionCanvas(
+            animationType = config.animation,
+            accentColor = accent,
+            progressProvider = { currentProgress },
+            elapsedMillisProvider = { elapsedMillisState }
+        )
 
         // Overlay UI content
         Column(
@@ -336,132 +235,11 @@ fun InterventionOverlayContent(
             }
         }
 
-        AnimatedVisibility(
+        EmergencyConfirmDialog(
             visible = showEmergencyConfirmDialog,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.75f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        showEmergencyConfirmDialog = false
-                    }
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            // Consume clicks to prevent dismissing dialog when clicking content
-                        },
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, palette.border),
-                    color = palette.surface
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = strings.emergencyDialogTitle.uppercase(),
-                            fontFamily = TerminalFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            letterSpacing = 0.15.sp,
-                            color = accent
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Text(
-                            text = strings.emergencyDialogDesc,
-                            fontFamily = TerminalFontFamily,
-                            fontSize = 12.sp,
-                            color = palette.textSecondary,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        TerminalButton(
-                            text = strings.emergencyEnterOnce.uppercase(),
-                            onClick = {
-                                onEmergencyAccess?.invoke(null, false)
-                                showEmergencyConfirmDialog = false
-                            },
-                            isPrimary = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = "${strings.emergencyPauseApp.uppercase()}: $targetAppName",
-                            fontFamily = TerminalFontFamily,
-                            fontSize = 11.sp,
-                            letterSpacing = 0.08.sp,
-                            color = palette.textSecondary,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-                        ) {
-                            TerminalBadge(
-                                text = strings.pause15m,
-                                modifier = Modifier.clickable {
-                                    onEmergencyAccess?.invoke(15 * 60_000L, false)
-                                    showEmergencyConfirmDialog = false
-                                }
-                            )
-                            TerminalBadge(
-                                text = strings.pause30m,
-                                modifier = Modifier.clickable {
-                                    onEmergencyAccess?.invoke(30 * 60_000L, false)
-                                    showEmergencyConfirmDialog = false
-                                }
-                            )
-                            TerminalBadge(
-                                text = strings.pause1h,
-                                modifier = Modifier.clickable {
-                                    onEmergencyAccess?.invoke(60 * 60_000L, false)
-                                    showEmergencyConfirmDialog = false
-                                }
-                            )
-                            TerminalBadge(
-                                text = strings.pauseForever,
-                                modifier = Modifier.clickable {
-                                    onEmergencyAccess?.invoke(null, true)
-                                    showEmergencyConfirmDialog = false
-                                }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        TerminalButton(
-                            text = strings.emergencyResumeBreath.uppercase(),
-                            onClick = { showEmergencyConfirmDialog = false },
-                            isPrimary = false,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-        }
+            targetAppName = targetAppName,
+            onDismiss = { showEmergencyConfirmDialog = false },
+            onEmergencyAccess = onEmergencyAccess
+        )
     }
 }

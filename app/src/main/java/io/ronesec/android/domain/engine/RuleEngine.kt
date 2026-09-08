@@ -3,6 +3,7 @@ package io.ronesec.android.domain.engine
 import io.ronesec.android.domain.model.BlockSchedule
 import io.ronesec.android.domain.model.Decision
 import io.ronesec.android.domain.model.ScheduleType
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
@@ -15,96 +16,76 @@ class RuleEngine {
         now: Instant,
         state: RuntimeState,
         zoneId: ZoneId = ZoneId.systemDefault(),
-        recentAttemptsCount: Int = 0
+        recentAttemptsCount: Int = 0,
+        currentSessionId: Long? = null
     ): Decision {
         val pausedUntil = state.protectionPausedUntil
-        if (pausedUntil != null) {
-            if (pausedUntil == -1L || now.toEpochMilli() < pausedUntil) {
-                return Decision.Allow
-            }
+        if (pausedUntil != null && (pausedUntil == -1L || now.toEpochMilli() < pausedUntil)) {
+            return Decision.Allow
         }
 
         val target = state.targets[packageName] ?: return Decision.Allow
-
         if (!target.enabled) {
             return Decision.Allow
         }
 
-        // Priority 1: Check state.activeBlockSessions -> if active and matches package and time, return Decision.Block
-        val activeSession = state.activeBlockSessions.firstOrNull { session ->
-            session.active &&
-                    session.packages.contains(packageName) &&
-                    now >= session.startTime &&
-                    now < session.endTime
+        // Priority 1: Active manual/quick block sessions
+        val activeSessions = state.activeBlockSessions.filter { session ->
+            session.active && session.packages.contains(packageName) && now >= session.startTime && now < session.endTime
         }
-        if (activeSession != null) {
-            return Decision.Block(until = activeSession.endTime)
+        if (activeSessions.isNotEmpty()) {
+            val maxUntil = activeSessions.maxOf { it.endTime }
+            return Decision.Block(until = maxUntil)
         }
 
         val zonedDateTime = ZonedDateTime.ofInstant(now, zoneId)
-        val dayOfWeek = zonedDateTime.dayOfWeek
-        val currentTime = zonedDateTime.toLocalTime()
+        val activeSchedulesWithEnd = getActiveSchedulesWithEnd(state.blockSchedules, packageName, zonedDateTime, zoneId)
 
-        // Priority 2: Check state.blockSchedules
-        val activeSchedule = state.blockSchedules.firstOrNull { schedule ->
-            schedule.enabled &&
-                    schedule.packages.contains(packageName) &&
-                    schedule.days.contains(dayOfWeek) &&
-                    isTimeWithinSchedule(currentTime, schedule.start, schedule.end)
+        // Priority 2: Hard Block schedules strictly override intervention schedules and access grants
+        val hardBlockSchedules = activeSchedulesWithEnd.filter { it.first.scheduleType == ScheduleType.HARD_BLOCK }
+        if (hardBlockSchedules.isNotEmpty()) {
+            val maxUntil = hardBlockSchedules.maxOf { it.second }
+            return Decision.Block(until = maxUntil)
         }
-        if (activeSchedule != null) {
-            when (activeSchedule.scheduleType) {
-                ScheduleType.HARD_BLOCK -> {
-                    val todayEnd = if (activeSchedule.start <= activeSchedule.end) {
-                        zonedDateTime.toLocalDate().atTime(activeSchedule.end).atZone(zoneId).toInstant()
-                    } else {
-                        val endDate = if (currentTime >= activeSchedule.start) {
-                            zonedDateTime.toLocalDate().plusDays(1)
-                        } else {
-                            zonedDateTime.toLocalDate()
-                        }
-                        endDate.atTime(activeSchedule.end).atZone(zoneId).toInstant()
-                    }
-                    return Decision.Block(until = todayEnd)
-                }
-                ScheduleType.INTERVENTION -> {
-                    if (isAccessGranted(packageName, now, state)) {
-                        return Decision.Allow
-                    }
-                    if (isWithinQuickReturnGrace(packageName, now, state, target.intervention.quickReturnGraceMs)) {
-                        return Decision.Allow
-                    }
 
-                    val override = activeSchedule.appOverrides[packageName]
-                    val baseDurationMs = override?.durationMs ?: target.intervention.durationMs
-                    val effectiveReinterventionMs = override?.reinterventionMs ?: target.intervention.reinterventionMs
-                    val calculatedDurationMs = calculateDuration(
-                        baseDurationMs = baseDurationMs,
-                        exponentialGrowthEnabled = target.intervention.exponentialGrowthEnabled,
-                        growthPercent = target.intervention.growthPercent,
-                        recentAttemptsCount = recentAttemptsCount
-                    )
-                    return Decision.Intervention(
-                        config = target.intervention.copy(
-                            durationMs = calculatedDurationMs,
-                            reinterventionMs = effectiveReinterventionMs
-                        )
-                    )
-                }
+        // Priority 3: Intervention schedules
+        val interventionSchedules = activeSchedulesWithEnd.filter { it.first.scheduleType == ScheduleType.INTERVENTION }
+        if (interventionSchedules.isNotEmpty()) {
+            if (isAccessGranted(packageName, now, state, currentSessionId) ||
+                isWithinQuickReturnGrace(packageName, now, state, target.intervention.quickReturnGraceMs)
+            ) {
+                return Decision.Allow
             }
+
+            val activeSchedule = interventionSchedules.first().first
+            val override = activeSchedule.appOverrides[packageName]
+            val baseDurationMs = override?.durationMs ?: target.intervention.durationMs
+            val effectiveReinterventionMs = override?.reinterventionMs ?: target.intervention.reinterventionMs
+            val calculatedDurationMs = calculateDuration(
+                baseDurationMs = baseDurationMs,
+                exponentialGrowthEnabled = target.intervention.exponentialGrowthEnabled,
+                growthPercent = target.intervention.growthPercent,
+                recentAttemptsCount = recentAttemptsCount
+            )
+            return Decision.Intervention(
+                config = target.intervention.copy(
+                    durationMs = calculatedDurationMs,
+                    reinterventionMs = effectiveReinterventionMs
+                )
+            )
         }
 
-        // Priority 3: Active unexpired AccessGrant
-        if (isAccessGranted(packageName, now, state)) {
+        // Priority 4: Active unexpired AccessGrant (session permit or timed permit)
+        if (isAccessGranted(packageName, now, state, currentSessionId)) {
             return Decision.Allow
         }
 
-        // Priority 4: Quick Return Grace period
+        // Priority 5: Quick Return Grace period
         if (isWithinQuickReturnGrace(packageName, now, state, target.intervention.quickReturnGraceMs)) {
             return Decision.Allow
         }
 
-        // Priority 5: Standard Intervention
+        // Priority 6: Standard Intervention
         val baseDurationMs = target.intervention.durationMs
         val calculatedDurationMs = calculateDuration(
             baseDurationMs = baseDurationMs,
@@ -117,10 +98,58 @@ class RuleEngine {
         )
     }
 
-    private fun isAccessGranted(packageName: String, now: Instant, state: RuntimeState): Boolean {
+    private fun getActiveSchedulesWithEnd(
+        schedules: List<BlockSchedule>,
+        packageName: String,
+        zdt: ZonedDateTime,
+        zoneId: ZoneId
+    ): List<Pair<BlockSchedule, Instant>> {
+        val currentDay = zdt.dayOfWeek
+        val previousDay = currentDay.minus(1)
+        val currentTime = zdt.toLocalTime()
+        val localDate = zdt.toLocalDate()
+
+        val results = mutableListOf<Pair<BlockSchedule, Instant>>()
+        for (schedule in schedules) {
+            if (!schedule.enabled || !schedule.packages.contains(packageName)) continue
+
+            val isOvernight = schedule.start > schedule.end
+            if (!isOvernight) {
+                if (schedule.days.contains(currentDay) && currentTime >= schedule.start && currentTime < schedule.end) {
+                    val endInstant = localDate.atTime(schedule.end).atZone(zoneId).toInstant()
+                    results.add(schedule to endInstant)
+                }
+            } else {
+                // Overnight: Evening part on start day
+                if (schedule.days.contains(currentDay) && currentTime >= schedule.start) {
+                    val endInstant = localDate.plusDays(1).atTime(schedule.end).atZone(zoneId).toInstant()
+                    results.add(schedule to endInstant)
+                }
+                // Overnight: Morning part on following day
+                else if (schedule.days.contains(previousDay) && currentTime < schedule.end) {
+                    val endInstant = localDate.atTime(schedule.end).atZone(zoneId).toInstant()
+                    results.add(schedule to endInstant)
+                }
+            }
+        }
+        return results
+    }
+
+    private fun isAccessGranted(
+        packageName: String,
+        now: Instant,
+        state: RuntimeState,
+        currentSessionId: Long?
+    ): Boolean {
+        // Session permit in RAM matching current session identity
+        if (currentSessionId != null && state.activeSessionPermits[packageName] == currentSessionId) {
+            return true
+        }
+
+        // Persistent timed permit with explicit expiration
         val grant = state.activeGrants[packageName] ?: return false
         val expiresAt = grant.expiresAt
-        return expiresAt == null || now < expiresAt
+        return expiresAt != null && now < expiresAt
     }
 
     private fun isWithinQuickReturnGrace(
@@ -146,15 +175,6 @@ class RuleEngine {
             (baseDurationMs * multiplier).toLong().coerceIn(1_000L, 300_000L)
         } else {
             baseDurationMs
-        }
-    }
-
-    private fun isTimeWithinSchedule(current: LocalTime, start: LocalTime, end: LocalTime): Boolean {
-        return if (start <= end) {
-            current >= start && current < end
-        } else {
-            // Spanning midnight e.g. 22:00 -> 06:00
-            current >= start || current < end
         }
     }
 }

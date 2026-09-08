@@ -2,7 +2,6 @@ package io.ronesec.android.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,11 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,31 +25,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.ronesec.android.domain.model.AnimationType
 import io.ronesec.android.domain.model.TargetApp
 import io.ronesec.android.domain.util.TimeFormatUtils
 import io.ronesec.android.overlay.InterventionOverlayContent
-import io.ronesec.android.ui.components.TerminalBadge
 import io.ronesec.android.ui.components.TerminalButton
-import io.ronesec.android.ui.components.TerminalCard
-import io.ronesec.android.ui.components.TerminalInputField
 import io.ronesec.android.ui.i18n.LocalAppStrings
+import io.ronesec.android.ui.screens.target.TargetAnimationAndDurationCard
+import io.ronesec.android.ui.screens.target.TargetExponentialGrowthCard
+import io.ronesec.android.ui.screens.target.TargetPhraseCard
+import io.ronesec.android.ui.screens.target.TargetQuickLockCard
+import io.ronesec.android.ui.screens.target.TargetQuickReturnCard
+import io.ronesec.android.ui.screens.target.TargetReinterventionCard
+import io.ronesec.android.ui.screens.target.TargetStatusCard
 import io.ronesec.android.ui.theme.LocalAppPalette
 import io.ronesec.android.ui.theme.TerminalFontFamily
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,906 +139,78 @@ fun TargetSettingsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Status Card
-        TerminalCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = strings.targetProtectionStatus,
-                        fontFamily = TerminalFontFamily,
-                        fontSize = 11.sp,
-                        color = palette.textSecondary
-                    )
-                    Text(
-                        text = if (enabled) strings.targetStatusActive else strings.targetStatusDisabled,
-                        fontFamily = TerminalFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = if (enabled) accent else palette.textSecondary
-                    )
-                }
-
-                TerminalBadge(
-                    text = if (enabled) strings.onLabel else strings.offLabel,
-                    isActive = enabled,
-                    modifier = Modifier.clickable { enabled = !enabled }
-                )
-            }
-        }
+        TargetStatusCard(
+            enabled = enabled,
+            onEnabledChange = { enabled = it }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Phrase Editor
-        TerminalCard(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = strings.targetMindfulnessPhrase,
-                fontFamily = TerminalFontFamily,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                color = palette.textSecondary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            TerminalInputField(
-                value = phrase,
-                onValueChange = { phrase = it },
-                maxLength = 80,
-                maxLines = 3,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    focusManager.clearFocus()
-                    keyboardController?.hide()
-                })
-            )
-        }
+        TargetPhraseCard(
+            phrase = phrase,
+            onPhraseChange = { phrase = it }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Animation Choice & Duration Card
-        TerminalCard(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = strings.targetAnimationType,
-                fontFamily = TerminalFontFamily,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                color = palette.textSecondary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(
-                    AnimationType.FILL,
-                    AnimationType.PULSE,
-                    AnimationType.CIRCLE
-                ).forEach { anim ->
-                    val isSelected = anim == selectedAnimation
-                    TerminalButton(
-                        text = strings.animationName(anim),
-                        onClick = { selectedAnimation = anim },
-                        isPrimary = isSelected,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = strings.targetPauseDuration,
-                fontFamily = TerminalFontFamily,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                color = palette.textSecondary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Text input for exact seconds
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .border(1.dp, palette.border, RoundedCornerShape(4.dp))
-                        .background(palette.surface, RoundedCornerShape(4.dp))
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
-                ) {
-                    if (durationInput.isEmpty()) {
-                        Text(
-                            text = "8",
-                            fontFamily = TerminalFontFamily,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = palette.textSecondary.copy(alpha = 0.4f)
-                        )
-                    }
-                    BasicTextField(
-                        value = durationInput,
-                        onValueChange = { input ->
-                            val filtered = input.filter { it.isDigit() }.take(3)
-                            durationInput = filtered
-                            val s = filtered.toFloatOrNull() ?: 8f
-                            durationSeconds = s.coerceIn(1f, 120f)
-                        },
-                        textStyle = TextStyle(
-                            fontFamily = TerminalFontFamily,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = palette.textPrimary
-                        ),
-                        cursorBrush = SolidColor(accent),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                if (durationInput.isBlank()) {
-                                    durationInput = durationSeconds.toInt().toString()
-                                }
-                                focusManager.clearFocus()
-                                keyboardController?.hide()
-                            }
-                        ),
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onKeyEvent {
-                                if (it.key == Key.Enter) {
-                                    if (durationInput.isBlank()) {
-                                        durationInput = durationSeconds.toInt().toString()
-                                    }
-                                    focusManager.clearFocus()
-                                    keyboardController?.hide()
-                                    true
-                                } else {
-                                    false
-                                }
-                            }
-                    )
-                }
-
-                Text(
-                    text = if (strings.secondsUnitShort == "с") "СЕК" else "SEC",
-                    fontFamily = TerminalFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = accent
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Steppers row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                listOf(
-                    -5f to "-5${strings.secondsUnitShort}",
-                    -1f to "-1${strings.secondsUnitShort}",
-                    1f to "+1${strings.secondsUnitShort}",
-                    5f to "+5${strings.secondsUnitShort}"
-                ).forEach { (delta, label) ->
-                    TerminalButton(
-                        text = label,
-                        onClick = {
-                            focusManager.clearFocus()
-                            val cur = durationInput.filter { it.isDigit() }.toFloatOrNull() ?: 8f
-                            val next = (cur + delta).coerceIn(1f, 120f)
-                            durationInput = next.toInt().toString()
-                            durationSeconds = next
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Quick presets
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                listOf(3, 5, 8, 10, 15, 20, 30).forEach { sec ->
-                    val isSelected = durationSeconds.toInt() == sec
-                    TerminalBadge(
-                        text = "$sec${strings.secondsUnitShort}",
-                        isActive = isSelected,
-                        modifier = Modifier.clickable {
-                            durationInput = sec.toString()
-                            durationSeconds = sec.toFloat()
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            TerminalButton(
-                text = strings.targetPreviewAnimation,
-                onClick = { showPreview = true },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+        TargetAnimationAndDurationCard(
+            selectedAnimation = selectedAnimation,
+            onAnimationSelected = { selectedAnimation = it },
+            durationSeconds = durationSeconds,
+            durationInput = durationInput,
+            onDurationInputChange = { input, seconds ->
+                durationInput = input
+                durationSeconds = seconds
+            },
+            onPreviewClick = { showPreview = true }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Remind Again (Re-intervention) Card
-        TerminalCard(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = strings.targetReintercept,
-                fontFamily = TerminalFontFamily,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                color = palette.textSecondary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                val intervals = listOf(
-                    strings.offLabel to null,
-                    "1${strings.minutesShort}" to 60_000L,
-                    "3${strings.minutesShort}" to 180_000L,
-                    "5${strings.minutesShort}" to 300_000L,
-                    "10${strings.minutesShort}" to 600_000L
-                )
-                intervals.forEach { (lbl, ms) ->
-                    val isSelected = !isCustomReintervention && remindAgainMs == ms
-                    TerminalBadge(
-                        text = lbl,
-                        isActive = isSelected,
-                        modifier = Modifier.clickable {
-                            isCustomReintervention = false
-                            remindAgainMs = ms
-                        }
-                    )
-                }
-
-                TerminalBadge(
-                    text = strings.targetCustomOption,
-                    isActive = isCustomReintervention,
-                    modifier = Modifier.clickable {
-                        isCustomReintervention = true
-                        val total = TimeFormatUtils.parseDuration(customMinutesInput, customSecondsInput, minMs = 5_000L)
-                        remindAgainMs = total
-                    }
-                )
+        TargetReinterventionCard(
+            remindAgainMs = remindAgainMs,
+            isCustomReintervention = isCustomReintervention,
+            customMinutesInput = customMinutesInput,
+            customSecondsInput = customSecondsInput,
+            onRemindAgainChange = { remindAgainMs = it },
+            onCustomModeChange = { isCustomReintervention = it },
+            onCustomInputsChange = { mins, secs, totalMs ->
+                customMinutesInput = mins
+                customSecondsInput = secs
+                remindAgainMs = totalMs
             }
-
-            if (isCustomReintervention) {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                val curMins = customMinutesInput.filter { it.isDigit() }.toLongOrNull() ?: 0L
-                val curSecs = customSecondsInput.filter { it.isDigit() }.toLongOrNull() ?: 0L
-                val currentEffectiveMs = curMins * 60_000L + curSecs * 1000L
-                val displayTime = strings.formatDuration(currentEffectiveMs)
-
-                fun applyAdjustment(deltaMs: Long) {
-                    focusManager.clearFocus()
-                    val (newM, newS) = TimeFormatUtils.calculateAdjustedTime(
-                        customMinutesInput,
-                        customSecondsInput,
-                        deltaMs
-                    )
-                    customMinutesInput = newM
-                    customSecondsInput = newS
-                    remindAgainMs = TimeFormatUtils.parseDuration(newM, newS)
-                }
-
-                fun applyPreset(presetMs: Long) {
-                    focusManager.clearFocus()
-                    val newM = (presetMs / 60_000L).toString()
-                    val newS = ((presetMs % 60_000L) / 1000L).toString()
-                    customMinutesInput = newM
-                    customSecondsInput = newS
-                    remindAgainMs = presetMs
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(palette.surfaceElevated, RoundedCornerShape(6.dp))
-                        .border(1.dp, palette.border, RoundedCornerShape(6.dp))
-                        .padding(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = strings.targetCustomInterval,
-                            fontFamily = TerminalFontFamily,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = palette.textSecondary
-                        )
-
-                        Text(
-                            text = displayTime,
-                            fontFamily = TerminalFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = accent
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        // Minutes column
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = strings.minutesLabel,
-                                fontFamily = TerminalFontFamily,
-                                fontSize = 10.sp,
-                                color = palette.textSecondary,
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(1.dp, palette.border, RoundedCornerShape(4.dp))
-                                    .background(palette.surface, RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 10.dp, vertical = 8.dp)
-                            ) {
-                                if (customMinutesInput.isEmpty()) {
-                                    Text(
-                                        text = "0",
-                                        fontFamily = TerminalFontFamily,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = palette.textSecondary.copy(alpha = 0.4f)
-                                    )
-                                }
-                                BasicTextField(
-                                    value = customMinutesInput,
-                                    onValueChange = { input ->
-                                        val filtered = input.filter { it.isDigit() }.take(3)
-                                        customMinutesInput = filtered
-                                        val total = TimeFormatUtils.parseDuration(filtered, customSecondsInput)
-                                        remindAgainMs = total
-                                    },
-                                    textStyle = TextStyle(
-                                        fontFamily = TerminalFontFamily,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = palette.textPrimary
-                                    ),
-                                    cursorBrush = SolidColor(accent),
-                                    keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Number,
-                                        imeAction = ImeAction.Next
-                                    ),
-                                    keyboardActions = KeyboardActions(
-                                        onNext = {
-                                            focusManager.moveFocus(FocusDirection.Next)
-                                        },
-                                        onDone = {
-                                            if (customMinutesInput.isBlank()) {
-                                                customMinutesInput = "0"
-                                            }
-                                            focusManager.clearFocus()
-                                            keyboardController?.hide()
-                                        }
-                                    ),
-                                    singleLine = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .onKeyEvent {
-                                            if (it.key == Key.Enter) {
-                                                focusManager.moveFocus(FocusDirection.Next)
-                                                true
-                                            } else {
-                                                false
-                                            }
-                                        }
-                                 )
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                TerminalButton(
-                                    text = "-1${strings.minutesShort}",
-                                    onClick = { applyAdjustment(-60_000L) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                TerminalButton(
-                                    text = "+1${strings.minutesShort}",
-                                    onClick = { applyAdjustment(60_000L) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-
-                        // Seconds column
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = strings.secondsLabel,
-                                fontFamily = TerminalFontFamily,
-                                fontSize = 10.sp,
-                                color = palette.textSecondary,
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(1.dp, palette.border, RoundedCornerShape(4.dp))
-                                    .background(palette.surface, RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 10.dp, vertical = 8.dp)
-                            ) {
-                                if (customSecondsInput.isEmpty()) {
-                                    Text(
-                                        text = "0",
-                                        fontFamily = TerminalFontFamily,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = palette.textSecondary.copy(alpha = 0.4f)
-                                    )
-                                }
-                                BasicTextField(
-                                    value = customSecondsInput,
-                                    onValueChange = { input ->
-                                        val filtered = input.filter { it.isDigit() }.take(2)
-                                        customSecondsInput = filtered
-                                        val total = TimeFormatUtils.parseDuration(customMinutesInput, filtered)
-                                        remindAgainMs = total
-                                    },
-                                    textStyle = TextStyle(
-                                        fontFamily = TerminalFontFamily,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = palette.textPrimary
-                                    ),
-                                    cursorBrush = SolidColor(accent),
-                                    keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Number,
-                                        imeAction = ImeAction.Done
-                                    ),
-                                    keyboardActions = KeyboardActions(
-                                        onDone = {
-                                            if (customSecondsInput.isBlank()) {
-                                                customSecondsInput = "0"
-                                            }
-                                            focusManager.clearFocus()
-                                            keyboardController?.hide()
-                                        }
-                                    ),
-                                    singleLine = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .onKeyEvent {
-                                            if (it.key == Key.Enter) {
-                                                if (customSecondsInput.isBlank()) {
-                                                    customSecondsInput = "0"
-                                                }
-                                                focusManager.clearFocus()
-                                                keyboardController?.hide()
-                                                true
-                                            } else {
-                                                false
-                                            }
-                                        }
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                TerminalButton(
-                                    text = "-15${strings.secondsUnitShort}",
-                                    onClick = { applyAdjustment(-15_000L) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                TerminalButton(
-                                    text = "+15${strings.secondsUnitShort}",
-                                    onClick = { applyAdjustment(15_000L) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = strings.targetQuickPresets,
-                        fontFamily = TerminalFontFamily,
-                        fontSize = 10.sp,
-                        color = palette.textSecondary,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        listOf(
-                            "30${strings.secondsUnitShort}" to 30_000L,
-                            "45${strings.secondsUnitShort}" to 45_000L,
-                            "2${strings.minutesShort}" to 120_000L,
-                            "15${strings.minutesShort}" to 900_000L,
-                            "30${strings.minutesShort}" to 1800_000L
-                        ).forEach { (lbl, ms) ->
-                            TerminalBadge(
-                                text = lbl,
-                                isActive = currentEffectiveMs == ms,
-                                modifier = Modifier.clickable { applyPreset(ms) }
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            val descText = if (remindAgainMs == null && !isCustomReintervention) {
-                strings.targetReinterceptOffDesc
-            } else {
-                val effectiveMs = if (isCustomReintervention) {
-                    val m = customMinutesInput.filter { it.isDigit() }.toLongOrNull() ?: 0L
-                    val s = customSecondsInput.filter { it.isDigit() }.toLongOrNull() ?: 0L
-                    m * 60_000L + s * 1000L
-                } else {
-                    remindAgainMs ?: 0L
-                }
-                val timeStr = strings.formatDuration(effectiveMs)
-                strings.targetReinterceptOnDesc(timeStr)
-            }
-
-            Text(
-                text = descText,
-                fontFamily = TerminalFontFamily,
-                fontSize = 11.sp,
-                lineHeight = 16.sp,
-                color = palette.textSecondary
-            )
-        }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Quick Return Grace Card
-        TerminalCard(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = strings.targetQuickReturn,
-                fontFamily = TerminalFontFamily,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                color = palette.textSecondary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                val graces = listOf(
-                    0L to "0${strings.secondsUnitShort}",
-                    15L to "15${strings.secondsUnitShort}",
-                    30L to "30${strings.secondsUnitShort}",
-                    60L to "1${strings.minutesShort}",
-                    120L to "2${strings.minutesShort}",
-                    300L to "5${strings.minutesShort}"
-                )
-                graces.forEach { (sec, lbl) ->
-                    val isSelected = quickReturnGraceSec == sec
-                    TerminalBadge(
-                        text = lbl,
-                        isActive = isSelected,
-                        modifier = Modifier.clickable { quickReturnGraceSec = sec }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = if (quickReturnGraceSec == 0L)
-                    strings.targetQuickReturn0s
-                else
-                    strings.targetQuickReturnGrace(quickReturnGraceSec),
-                fontFamily = TerminalFontFamily,
-                fontSize = 11.sp,
-                lineHeight = 16.sp,
-                color = palette.textSecondary
-            )
-        }
+        TargetQuickReturnCard(
+            quickReturnGraceSec = quickReturnGraceSec,
+            onQuickReturnGraceChange = { quickReturnGraceSec = it }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Exponential Growth Card
-        TerminalCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = strings.targetExponentialGrowth,
-                    fontFamily = TerminalFontFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 11.sp,
-                    color = palette.textSecondary
-                )
-
-                TerminalBadge(
-                    text = if (exponentialGrowthEnabled) strings.onLabel else strings.offLabel,
-                    isActive = exponentialGrowthEnabled,
-                    modifier = Modifier.clickable { exponentialGrowthEnabled = !exponentialGrowthEnabled }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = strings.targetExponentialGrowthDesc,
-                fontFamily = TerminalFontFamily,
-                fontSize = 11.sp,
-                lineHeight = 16.sp,
-                color = palette.textSecondary
-            )
-
-            if (exponentialGrowthEnabled) {
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Секция «ПРОЦЕНТ РОСТА НА КАЖДОЕ ОТКРЫТИЕ»
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = strings.targetGrowthPercent,
-                        fontFamily = TerminalFontFamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 11.sp,
-                        color = palette.textSecondary
-                    )
-                    Text(
-                        text = "+$growthPercent%",
-                        fontFamily = TerminalFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = accent
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Steppers row: [-5%], [-1%], [+1%], [+5%], clamping percent in 1..200
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    listOf(-5 to "-5%", -1 to "-1%", 1 to "+1%", 5 to "+5%").forEach { (delta, label) ->
-                        TerminalButton(
-                            text = label,
-                            onClick = {
-                                growthPercent = (growthPercent + delta).coerceIn(1, 200)
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Preset badges row: 10%, 20%, 30%, 50%
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    listOf(10, 20, 30, 50).forEach { pct ->
-                        val isSelected = growthPercent == pct
-                        TerminalBadge(
-                            text = "$pct%",
-                            isActive = isSelected,
-                            modifier = Modifier.clickable { growthPercent = pct }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Секция «ПЕРИОД УЧЕТА ЗАПУСКОВ»
-                Text(
-                    text = strings.targetRollingWindow,
-                    fontFamily = TerminalFontFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 11.sp,
-                    color = palette.textSecondary
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    val periods = listOf(
-                        "15${strings.minutesShort}" to 15,
-                        "30${strings.minutesShort}" to 30,
-                        "1${strings.hoursShort}" to 60,
-                        "2${strings.hoursShort}" to 120,
-                        "24${strings.hoursShort}" to 1440
-                    )
-                    periods.forEach { (lbl, mins) ->
-                        val isSelected = growthPeriodMinutes == mins
-                        TerminalBadge(
-                            text = lbl,
-                            isActive = isSelected,
-                            modifier = Modifier.clickable { growthPeriodMinutes = mins }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Секция «ИНТЕРАКТИВНЫЙ ПРЕДПРОСЧЕТ (ПЕРВЫЕ 10 ОТКРЫТИЙ)»
-                Text(
-                    text = strings.targetProjectionTitle(growthPercent),
-                    fontFamily = TerminalFontFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 11.sp,
-                    color = palette.textSecondary
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                val baseSec = durationSeconds
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(palette.surfaceElevated, RoundedCornerShape(6.dp))
-                        .border(1.dp, palette.border, RoundedCornerShape(6.dp))
-                        .padding(10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Left column (1..5)
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            for (k in 1..5) {
-                                val timeSec = baseSec * Math.pow(1.0 + growthPercent / 100.0, k.toDouble())
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = strings.targetOpenNumber(k),
-                                        fontFamily = TerminalFontFamily,
-                                        fontSize = 11.sp,
-                                        color = palette.textSecondary
-                                    )
-                                    Text(
-                                        text = String.format(Locale.US, "%.1f %s", timeSec, strings.secondsShort),
-                                        fontFamily = TerminalFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                        color = accent
-                                    )
-                                }
-                            }
-                        }
-
-                        // Right column (6..10)
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            for (k in 6..10) {
-                                val timeSec = baseSec * Math.pow(1.0 + growthPercent / 100.0, k.toDouble())
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = strings.targetOpenNumber(k),
-                                        fontFamily = TerminalFontFamily,
-                                        fontSize = 11.sp,
-                                        color = palette.textSecondary
-                                    )
-                                    Text(
-                                        text = String.format(Locale.US, "%.1f %s", timeSec, strings.secondsShort),
-                                        fontFamily = TerminalFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                        color = accent
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = strings.targetProjectionBaseHint(baseSec.toInt()),
-                    fontFamily = TerminalFontFamily,
-                    fontSize = 10.sp,
-                    lineHeight = 14.sp,
-                    color = palette.textSecondary
-                )
-            }
-        }
+        TargetExponentialGrowthCard(
+            enabled = exponentialGrowthEnabled,
+            onEnabledChange = { exponentialGrowthEnabled = it },
+            growthPercent = growthPercent,
+            onGrowthPercentChange = { growthPercent = it },
+            growthPeriodMinutes = growthPeriodMinutes,
+            onGrowthPeriodMinutesChange = { growthPeriodMinutes = it },
+            durationSeconds = durationSeconds
+        )
 
         if (onStartHardBlock != null) {
             Spacer(modifier = Modifier.height(16.dp))
-
-            TerminalCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = strings.targetQuickLock,
-                    fontFamily = TerminalFontFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 11.sp,
-                    color = palette.textSecondary,
-                    modifier = Modifier.padding(bottom = 6.dp)
-                )
-                Text(
-                    text = strings.targetQuickLockDesc(target.displayName),
-                    fontFamily = TerminalFontFamily,
-                    fontSize = 11.sp,
-                    color = palette.textSecondary,
-                    modifier = Modifier.padding(bottom = 10.dp)
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val durations = listOf(
-                        "15${strings.minutesShort}" to 15,
-                        "30${strings.minutesShort}" to 30,
-                        "1${strings.hoursShort}" to 60,
-                        "2${strings.hoursShort}" to 120
-                    )
-                    durations.forEach { (lbl, mins) ->
-                        TerminalButton(
-                            text = lbl,
-                            onClick = {
-                                onStartHardBlock(strings.targetQuickLockFocusPrefix(target.displayName), mins, setOf(target.packageName))
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
+            TargetQuickLockCard(
+                targetDisplayName = target.displayName,
+                targetPackageName = target.packageName,
+                onStartHardBlock = onStartHardBlock
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Save Button
         TerminalButton(
             text = strings.saveChangesButton,
             onClick = {
@@ -1086,7 +246,6 @@ fun TargetSettingsScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Delete Button
         TerminalButton(
             text = strings.removeFromProtectionButton,
             onClick = {

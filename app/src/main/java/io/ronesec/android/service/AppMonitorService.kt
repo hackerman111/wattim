@@ -1,6 +1,7 @@
 package io.ronesec.android.service
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -9,58 +10,66 @@ import android.content.pm.PackageManager
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.content.ContextCompat
 import io.ronesec.android.RonesecApplication
-import io.ronesec.android.data.repository.RonesecRepository
-import io.ronesec.android.domain.engine.RuleEngine
-import io.ronesec.android.domain.model.AttemptOutcome
-import io.ronesec.android.domain.model.Decision
-import io.ronesec.android.domain.model.InterventionConfig
-import io.ronesec.android.overlay.OverlayController
+import io.ronesec.android.domain.protection.AudioGuard
+import io.ronesec.android.domain.protection.BoundaryScheduler
+import io.ronesec.android.domain.protection.ForegroundTracker
+import io.ronesec.android.domain.protection.InterventionCoordinator
+import io.ronesec.android.domain.protection.ProtectionEffect
+import io.ronesec.android.domain.protection.ProtectionEvent
+import io.ronesec.android.domain.protection.UserProtectionAction
+import io.ronesec.android.overlay.OverlayHost
 import io.ronesec.android.ui.i18n.AppLanguage
-import io.ronesec.android.ui.i18n.AppStrings
 import io.ronesec.android.ui.i18n.resolveAppStrings
 import io.ronesec.android.ui.theme.AppTheme
-import io.ronesec.android.ui.theme.TerminalAccent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.time.Instant
 
 class AppMonitorService : AccessibilityService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val ruleEngine = RuleEngine()
-    private lateinit var overlayController: OverlayController
+    private val eventChannel = Channel<ProtectionEvent>(Channel.UNLIMITED)
 
-    private var currentForegroundPackage: String? = null
+    private lateinit var audioGuard: AudioGuard
+    private lateinit var overlayHost: OverlayHost
+    private lateinit var boundaryScheduler: BoundaryScheduler
+    private lateinit var foregroundTracker: ForegroundTracker
+    private lateinit var coordinator: InterventionCoordinator
+
     private var currentTheme: AppTheme = AppTheme.NORD
     private var currentLanguage: AppLanguage = AppLanguage.SYSTEM
-    private val currentStrings: AppStrings
-        get() = resolveAppStrings(currentLanguage)
-    private var reinterventionJob: Job? = null
 
     private val screenOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_SCREEN_OFF) {
-                val currentPkg = currentForegroundPackage
-                if (currentPkg != null && currentPkg != packageName) {
-                    cancelReintervention(currentPkg)
-                    val repository = (application as RonesecApplication).repository
-                    repository.recordExit(currentPkg, Instant.now())
-                    currentForegroundPackage = null
-                }
+                eventChannel.trySend(ProtectionEvent.ScreenOff)
             }
         }
     }
 
     override fun onCreate() {
         super.onCreate()
-        overlayController = OverlayController(this)
+        val repository = (application as RonesecApplication).repository
+
+        audioGuard = AudioGuard(this)
+        overlayHost = OverlayHost(this)
+        boundaryScheduler = BoundaryScheduler(scope) { sessionId, pkg, type ->
+            eventChannel.trySend(ProtectionEvent.TemporalBoundaryReached(sessionId, pkg, type))
+        }
+
+        coordinator = InterventionCoordinator(
+            appLabelResolver = { getAppLabel(it) },
+            savedTimeTextResolver = { null },
+            onEffect = { executeEffect(it) }
+        )
+
+        foregroundTracker = ForegroundTracker(packageName) { pkg, time ->
+            eventChannel.trySend(ProtectionEvent.ForegroundChanged(pkg, time))
+        }
 
         try {
             ContextCompat.registerReceiver(
@@ -69,12 +78,24 @@ class AppMonitorService : AccessibilityService() {
                 IntentFilter(Intent.ACTION_SCREEN_OFF),
                 ContextCompat.RECEIVER_NOT_EXPORTED
             )
-        } catch (e: Exception) {
-            // Fallback for devices where receiver flag is not strictly required
+        } catch (_: Exception) {
             registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
         }
 
-        val repository = (application as RonesecApplication).repository
+        // Single consumer for the event channel
+        scope.launch {
+            for (event in eventChannel) {
+                coordinator.processEvent(event)
+            }
+        }
+
+        // Collect repository state and feed snapshots into coordinator
+        scope.launch {
+            repository.runtimeState.collectLatest { state ->
+                eventChannel.trySend(ProtectionEvent.PolicySnapshotUpdated(state))
+            }
+        }
+
         scope.launch {
             repository.getSettingFlow("app_theme").collectLatest { themeId ->
                 currentTheme = AppTheme.fromId(themeId)
@@ -89,260 +110,130 @@ class AppMonitorService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        // Ensure Foreground Service is also running for persistent OOM priority
         FocusForegroundService.start(this)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null) return
+        foregroundTracker.onAccessibilityEvent(event)
+    }
 
-        val eventType = event.eventType
-        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED
-        ) {
-            return
-        }
-
-        val rawPackage = event.packageName?.toString() ?: return
-
-        // Ignore our own app and system overlays
-        if (rawPackage == packageName ||
-            rawPackage == "com.android.systemui" ||
-            rawPackage.contains("inputmethod")
-        ) {
-            return
-        }
-
-        if (rawPackage == currentForegroundPackage) {
-            return
-        }
-
-        val previousPackage = currentForegroundPackage
-        currentForegroundPackage = rawPackage
-        val now = Instant.now()
-
+    private fun executeEffect(effect: ProtectionEffect) {
         val repository = (application as RonesecApplication).repository
+        val appStrings = resolveAppStrings(currentLanguage)
 
-        // If switching away from a protected app or to another app, cancel re-intervention timer & record exit
-        if (previousPackage != null && previousPackage != rawPackage && previousPackage != packageName) {
-            cancelReintervention(previousPackage)
-            repository.recordExit(previousPackage, now)
-        }
-
-        val state = repository.getHotRuntimeState()
-        scope.launch {
-            val target = state.targets[rawPackage]
-            val count = if (target != null && target.enabled && target.intervention.exponentialGrowthEnabled) {
-                withContext(Dispatchers.IO) {
-                    repository.getRecentAttemptsCount(rawPackage, target.intervention.growthPeriodMinutes)
-                }
-            } else {
-                0
+        when (effect) {
+            is ProtectionEffect.ShowInterventionOverlay -> {
+                overlayHost.showIntervention(
+                    sessionId = effect.sessionId,
+                    targetAppName = effect.appLabel,
+                    config = effect.config,
+                    savedTimeText = effect.savedTimeText,
+                    theme = currentTheme,
+                    appStrings = appStrings,
+                    onEmergencyAccess = { durationMs, disableTarget ->
+                        eventChannel.trySend(
+                            ProtectionEvent.UserAction(
+                                effect.sessionId,
+                                effect.targetPackage,
+                                UserProtectionAction.EmergencyAccess(durationMs, disableTarget)
+                            )
+                        )
+                    },
+                    onClose = {
+                        eventChannel.trySend(
+                            ProtectionEvent.UserAction(
+                                effect.sessionId,
+                                effect.targetPackage,
+                                UserProtectionAction.Close
+                            )
+                        )
+                    },
+                    onContinue = {
+                        eventChannel.trySend(
+                            ProtectionEvent.UserAction(
+                                effect.sessionId,
+                                effect.targetPackage,
+                                UserProtectionAction.Continue
+                            )
+                        )
+                    }
+                )
             }
 
-            if (currentForegroundPackage != rawPackage) {
-                return@launch
+            is ProtectionEffect.ShowBlockOverlay -> {
+                overlayHost.showBlock(
+                    sessionId = effect.sessionId,
+                    sessionName = effect.sessionName,
+                    until = effect.until,
+                    theme = currentTheme,
+                    appStrings = appStrings,
+                    onClose = {
+                        eventChannel.trySend(
+                            ProtectionEvent.UserAction(
+                                effect.sessionId,
+                                effect.targetPackage,
+                                UserProtectionAction.Close
+                            )
+                        )
+                    }
+                )
             }
 
-            val decision = ruleEngine.evaluate(rawPackage, now, state, recentAttemptsCount = count)
+            is ProtectionEffect.DismissOverlay -> overlayHost.dismiss(effect.sessionId)
+            is ProtectionEffect.AcquireAudio -> audioGuard.acquire(effect.sessionId)
+            is ProtectionEffect.ReleaseAudio -> audioGuard.release(effect.sessionId)
+            is ProtectionEffect.ScheduleBoundary -> boundaryScheduler.schedule(
+                effect.sessionId,
+                effect.targetPackage,
+                effect.boundaryType,
+                effect.delayMs
+            )
+            is ProtectionEffect.CancelBoundary -> boundaryScheduler.cancel(effect.sessionId)
+            is ProtectionEffect.PerformGlobalHome -> performGlobalAction(GLOBAL_ACTION_HOME)
 
-            when (decision) {
-                is Decision.Allow -> {
-                    if (overlayController.isShowing) {
-                        overlayController.dismiss()
-                    }
-                    // If returning to a protected target app within grace, re-grant access & reschedule reintervention
-                    if (target != null && target.enabled) {
-                        scope.launch(Dispatchers.IO) {
-                            repository.grantAccess(rawPackage, target.intervention.reinterventionMs)
-                        }
-                        scheduleReintervention(rawPackage, target.intervention)
-                    }
-                }
-
-                is Decision.Block -> {
-                    val appLabel = getAppLabel(rawPackage)
-                    overlayController.showBlock(
-                        sessionName = appLabel,
-                        until = decision.until,
-                        theme = currentTheme,
-                        appStrings = currentStrings,
-                        onClose = {
-                            performGlobalAction(GLOBAL_ACTION_HOME)
-                            scope.launch(Dispatchers.IO) {
-                                repository.recordAttempt(rawPackage, AttemptOutcome.BLOCKED, now)
-                            }
-                            currentForegroundPackage = null
-                        }
-                    )
-                }
-
-                is Decision.Intervention -> {
-                    val appLabel = getAppLabel(rawPackage)
-                    val savedText = getSavedTimeTextIfEnabled(repository)
-
-                    overlayController.showIntervention(
-                        targetAppName = appLabel,
-                        config = decision.config,
-                        savedTimeText = savedText,
-                        theme = currentTheme,
-                        appStrings = currentStrings,
-                        onEmergencyAccess = { durationMs, disableTarget ->
-                            scope.launch(Dispatchers.IO) {
-                                if (disableTarget) {
-                                    repository.updateTargetEnabled(rawPackage, false)
-                                    repository.grantAccess(rawPackage, null)
-                                } else {
-                                    val grantDuration = durationMs ?: target?.intervention?.reinterventionMs
-                                    repository.grantAccess(rawPackage, grantDuration)
-                                }
-                                repository.recordAttempt(rawPackage, AttemptOutcome.CONTINUED, now)
-                            }
-                            if (durationMs != null) {
-                                cancelReintervention(rawPackage)
-                            } else if (!disableTarget) {
-                                scheduleReintervention(rawPackage, decision.config, 1)
-                            }
-                        },
-                        onClose = {
-                            performGlobalAction(GLOBAL_ACTION_HOME)
-                            cancelReintervention(rawPackage)
-                            scope.launch(Dispatchers.IO) {
-                                repository.recordAttempt(rawPackage, AttemptOutcome.ABANDONED, now)
-                                repository.revokeAccess(rawPackage)
-                            }
-                            repository.recordExit(rawPackage, now)
-                            currentForegroundPackage = null
-                        },
-                        onContinue = {
-                            scope.launch(Dispatchers.IO) {
-                                repository.grantAccess(rawPackage, decision.config.reinterventionMs)
-                                repository.recordAttempt(rawPackage, AttemptOutcome.CONTINUED, now)
-                            }
-                            scheduleReintervention(rawPackage, decision.config)
-                        }
-                    )
-                }
+            is ProtectionEffect.PersistAttempt -> scope.launch(Dispatchers.IO) {
+                repository.recordAttempt(effect.targetPackage, effect.outcome, effect.timestamp)
             }
-        }
-    }
-
-    private suspend fun getSavedTimeTextIfEnabled(repository: RonesecRepository): String? {
-        val showStatsSetting = withContext(Dispatchers.IO) {
-            repository.getSetting("show_saved_time_stats")
-        }
-        val showStats = showStatsSetting == null || showStatsSetting == "true"
-        if (!showStats) return null
-
-        val allAvoided = withContext(Dispatchers.IO) { repository.getAvoidedCountAllTime() }
-        val sessionMinutesSetting = withContext(Dispatchers.IO) { repository.getSetting("session_minutes") }
-        val sessionMins = sessionMinutesSetting?.toIntOrNull() ?: 7
-        val totalSavedMinutes = allAvoided.toLong() * sessionMins
-        return if (totalSavedMinutes > 0) {
-            val formatted = currentStrings.formatSavedTime(totalSavedMinutes)
-            currentStrings.savedTimeOverlay(formatted)
-        } else {
-            null
-        }
-    }
-
-    private fun scheduleReintervention(targetPackage: String, config: InterventionConfig, cycle: Int = 1) {
-        reinterventionJob?.cancel()
-        val delayMs = config.reinterventionMs ?: return
-        if (delayMs <= 0) return
-
-        reinterventionJob = scope.launch {
-            delay(delayMs)
-            if (currentForegroundPackage == targetPackage && !overlayController.isShowing) {
-                triggerReintervention(targetPackage, config, cycle)
+            is ProtectionEffect.PersistGrant -> scope.launch(Dispatchers.IO) {
+                repository.grantAccess(effect.targetPackage, effect.durationMs, effect.sessionId)
             }
-        }
-    }
-
-    private fun cancelReintervention(targetPackage: String? = null) {
-        reinterventionJob?.cancel()
-        reinterventionJob = null
-    }
-
-    private fun triggerReintervention(targetPackage: String, config: InterventionConfig, cycle: Int) {
-        val appLabel = getAppLabel(targetPackage)
-        val totalSpentMs = (config.reinterventionMs ?: 0L) * cycle
-        val timeStr = currentStrings.formatDuration(totalSpentMs)
-        val phrase = currentStrings.reinterventionPrompt(appLabel, timeStr)
-
-        // If exponential growth is enabled, scale duration for this re-intervention:
-        val nextDurationMs = if (config.exponentialGrowthEnabled) {
-            (config.durationMs * (1.0 + config.growthPercent / 100.0))
-                .toLong()
-                .coerceIn(1_000L, 300_000L)
-        } else {
-            config.durationMs
-        }
-        val reinterventionConfig = config.copy(phrase = phrase, durationMs = nextDurationMs)
-
-        val repository = (application as RonesecApplication).repository
-        scope.launch {
-            val savedText = getSavedTimeTextIfEnabled(repository)
-
-            overlayController.showIntervention(
-                targetAppName = appLabel,
-                config = reinterventionConfig,
-                savedTimeText = savedText,
-                theme = currentTheme,
-                appStrings = currentStrings,
-                onEmergencyAccess = { durationMs, disableTarget ->
-                    val emergencyTime = Instant.now()
-                    scope.launch(Dispatchers.IO) {
-                        if (disableTarget) {
-                            repository.updateTargetEnabled(targetPackage, false)
-                            repository.grantAccess(targetPackage, null)
-                        } else {
-                            val grantDuration = durationMs ?: config.reinterventionMs
-                            repository.grantAccess(targetPackage, grantDuration)
-                        }
-                        repository.recordAttempt(targetPackage, AttemptOutcome.CONTINUED, emergencyTime)
-                    }
-                    if (durationMs != null) {
-                        cancelReintervention(targetPackage)
-                    } else if (!disableTarget) {
-                        scheduleReintervention(targetPackage, config, 1)
-                    }
-                },
-                onClose = {
-                    performGlobalAction(GLOBAL_ACTION_HOME)
-                    cancelReintervention(targetPackage)
-                    scope.launch(Dispatchers.IO) {
-                        repository.recordAttempt(targetPackage, AttemptOutcome.ABANDONED, Instant.now())
-                        repository.revokeAccess(targetPackage)
-                    }
-                    repository.recordExit(targetPackage, Instant.now())
-                    currentForegroundPackage = null
-                },
-                onContinue = {
-                    val continueTime = Instant.now()
-                    scope.launch(Dispatchers.IO) {
-                        repository.grantAccess(targetPackage, config.reinterventionMs)
-                        repository.recordAttempt(targetPackage, AttemptOutcome.CONTINUED, continueTime)
-                    }
-                    scheduleReintervention(targetPackage, reinterventionConfig, cycle + 1)
-                }
+            is ProtectionEffect.PersistRevoke -> scope.launch(Dispatchers.IO) {
+                repository.revokeAccess(effect.targetPackage, effect.sessionId)
+            }
+            is ProtectionEffect.PersistTargetDisabled -> scope.launch(Dispatchers.IO) {
+                repository.updateTargetEnabled(effect.targetPackage, false)
+                repository.revokeAccess(effect.targetPackage)
+            }
+            is ProtectionEffect.UpdateAdaptiveSubscription -> updateAdaptiveSubscription(
+                effect.targetPackages,
+                effect.isTargetActive
             )
         }
     }
 
+    private fun updateAdaptiveSubscription(targetPackages: Set<String>, isTargetActive: Boolean) {
+        try {
+            val info = serviceInfo ?: return
+            if (isTargetActive || targetPackages.isEmpty()) {
+                info.packageNames = null
+            } else {
+                info.packageNames = targetPackages.toTypedArray()
+            }
+            serviceInfo = info
+        } catch (_: Exception) {}
+    }
+
     override fun onInterrupt() {
-        cancelReintervention()
-        overlayController.dismiss()
+        eventChannel.trySend(ProtectionEvent.ServiceInterrupted)
     }
 
     override fun onDestroy() {
         try {
             unregisterReceiver(screenOffReceiver)
-        } catch (e: Exception) {
-            // Ignore if not registered
-        }
-        cancelReintervention()
-        overlayController.dismiss()
+        } catch (_: Exception) {}
+        eventChannel.close()
+        overlayHost.dismiss()
+        audioGuard.release(-1L)
         scope.cancel()
         super.onDestroy()
     }
@@ -351,7 +242,7 @@ class AppMonitorService : AccessibilityService() {
         return try {
             val appInfo = packageManager.getApplicationInfo(pkg, 0)
             packageManager.getApplicationLabel(appInfo).toString()
-        } catch (e: PackageManager.NameNotFoundException) {
+        } catch (_: PackageManager.NameNotFoundException) {
             pkg.substringAfterLast('.')
         }
     }

@@ -86,21 +86,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val todayAttempts: StateFlow<List<OpenAttempt>> = repository.getRecentAttemptsFlow(todayMidnight)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val allAttempts: StateFlow<List<OpenAttempt>> = repository.getAllAttemptsFlow()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allTimeAvoidedCount: StateFlow<Int> = repository.getAllAvoidedCountFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val sessionMinutes: StateFlow<Int> = repository.getSettingFlow("session_minutes")
         .map { it?.toIntOrNull() ?: 7 }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 7)
 
-    val todayStats: StateFlow<TodayStats> = combine(todayAttempts, allAttempts, sessionMinutes) { todayList, allList, minsPerSession ->
+    val todayStats: StateFlow<TodayStats> = combine(todayAttempts, allTimeAvoidedCount, sessionMinutes) { todayList, allAvoided, minsPerSession ->
         val total = todayList.size
         val continued = todayList.count { it.outcome == AttemptOutcome.CONTINUED }
         val closed = todayList.count { it.outcome == AttemptOutcome.ABANDONED || it.outcome == AttemptOutcome.BLOCKED }
         val avoided = if (total > 0) ((closed.toFloat() / total) * 100).toInt() else 0
         val todayMinutes = closed.toLong() * minsPerSession
-
-        val allAvoided = allList.count { it.outcome == AttemptOutcome.ABANDONED || it.outcome == AttemptOutcome.BLOCKED }
         val allMinutes = allAvoided.toLong() * minsPerSession
 
         TodayStats(

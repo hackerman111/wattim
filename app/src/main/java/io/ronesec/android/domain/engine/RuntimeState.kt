@@ -9,6 +9,7 @@ import java.time.Instant
 data class RuntimeState(
     val targets: Map<String, TargetApp> = emptyMap(),
     val activeGrants: Map<String, AccessGrant> = emptyMap(),
+    val activeSessionPermits: Map<String, Long> = emptyMap(),
     val lastExitTimes: Map<String, Instant> = emptyMap(),
     val activeBlockSessions: List<BlockSession> = emptyList(),
     val blockSchedules: List<BlockSchedule> = emptyList(),

@@ -8,14 +8,7 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
-import android.media.AudioManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -28,7 +21,6 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import androidx.compose.runtime.CompositionLocalProvider
 import io.ronesec.android.domain.model.InterventionConfig
 import io.ronesec.android.ui.i18n.AppLanguage
 import io.ronesec.android.ui.i18n.AppStrings
@@ -61,143 +53,19 @@ class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner, ViewModel
     }
 }
 
-class OverlayController(private val context: Context) {
-
+class OverlayHost(private val context: Context) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var overlayView: View? = null
     private var lifecycleOwner: OverlayLifecycleOwner? = null
-    private var audioFocusRequest: AudioFocusRequest? = null
-    private var pauseJob: Job? = null
-    private var savedVolume: Int? = null
-    private var isMuted = false
+    private var activeSessionId: Long? = null
 
     val isShowing: Boolean
         get() = overlayView != null
 
-    private fun silenceAudio() {
-        try {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            if (!isMuted) {
-                val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-                savedVolume = currentVol
-                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0)
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0)
-                isMuted = true
-            }
-        } catch (e: Exception) {
-            // Volume adjustment fallback
-        }
-    }
-
-    private fun restoreAudio() {
-        try {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            if (isMuted) {
-                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
-                savedVolume?.let { vol ->
-                    if (vol > 0) {
-                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
-                    }
-                }
-                isMuted = false
-                savedVolume = null
-            }
-        } catch (e: Exception) {
-            // Volume restore fallback
-        }
-    }
-
-    private fun dispatchMediaPause() {
-        try {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE))
-            audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE))
-        } catch (e: Exception) {
-            // Ignore
-        }
-    }
-
-    private fun acquireAudioFocus() {
-        silenceAudio()
-        dispatchMediaPause()
-
-        // Periodically dispatch pause key during the first 2.5s to catch TikTok when its ExoPlayer asynchronously loads the first video
-        pauseJob?.cancel()
-        pauseJob = CoroutineScope(Dispatchers.Main).launch {
-            delay(300)
-            if (isShowing) {
-                silenceAudio()
-                dispatchMediaPause()
-            }
-            delay(500)
-            if (isShowing) {
-                silenceAudio()
-                dispatchMediaPause()
-            }
-            delay(1000)
-            if (isShowing) {
-                silenceAudio()
-                dispatchMediaPause()
-            }
-        }
-
-        try {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val playbackAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build()
-                val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-                    .setAudioAttributes(playbackAttributes)
-                    .setAcceptsDelayedFocusGain(false)
-                    .setWillPauseWhenDucked(true)
-                    .setOnAudioFocusChangeListener { focusChange ->
-                        if (isShowing) {
-                            silenceAudio()
-                            dispatchMediaPause()
-                        }
-                    }
-                    .build()
-                audioFocusRequest = request
-                audioManager.requestAudioFocus(request)
-            } else {
-                @Suppress("DEPRECATION")
-                audioManager.requestAudioFocus(
-                    { focusChange ->
-                        if (isShowing) {
-                            silenceAudio()
-                            dispatchMediaPause()
-                        }
-                    },
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
-                )
-            }
-        } catch (e: Exception) {
-            // Audio focus fallback
-        }
-    }
-
-    private fun abandonAudioFocus() {
-        pauseJob?.cancel()
-        pauseJob = null
-        try {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
-                audioFocusRequest = null
-            } else {
-                @Suppress("DEPRECATION")
-                audioManager.abandonAudioFocus(null)
-            }
-        } catch (e: Exception) {
-            // Ignore
-        }
-        restoreAudio()
-    }
+    fun isShowingSession(sessionId: Long): Boolean = isShowing && activeSessionId == sessionId
 
     fun showIntervention(
+        sessionId: Long,
         targetAppName: String,
         config: InterventionConfig,
         savedTimeText: String? = null,
@@ -207,8 +75,12 @@ class OverlayController(private val context: Context) {
         onClose: () -> Unit,
         onContinue: () -> Unit
     ) {
+        if (activeSessionId == sessionId && isShowing) {
+            // Already showing for this session
+            return
+        }
         dismiss()
-        acquireAudioFocus()
+        activeSessionId = sessionId
 
         val owner = OverlayLifecycleOwner()
         lifecycleOwner = owner
@@ -228,7 +100,6 @@ class OverlayController(private val context: Context) {
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             )
 
-            // Intercept Back key to safely close overlay and return to Home
             isFocusable = true
             isFocusableInTouchMode = true
             requestFocus()
@@ -250,20 +121,9 @@ class OverlayController(private val context: Context) {
                             targetAppName = targetAppName,
                             config = config,
                             savedTimeText = savedTimeText,
-                            onEmergencyAccess = if (onEmergencyAccess != null) {
-                                { durationMs, disableTarget ->
-                                    dismiss()
-                                    onEmergencyAccess(durationMs, disableTarget)
-                                }
-                            } else null,
-                            onClose = {
-                                dismiss()
-                                onClose()
-                            },
-                            onContinue = {
-                                dismiss()
-                                onContinue()
-                            }
+                            onEmergencyAccess = onEmergencyAccess,
+                            onClose = onClose,
+                            onContinue = onContinue
                         )
                     }
                 }
@@ -276,14 +136,18 @@ class OverlayController(private val context: Context) {
     }
 
     fun showBlock(
+        sessionId: Long,
         sessionName: String,
         until: Instant?,
         theme: AppTheme = AppTheme.NORD,
         appStrings: AppStrings = resolveAppStrings(AppLanguage.SYSTEM),
         onClose: () -> Unit
     ) {
+        if (activeSessionId == sessionId && isShowing) {
+            return
+        }
         dismiss()
-        acquireAudioFocus()
+        activeSessionId = sessionId
 
         val owner = OverlayLifecycleOwner()
         lifecycleOwner = owner
@@ -323,10 +187,7 @@ class OverlayController(private val context: Context) {
                         BlockOverlayContent(
                             sessionName = sessionName,
                             until = until,
-                            onClose = {
-                                dismiss()
-                                onClose()
-                            }
+                            onClose = onClose
                         )
                     }
                 }
@@ -338,14 +199,14 @@ class OverlayController(private val context: Context) {
         windowManager.addView(composeView, params)
     }
 
-    fun dismiss() {
-        abandonAudioFocus()
+    fun dismiss(sessionId: Long? = null) {
+        if (sessionId != null && activeSessionId != null && activeSessionId != sessionId) {
+            return
+        }
         overlayView?.let { view ->
             try {
                 windowManager.removeView(view)
-            } catch (e: Exception) {
-                // View already detached
-            }
+            } catch (_: Exception) {}
             overlayView = null
         }
         lifecycleOwner?.let { owner ->
@@ -354,6 +215,7 @@ class OverlayController(private val context: Context) {
             owner.destroy()
             lifecycleOwner = null
         }
+        activeSessionId = null
     }
 
     private fun createLayoutParams(): WindowManager.LayoutParams {
