@@ -5,6 +5,7 @@ import java.time.Instant
 
 class ForegroundTracker(
     private val ownPackageName: String,
+    private val isAdditionalIgnoredPackage: (String) -> Boolean = { false },
     private val onForegroundConfirmed: (packageName: String, timestamp: Instant) -> Unit
 ) {
     private var confirmedPackage: String? = null
@@ -42,7 +43,8 @@ class ForegroundTracker(
                 pkg == "com.android.systemui" ||
                 pkg == "android" ||
                 pkg.contains("inputmethod") ||
-                pkg.contains("keyboard")
+                pkg.contains("keyboard") ||
+                isAdditionalIgnoredPackage(pkg)
     }
 
     fun reset() {

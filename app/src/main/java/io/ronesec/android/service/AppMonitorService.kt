@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.content.ContextCompat
 import io.ronesec.android.RonesecApplication
@@ -71,7 +72,10 @@ class AppMonitorService : AccessibilityService() {
             onEffect = { executeEffect(it) }
         )
 
-        foregroundTracker = ForegroundTracker(packageName) { pkg, time ->
+        foregroundTracker = ForegroundTracker(
+            ownPackageName = packageName,
+            isAdditionalIgnoredPackage = { pkg -> pkg == getCurrentInputMethodPackage() }
+        ) { pkg, time ->
             eventChannel.trySend(ProtectionEvent.ForegroundChanged(pkg, time))
         }
 
@@ -88,14 +92,12 @@ class AppMonitorService : AccessibilityService() {
             registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
         }
 
-        // Single consumer for the event channel
         scope.launch {
             for (event in eventChannel) {
                 coordinator.processEvent(event)
             }
         }
 
-        // Collect repository state and feed snapshots into coordinator
         scope.launch {
             repository.runtimeState.collectLatest { state ->
                 eventChannel.trySend(ProtectionEvent.PolicySnapshotUpdated(state))
@@ -230,6 +232,15 @@ class AppMonitorService : AccessibilityService() {
         audioGuard.release(SessionId.NONE)
         scope.cancel()
         super.onDestroy()
+    }
+
+    private fun getCurrentInputMethodPackage(): String? {
+        val setting = try {
+            Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+        } catch (_: Exception) {
+            null
+        }
+        return setting?.substringBefore('/')?.takeIf { it.isNotBlank() }
     }
 
     private fun getAppLabel(pkg: String): String {
