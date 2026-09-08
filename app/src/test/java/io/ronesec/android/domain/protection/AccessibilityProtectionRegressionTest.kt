@@ -73,7 +73,7 @@ class AccessibilityProtectionRegressionTest {
         // Stale async result from Session 1 arrives
         coordinator.processEvent(
             ProtectionEvent.UserAction(
-                sessionId = 1L,
+                sessionId = SessionId(1L),
                 targetPackage = testPackage,
                 action = UserProtectionAction.Continue,
                 timestamp = baseTime.plusSeconds(25)
@@ -81,7 +81,7 @@ class AccessibilityProtectionRegressionTest {
         )
 
         // Verify no effects emitted for stale session 1 action
-        assertTrue(effects.none { it is ProtectionEffect.DismissOverlay && it.sessionId == 1L })
+        assertTrue(effects.none { it is ProtectionEffect.DismissOverlay && it.sessionId == SessionId(1L) })
         assertTrue(effects.none { it is ProtectionEffect.PersistGrant })
         assertEquals(2L, coordinator.getCurrentSessionId())
     }
@@ -104,7 +104,7 @@ class AccessibilityProtectionRegressionTest {
         // User taps exit/close
         coordinator.processEvent(
             ProtectionEvent.UserAction(
-                sessionId = 1L,
+                sessionId = SessionId(1L),
                 targetPackage = testPackage,
                 action = UserProtectionAction.Close,
                 timestamp = baseTime.plusSeconds(2)
@@ -124,8 +124,8 @@ class AccessibilityProtectionRegressionTest {
         // Launcher is now in foreground
         coordinator.processEvent(ProtectionEvent.ForegroundChanged(launcherPackage, baseTime.plusMillis(2500)))
         // Confirms exit
-        assertTrue(effects.any { it is ProtectionEffect.DismissOverlay && it.sessionId == 1L })
-        assertTrue(effects.any { it is ProtectionEffect.ReleaseAudio && it.sessionId == 1L })
+        assertTrue(effects.any { it is ProtectionEffect.DismissOverlay && it.sessionId == SessionId(1L) })
+        assertTrue(effects.any { it is ProtectionEffect.ReleaseAudio && it.sessionId == SessionId(1L) })
         assertNull(coordinator.getActiveTargetPackage())
     }
 
@@ -139,7 +139,7 @@ class AccessibilityProtectionRegressionTest {
         coordinator.processEvent(ProtectionEvent.PolicySnapshotUpdated(state))
 
         coordinator.processEvent(ProtectionEvent.ForegroundChanged(testPackage, baseTime))
-        val sessionId = coordinator.getCurrentSessionId()
+        val sessionId = coordinator.getCurrentSession()
 
         // User grants 15 minutes emergency access
         coordinator.processEvent(
@@ -181,7 +181,7 @@ class AccessibilityProtectionRegressionTest {
         coordinator.processEvent(ProtectionEvent.PolicySnapshotUpdated(state))
 
         coordinator.processEvent(ProtectionEvent.ForegroundChanged(testPackage, baseTime))
-        val sessionId = coordinator.getCurrentSessionId()
+        val sessionId = coordinator.getCurrentSession()
 
         // User finishes breathing and continues
         coordinator.processEvent(
@@ -196,7 +196,7 @@ class AccessibilityProtectionRegressionTest {
         // User turns on global pause for 30 minutes
         val pausedState = state.copy(
             protectionPausedUntil = baseTime.plusSeconds(1800).toEpochMilli(),
-            activeSessionPermits = mapOf(testPackage to sessionId)
+            activeSessionPermits = mapOf(testPackage to sessionId.value)
         )
         coordinator.processEvent(ProtectionEvent.PolicySnapshotUpdated(pausedState))
 
@@ -382,7 +382,7 @@ class AccessibilityProtectionRegressionTest {
         coordinator.processEvent(ProtectionEvent.PolicySnapshotUpdated(state))
 
         coordinator.processEvent(ProtectionEvent.ForegroundChanged(testPackage, baseTime))
-        val sessionId = coordinator.getCurrentSessionId()
+        val sessionId = coordinator.getCurrentSession()
 
         effects.clear()
 
@@ -418,7 +418,7 @@ class AccessibilityProtectionRegressionTest {
 
         assertEquals(2L, coordinator.getCurrentSessionId())
         assertEquals(testPackage, coordinator.getActiveTargetPackage())
-        assertTrue(effects.any { it is ProtectionEffect.ShowInterventionOverlay && it.sessionId == 2L })
+        assertTrue(effects.any { it is ProtectionEffect.ShowInterventionOverlay && it.sessionId == SessionId(2L) })
     }
 
     // Scenario 12: Policy not ready when target event arrives
@@ -441,6 +441,6 @@ class AccessibilityProtectionRegressionTest {
         // Now queued event should be evaluated immediately
         assertEquals(1L, coordinator.getCurrentSessionId())
         assertEquals(testPackage, coordinator.getActiveTargetPackage())
-        assertTrue(effects.any { it is ProtectionEffect.ShowInterventionOverlay && it.sessionId == 1L })
+        assertTrue(effects.any { it is ProtectionEffect.ShowInterventionOverlay && it.sessionId == SessionId(1L) })
     }
 }

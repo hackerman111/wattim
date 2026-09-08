@@ -23,23 +23,28 @@ sealed interface ProtectionEvent {
     ) : ProtectionEvent
 
     data class TemporalBoundaryReached(
-        val sessionId: Long,
+        val sessionId: SessionId,
         val targetPackage: String,
         val boundaryType: BoundaryType,
         val timestamp: Instant = Instant.now()
     ) : ProtectionEvent
 
     data class UserAction(
-        val sessionId: Long,
+        val sessionId: SessionId,
         val targetPackage: String,
         val action: UserProtectionAction,
         val timestamp: Instant = Instant.now()
     ) : ProtectionEvent
 
     data class PolicySnapshotUpdated(
-        val snapshot: RuntimeState
+        val snapshot: RuntimeState,
+        val revision: Long = 0L
     ) : ProtectionEvent
 
     data object ScreenOff : ProtectionEvent
+    data object ScreenOn : ProtectionEvent
+    data object ServiceConnected : ProtectionEvent
     data object ServiceInterrupted : ProtectionEvent
+    data object ServiceDestroyed : ProtectionEvent
+    data object TimeChanged : ProtectionEvent
 }

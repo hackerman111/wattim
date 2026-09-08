@@ -6,7 +6,7 @@ import java.time.Instant
 
 sealed interface ProtectionEffect {
     data class ShowInterventionOverlay(
-        val sessionId: Long,
+        val sessionId: SessionId,
         val targetPackage: String,
         val appLabel: String,
         val config: InterventionConfig,
@@ -14,27 +14,27 @@ sealed interface ProtectionEffect {
     ) : ProtectionEffect
 
     data class ShowBlockOverlay(
-        val sessionId: Long,
+        val sessionId: SessionId,
         val targetPackage: String,
         val sessionName: String,
         val until: Instant?
     ) : ProtectionEffect
 
-    data class DismissOverlay(val sessionId: Long) : ProtectionEffect
+    data class DismissOverlay(val sessionId: SessionId) : ProtectionEffect
 
-    data class AcquireAudio(val sessionId: Long) : ProtectionEffect
-    data class ReleaseAudio(val sessionId: Long) : ProtectionEffect
+    data class AcquireAudio(val sessionId: SessionId) : ProtectionEffect
+    data class ReleaseAudio(val sessionId: SessionId) : ProtectionEffect
 
     data class ScheduleBoundary(
-        val sessionId: Long,
+        val sessionId: SessionId,
         val targetPackage: String,
         val boundaryType: BoundaryType,
         val delayMs: Long
     ) : ProtectionEffect
 
-    data class CancelBoundary(val sessionId: Long) : ProtectionEffect
+    data class CancelBoundary(val sessionId: SessionId) : ProtectionEffect
 
-    data class PerformGlobalHome(val sessionId: Long) : ProtectionEffect
+    data class PerformGlobalHome(val sessionId: SessionId) : ProtectionEffect
 
     data class PersistAttempt(
         val targetPackage: String,
@@ -45,12 +45,12 @@ sealed interface ProtectionEffect {
     data class PersistGrant(
         val targetPackage: String,
         val durationMs: Long?,
-        val sessionId: Long
+        val sessionId: SessionId
     ) : ProtectionEffect
 
     data class PersistRevoke(
         val targetPackage: String,
-        val sessionId: Long
+        val sessionId: SessionId
     ) : ProtectionEffect
 
     data class PersistTargetDisabled(

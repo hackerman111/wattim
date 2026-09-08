@@ -16,6 +16,7 @@ import io.ronesec.android.domain.protection.ForegroundTracker
 import io.ronesec.android.domain.protection.InterventionCoordinator
 import io.ronesec.android.domain.protection.ProtectionEffect
 import io.ronesec.android.domain.protection.ProtectionEvent
+import io.ronesec.android.domain.protection.SessionId
 import io.ronesec.android.domain.protection.UserProtectionAction
 import io.ronesec.android.overlay.OverlayHost
 import io.ronesec.android.ui.i18n.AppLanguage
@@ -58,7 +59,7 @@ class AppMonitorService : AccessibilityService() {
         audioGuard = AudioGuard(this)
         overlayHost = OverlayHost(this)
         boundaryScheduler = BoundaryScheduler(scope) { sessionId, pkg, type ->
-            eventChannel.trySend(ProtectionEvent.TemporalBoundaryReached(sessionId, pkg, type))
+            eventChannel.trySend(ProtectionEvent.TemporalBoundaryReached(SessionId(sessionId), pkg, type))
         }
 
         coordinator = InterventionCoordinator(
@@ -124,7 +125,7 @@ class AppMonitorService : AccessibilityService() {
         when (effect) {
             is ProtectionEffect.ShowInterventionOverlay -> {
                 overlayHost.showIntervention(
-                    sessionId = effect.sessionId,
+                    sessionId = effect.sessionId.value,
                     targetAppName = effect.appLabel,
                     config = effect.config,
                     savedTimeText = effect.savedTimeText,
@@ -162,7 +163,7 @@ class AppMonitorService : AccessibilityService() {
 
             is ProtectionEffect.ShowBlockOverlay -> {
                 overlayHost.showBlock(
-                    sessionId = effect.sessionId,
+                    sessionId = effect.sessionId.value,
                     sessionName = effect.sessionName,
                     until = effect.until,
                     theme = currentTheme,
@@ -179,26 +180,26 @@ class AppMonitorService : AccessibilityService() {
                 )
             }
 
-            is ProtectionEffect.DismissOverlay -> overlayHost.dismiss(effect.sessionId)
-            is ProtectionEffect.AcquireAudio -> audioGuard.acquire(effect.sessionId)
-            is ProtectionEffect.ReleaseAudio -> audioGuard.release(effect.sessionId)
+            is ProtectionEffect.DismissOverlay -> overlayHost.dismiss(effect.sessionId.value)
+            is ProtectionEffect.AcquireAudio -> audioGuard.acquire(effect.sessionId.value)
+            is ProtectionEffect.ReleaseAudio -> audioGuard.release(effect.sessionId.value)
             is ProtectionEffect.ScheduleBoundary -> boundaryScheduler.schedule(
-                effect.sessionId,
+                effect.sessionId.value,
                 effect.targetPackage,
                 effect.boundaryType,
                 effect.delayMs
             )
-            is ProtectionEffect.CancelBoundary -> boundaryScheduler.cancel(effect.sessionId)
+            is ProtectionEffect.CancelBoundary -> boundaryScheduler.cancel(effect.sessionId.value)
             is ProtectionEffect.PerformGlobalHome -> performGlobalAction(GLOBAL_ACTION_HOME)
 
             is ProtectionEffect.PersistAttempt -> scope.launch(Dispatchers.IO) {
                 repository.recordAttempt(effect.targetPackage, effect.outcome, effect.timestamp)
             }
             is ProtectionEffect.PersistGrant -> scope.launch(Dispatchers.IO) {
-                repository.grantAccess(effect.targetPackage, effect.durationMs, effect.sessionId)
+                repository.grantAccess(effect.targetPackage, effect.durationMs, effect.sessionId.value)
             }
             is ProtectionEffect.PersistRevoke -> scope.launch(Dispatchers.IO) {
-                repository.revokeAccess(effect.targetPackage, effect.sessionId)
+                repository.revokeAccess(effect.targetPackage, effect.sessionId.value)
             }
             is ProtectionEffect.PersistTargetDisabled -> scope.launch(Dispatchers.IO) {
                 repository.updateTargetEnabled(effect.targetPackage, false)

@@ -1,8 +1,10 @@
 package io.ronesec.android.domain.engine
 
+import io.ronesec.android.domain.model.AllowReason
 import io.ronesec.android.domain.model.BlockSchedule
 import io.ronesec.android.domain.model.Decision
 import io.ronesec.android.domain.model.ScheduleType
+import io.ronesec.android.domain.protection.SessionId
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalTime
@@ -17,16 +19,32 @@ class RuleEngine {
         state: RuntimeState,
         zoneId: ZoneId = ZoneId.systemDefault(),
         recentAttemptsCount: Int = 0,
+        sessionId: SessionId?
+    ): Decision = evaluate(
+        packageName = packageName,
+        now = now,
+        state = state,
+        zoneId = zoneId,
+        recentAttemptsCount = recentAttemptsCount,
+        currentSessionId = sessionId?.value
+    )
+
+    fun evaluate(
+        packageName: String,
+        now: Instant,
+        state: RuntimeState,
+        zoneId: ZoneId = ZoneId.systemDefault(),
+        recentAttemptsCount: Int = 0,
         currentSessionId: Long? = null
     ): Decision {
         val pausedUntil = state.protectionPausedUntil
         if (pausedUntil != null && (pausedUntil == -1L || now.toEpochMilli() < pausedUntil)) {
-            return Decision.Allow
+            return Decision.Allow(AllowReason.GLOBAL_PAUSE)
         }
 
-        val target = state.targets[packageName] ?: return Decision.Allow
+        val target = state.targets[packageName] ?: return Decision.Allow(AllowReason.NOT_TARGET)
         if (!target.enabled) {
-            return Decision.Allow
+            return Decision.Allow(AllowReason.TARGET_DISABLED)
         }
 
         // Priority 1: Active manual/quick block sessions
@@ -51,10 +69,12 @@ class RuleEngine {
         // Priority 3: Intervention schedules
         val interventionSchedules = activeSchedulesWithEnd.filter { it.first.scheduleType == ScheduleType.INTERVENTION }
         if (interventionSchedules.isNotEmpty()) {
-            if (isAccessGranted(packageName, now, state, currentSessionId) ||
-                isWithinQuickReturnGrace(packageName, now, state, target.intervention.quickReturnGraceMs)
-            ) {
-                return Decision.Allow
+            val grantReason = getAccessGrantedReason(packageName, now, state, currentSessionId)
+            if (grantReason != null) {
+                return Decision.Allow(grantReason)
+            }
+            if (isWithinQuickReturnGrace(packageName, now, state, target.intervention.quickReturnGraceMs)) {
+                return Decision.Allow(AllowReason.QUICK_RETURN)
             }
 
             val activeSchedule = interventionSchedules.first().first
@@ -76,13 +96,14 @@ class RuleEngine {
         }
 
         // Priority 4: Active unexpired AccessGrant (session permit or timed permit)
-        if (isAccessGranted(packageName, now, state, currentSessionId)) {
-            return Decision.Allow
+        val grantReason = getAccessGrantedReason(packageName, now, state, currentSessionId)
+        if (grantReason != null) {
+            return Decision.Allow(grantReason)
         }
 
         // Priority 5: Quick Return Grace period
         if (isWithinQuickReturnGrace(packageName, now, state, target.intervention.quickReturnGraceMs)) {
-            return Decision.Allow
+            return Decision.Allow(AllowReason.QUICK_RETURN)
         }
 
         // Priority 6: Standard Intervention
@@ -135,22 +156,26 @@ class RuleEngine {
         return results
     }
 
+    private fun getAccessGrantedReason(
+        packageName: String,
+        now: Instant,
+        state: RuntimeState,
+        currentSessionId: Long?
+    ): AllowReason? {
+        if (currentSessionId != null && state.activeSessionPermits[packageName] == currentSessionId) {
+            return AllowReason.ACTIVE_SESSION_PERMIT
+        }
+        val grant = state.activeGrants[packageName] ?: return null
+        val expiresAt = grant.expiresAt
+        return if (expiresAt != null && now < expiresAt) AllowReason.ACTIVE_TIMED_PERMIT else null
+    }
+
     private fun isAccessGranted(
         packageName: String,
         now: Instant,
         state: RuntimeState,
         currentSessionId: Long?
-    ): Boolean {
-        // Session permit in RAM matching current session identity
-        if (currentSessionId != null && state.activeSessionPermits[packageName] == currentSessionId) {
-            return true
-        }
-
-        // Persistent timed permit with explicit expiration
-        val grant = state.activeGrants[packageName] ?: return false
-        val expiresAt = grant.expiresAt
-        return expiresAt != null && now < expiresAt
-    }
+    ): Boolean = getAccessGrantedReason(packageName, now, state, currentSessionId) != null
 
     private fun isWithinQuickReturnGrace(
         packageName: String,
