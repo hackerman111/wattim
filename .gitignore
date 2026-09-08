@@ -10,3 +10,5 @@
 build/
 app/build/
 *.apk
+web-ext-artifacts/
+extension/web-ext-artifacts/

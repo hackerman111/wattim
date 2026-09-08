@@ -5,6 +5,11 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.view.KeyEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 interface AudioGuard {
     fun acquire(sessionId: SessionId): AudioAcquireResult
@@ -12,11 +17,13 @@ interface AudioGuard {
 }
 
 class SystemAudioGuard(
-    context: Context
+    context: Context,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) : AudioGuard {
     private val audioManager: AudioManager? = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
     private var activeSessionId: SessionId? = null
     private var audioFocusRequest: AudioFocusRequest? = null
+    private var pausePulseJob: Job? = null
 
     override fun acquire(sessionId: SessionId): AudioAcquireResult {
         if (activeSessionId == sessionId) return AudioAcquireResult.Success
@@ -30,16 +37,19 @@ class SystemAudioGuard(
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build()
 
-            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
                 .setAudioAttributes(playbackAttributes)
                 .setAcceptsDelayedFocusGain(false)
                 .setWillPauseWhenDucked(true)
-                .setOnAudioFocusChangeListener { /* transient focus held */ }
+                .setOnAudioFocusChangeListener { focusChange ->
+                    handleAudioFocusChange(sessionId, focusChange)
+                }
                 .build()
 
             audioFocusRequest = request
             val result = am.requestAudioFocus(request)
-            dispatchMediaPause()
+
+            startStaggeredPausePulses(sessionId)
 
             if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 AudioAcquireResult.Success
@@ -54,6 +64,8 @@ class SystemAudioGuard(
     override fun release(sessionId: SessionId) {
         if (activeSessionId != null && activeSessionId != sessionId && sessionId != SessionId.NONE) return
         activeSessionId = null
+        pausePulseJob?.cancel()
+        pausePulseJob = null
         val am = audioManager ?: return
         try {
             audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
@@ -63,6 +75,33 @@ class SystemAudioGuard(
 
     fun acquire(sessionId: Long): AudioAcquireResult = acquire(SessionId(sessionId))
     fun release(sessionId: Long) = release(SessionId(sessionId))
+
+    private fun handleAudioFocusChange(sessionId: SessionId, focusChange: Int) {
+        if (activeSessionId != sessionId) return
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS,
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                val am = audioManager ?: return
+                audioFocusRequest?.let { am.requestAudioFocus(it) }
+                dispatchMediaPause()
+            }
+        }
+    }
+
+    private fun startStaggeredPausePulses(sessionId: SessionId) {
+        pausePulseJob?.cancel()
+        pausePulseJob = scope.launch {
+            val delays = longArrayOf(0L, 150L, 250L, 400L, 400L)
+            for (stepDelay in delays) {
+                if (stepDelay > 0L) {
+                    delay(stepDelay)
+                }
+                if (activeSessionId != sessionId) break
+                dispatchMediaPause()
+            }
+        }
+    }
 
     private fun dispatchMediaPause() {
         val am = audioManager ?: return

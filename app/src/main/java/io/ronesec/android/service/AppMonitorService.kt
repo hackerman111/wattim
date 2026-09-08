@@ -59,7 +59,7 @@ class AppMonitorService : AccessibilityService() {
         super.onCreate()
         val repository = (application as RonesecApplication).repository
 
-        audioGuard = SystemAudioGuard(this)
+        audioGuard = SystemAudioGuard(this, scope)
         overlayHost = OverlayHost(this)
         temporalBoundaryScheduler = TemporalBoundaryScheduler(scope) { sessionId, pkg, type, timestamp ->
             eventChannel.trySend(ProtectionEvent.TemporalBoundaryReached(sessionId, pkg, type, timestamp))
