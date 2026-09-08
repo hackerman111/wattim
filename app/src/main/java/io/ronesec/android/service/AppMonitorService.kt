@@ -17,6 +17,7 @@ import io.ronesec.android.domain.protection.InterventionCoordinator
 import io.ronesec.android.domain.protection.ProtectionEffect
 import io.ronesec.android.domain.protection.ProtectionEvent
 import io.ronesec.android.domain.protection.SessionId
+import io.ronesec.android.domain.protection.SystemAudioGuard
 import io.ronesec.android.domain.protection.TemporalBoundaryScheduler
 import io.ronesec.android.domain.protection.UserProtectionAction
 import io.ronesec.android.overlay.OverlayHost
@@ -58,7 +59,7 @@ class AppMonitorService : AccessibilityService() {
         super.onCreate()
         val repository = (application as RonesecApplication).repository
 
-        audioGuard = AudioGuard(this)
+        audioGuard = SystemAudioGuard(this)
         overlayHost = OverlayHost(this)
         temporalBoundaryScheduler = TemporalBoundaryScheduler(scope) { sessionId, pkg, type, timestamp ->
             eventChannel.trySend(ProtectionEvent.TemporalBoundaryReached(sessionId, pkg, type, timestamp))
@@ -184,9 +185,9 @@ class AppMonitorService : AccessibilityService() {
                 )
             }
 
-            is ProtectionEffect.DismissOverlay -> overlayHost.dismiss(effect.sessionId.value)
-            is ProtectionEffect.AcquireAudio -> audioGuard.acquire(effect.sessionId.value)
-            is ProtectionEffect.ReleaseAudio -> audioGuard.release(effect.sessionId.value)
+            is ProtectionEffect.DismissOverlay -> overlayHost.dismiss(effect.sessionId)
+            is ProtectionEffect.AcquireAudio -> audioGuard.acquire(effect.sessionId)
+            is ProtectionEffect.ReleaseAudio -> audioGuard.release(effect.sessionId)
             is ProtectionEffect.ScheduleBoundary -> temporalBoundaryScheduler.schedule(
                 effect.sessionId,
                 effect.targetPackage,
@@ -226,7 +227,7 @@ class AppMonitorService : AccessibilityService() {
         } catch (_: Exception) {}
         eventChannel.close()
         overlayHost.dismiss()
-        audioGuard.release(-1L)
+        audioGuard.release(SessionId.NONE)
         scope.cancel()
         super.onDestroy()
     }

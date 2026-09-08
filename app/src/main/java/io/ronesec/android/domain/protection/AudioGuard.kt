@@ -4,61 +4,65 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
-import android.os.Build
 import android.view.KeyEvent
 
-class AudioGuard(private val context: Context) {
+interface AudioGuard {
+    fun acquire(sessionId: SessionId): AudioAcquireResult
+    fun release(sessionId: SessionId)
+}
+
+class SystemAudioGuard(
+    context: Context
+) : AudioGuard {
     private val audioManager: AudioManager? = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-    private var activeSessionId: Long? = null
+    private var activeSessionId: SessionId? = null
     private var audioFocusRequest: AudioFocusRequest? = null
 
-    fun acquire(sessionId: Long) {
-        if (activeSessionId == sessionId) return
+    override fun acquire(sessionId: SessionId): AudioAcquireResult {
+        if (activeSessionId == sessionId) return AudioAcquireResult.Success
         activeSessionId?.let { release(it) }
         activeSessionId = sessionId
 
-        val am = audioManager ?: return
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val playbackAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build()
-                val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-                    .setAudioAttributes(playbackAttributes)
-                    .setAcceptsDelayedFocusGain(false)
-                    .setWillPauseWhenDucked(true)
-                    .setOnAudioFocusChangeListener { /* transient focus held */ }
-                    .build()
-                audioFocusRequest = request
-                am.requestAudioFocus(request)
-            } else {
-                @Suppress("DEPRECATION")
-                am.requestAudioFocus(
-                    null,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
-                )
-            }
-        } catch (_: Exception) {}
+        val am = audioManager ?: return AudioAcquireResult.Failed("AudioManager unavailable")
+        return try {
+            val playbackAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
 
-        dispatchMediaPause()
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                .setAudioAttributes(playbackAttributes)
+                .setAcceptsDelayedFocusGain(false)
+                .setWillPauseWhenDucked(true)
+                .setOnAudioFocusChangeListener { /* transient focus held */ }
+                .build()
+
+            audioFocusRequest = request
+            val result = am.requestAudioFocus(request)
+            dispatchMediaPause()
+
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                AudioAcquireResult.Success
+            } else {
+                AudioAcquireResult.FocusDenied
+            }
+        } catch (e: Exception) {
+            AudioAcquireResult.Failed(e.message ?: "Unknown audio error")
+        }
     }
 
-    fun release(sessionId: Long) {
-        if (activeSessionId != null && activeSessionId != sessionId) return
+    override fun release(sessionId: SessionId) {
+        if (activeSessionId != null && activeSessionId != sessionId && sessionId != SessionId.NONE) return
         activeSessionId = null
         val am = audioManager ?: return
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
-                audioFocusRequest = null
-            } else {
-                @Suppress("DEPRECATION")
-                am.abandonAudioFocus(null)
-            }
+            audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
+            audioFocusRequest = null
         } catch (_: Exception) {}
     }
+
+    fun acquire(sessionId: Long): AudioAcquireResult = acquire(SessionId(sessionId))
+    fun release(sessionId: Long) = release(SessionId(sessionId))
 
     private fun dispatchMediaPause() {
         val am = audioManager ?: return

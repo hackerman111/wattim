@@ -2,13 +2,14 @@ package io.ronesec.android.overlay
 
 import android.content.Context
 import android.graphics.PixelFormat
-import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -22,12 +23,14 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import io.ronesec.android.domain.model.InterventionConfig
+import io.ronesec.android.domain.protection.SessionId
 import io.ronesec.android.ui.i18n.AppLanguage
 import io.ronesec.android.ui.i18n.AppStrings
 import io.ronesec.android.ui.i18n.LocalAppStrings
 import io.ronesec.android.ui.i18n.resolveAppStrings
 import io.ronesec.android.ui.theme.AppTheme
 import io.ronesec.android.ui.theme.RonesecTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.time.Instant
 
 class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
@@ -40,6 +43,7 @@ class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner, ViewModel
     override val viewModelStore: ViewModelStore get() = _viewModelStore
 
     init {
+        savedStateRegistryController.performAttach()
         savedStateRegistryController.performRestore(Bundle())
     }
 
@@ -53,16 +57,20 @@ class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner, ViewModel
     }
 }
 
-class OverlayHost(private val context: Context) {
-    private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+class OverlayHost(
+    private val context: Context,
+    private val backend: OverlayBackend = ApplicationOverlayBackend(context)
+) {
     private var overlayView: View? = null
     private var lifecycleOwner: OverlayLifecycleOwner? = null
     private var activeSessionId: Long? = null
+    private val uiStateFlow = MutableStateFlow<OverlayUiState?>(null)
 
     val isShowing: Boolean
         get() = overlayView != null
 
     fun isShowingSession(sessionId: Long): Boolean = isShowing && activeSessionId == sessionId
+    fun isShowingSession(sessionId: SessionId): Boolean = isShowingSession(sessionId.value)
 
     fun showIntervention(
         sessionId: Long,
@@ -74,65 +82,29 @@ class OverlayHost(private val context: Context) {
         onEmergencyAccess: ((durationMs: Long?, disableTarget: Boolean) -> Unit)? = null,
         onClose: () -> Unit,
         onContinue: () -> Unit
-    ) {
+    ): OverlayAttachResult {
+        val newState = OverlayUiState.Intervention(
+            sessionId = sessionId,
+            targetAppName = targetAppName,
+            config = config,
+            savedTimeText = savedTimeText,
+            theme = theme,
+            appStrings = appStrings,
+            onEmergencyAccess = onEmergencyAccess,
+            onClose = onClose,
+            onContinue = onContinue
+        )
+
         if (activeSessionId == sessionId && isShowing) {
-            // Already showing for this session
-            return
+            uiStateFlow.value = newState
+            return OverlayAttachResult.Success
         }
+
         dismiss()
         activeSessionId = sessionId
+        uiStateFlow.value = newState
 
-        val owner = OverlayLifecycleOwner()
-        lifecycleOwner = owner
-        owner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
-        owner.handleLifecycleEvent(Lifecycle.Event.ON_START)
-        owner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
-
-        val composeView = ComposeView(context).apply {
-            setViewTreeLifecycleOwner(owner)
-            setViewTreeSavedStateRegistryOwner(owner)
-            setViewTreeViewModelStoreOwner(owner)
-
-            @Suppress("DEPRECATION")
-            systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            )
-
-            isFocusable = true
-            isFocusableInTouchMode = true
-            requestFocus()
-            setOnKeyListener { _, keyCode, event ->
-                if (keyCode == KeyEvent.KEYCODE_BACK) {
-                    if (event.action == KeyEvent.ACTION_UP) {
-                        onClose()
-                    }
-                    true
-                } else {
-                    false
-                }
-            }
-
-            setContent {
-                CompositionLocalProvider(LocalAppStrings provides appStrings) {
-                    RonesecTheme(theme = theme) {
-                        InterventionOverlayContent(
-                            targetAppName = targetAppName,
-                            config = config,
-                            savedTimeText = savedTimeText,
-                            onEmergencyAccess = onEmergencyAccess,
-                            onClose = onClose,
-                            onContinue = onContinue
-                        )
-                    }
-                }
-            }
-        }
-
-        val params = createLayoutParams()
-        overlayView = composeView
-        windowManager.addView(composeView, params)
+        return attachOverlayView(onClose)
     }
 
     fun showBlock(
@@ -142,13 +114,29 @@ class OverlayHost(private val context: Context) {
         theme: AppTheme = AppTheme.NORD,
         appStrings: AppStrings = resolveAppStrings(AppLanguage.SYSTEM),
         onClose: () -> Unit
-    ) {
+    ): OverlayAttachResult {
+        val newState = OverlayUiState.Block(
+            sessionId = sessionId,
+            sessionName = sessionName,
+            until = until,
+            theme = theme,
+            appStrings = appStrings,
+            onClose = onClose
+        )
+
         if (activeSessionId == sessionId && isShowing) {
-            return
+            uiStateFlow.value = newState
+            return OverlayAttachResult.Success
         }
+
         dismiss()
         activeSessionId = sessionId
+        uiStateFlow.value = newState
 
+        return attachOverlayView(onClose)
+    }
+
+    private fun attachOverlayView(onBackPress: () -> Unit): OverlayAttachResult {
         val owner = OverlayLifecycleOwner()
         lifecycleOwner = owner
         owner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
@@ -173,7 +161,7 @@ class OverlayHost(private val context: Context) {
             setOnKeyListener { _, keyCode, event ->
                 if (keyCode == KeyEvent.KEYCODE_BACK) {
                     if (event.action == KeyEvent.ACTION_UP) {
-                        onClose()
+                        onBackPress()
                     }
                     true
                 } else {
@@ -182,21 +170,45 @@ class OverlayHost(private val context: Context) {
             }
 
             setContent {
-                CompositionLocalProvider(LocalAppStrings provides appStrings) {
-                    RonesecTheme(theme = theme) {
-                        BlockOverlayContent(
-                            sessionName = sessionName,
-                            until = until,
-                            onClose = onClose
-                        )
+                val currentUiState by uiStateFlow.collectAsState()
+                when (val state = currentUiState) {
+                    is OverlayUiState.Intervention -> {
+                        CompositionLocalProvider(LocalAppStrings provides state.appStrings) {
+                            RonesecTheme(theme = state.theme) {
+                                InterventionOverlayContent(
+                                    targetAppName = state.targetAppName,
+                                    config = state.config,
+                                    savedTimeText = state.savedTimeText,
+                                    onEmergencyAccess = state.onEmergencyAccess,
+                                    onClose = state.onClose,
+                                    onContinue = state.onContinue
+                                )
+                            }
+                        }
                     }
+                    is OverlayUiState.Block -> {
+                        CompositionLocalProvider(LocalAppStrings provides state.appStrings) {
+                            RonesecTheme(theme = state.theme) {
+                                BlockOverlayContent(
+                                    sessionName = state.sessionName,
+                                    until = state.until,
+                                    onClose = state.onClose
+                                )
+                            }
+                        }
+                    }
+                    null -> Unit
                 }
             }
         }
 
         val params = createLayoutParams()
         overlayView = composeView
-        windowManager.addView(composeView, params)
+        val result = backend.addView(composeView, params)
+        if (result is OverlayAttachResult.Failed) {
+            dismiss()
+        }
+        return result
     }
 
     fun dismiss(sessionId: Long? = null) {
@@ -204,9 +216,7 @@ class OverlayHost(private val context: Context) {
             return
         }
         overlayView?.let { view ->
-            try {
-                windowManager.removeView(view)
-            } catch (_: Exception) {}
+            backend.removeView(view)
             overlayView = null
         }
         lifecycleOwner?.let { owner ->
@@ -216,20 +226,16 @@ class OverlayHost(private val context: Context) {
             lifecycleOwner = null
         }
         activeSessionId = null
+        uiStateFlow.value = null
     }
 
-    private fun createLayoutParams(): WindowManager.LayoutParams {
-        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        } else {
-            @Suppress("DEPRECATION")
-            WindowManager.LayoutParams.TYPE_PHONE
-        }
+    fun dismiss(sessionId: SessionId) = dismiss(sessionId.value)
 
+    private fun createLayoutParams(): WindowManager.LayoutParams {
         return WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
-            type,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS or
@@ -237,9 +243,7 @@ class OverlayHost(private val context: Context) {
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.CENTER
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-            }
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
     }
 }
