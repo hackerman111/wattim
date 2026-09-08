@@ -111,7 +111,12 @@ function renderTargets() {
   targetsCountBadge.textContent = `${targets.length} сайтов`;
 
   if (targets.length === 0) {
-    targetsList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px;">Список пуст. Добавьте первый сайт выше.</div>';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.style.color = 'var(--text-muted)';
+    emptyDiv.style.fontSize = '0.85rem';
+    emptyDiv.style.padding = '12px';
+    emptyDiv.textContent = 'Список пуст. Добавьте первый сайт выше.';
+    targetsList.appendChild(emptyDiv);
     return;
   }
 
@@ -145,7 +150,7 @@ function renderTargets() {
     // Delete button
     const btnDelete = document.createElement('button');
     btnDelete.className = 'btn-icon-delete';
-    btnDelete.innerHTML = '🗑️';
+    btnDelete.textContent = '🗑️';
     btnDelete.title = 'Удалить сайт';
     btnDelete.addEventListener('click', async () => {
       storageData.targets.splice(index, 1);
@@ -275,11 +280,13 @@ function renderPhrases() {
   phrases.forEach((phrase, index) => {
     const li = document.createElement('li');
     li.className = 'phrase-item';
-    li.innerHTML = `<span>«${phrase}»</span>`;
+    const span = document.createElement('span');
+    span.textContent = `«${phrase}»`;
+    li.appendChild(span);
 
     const btnDel = document.createElement('button');
     btnDel.className = 'btn-icon-delete';
-    btnDel.innerHTML = '🗑️';
+    btnDel.textContent = '🗑️';
     btnDel.title = 'Удалить';
     btnDel.addEventListener('click', () => {
       phrases.splice(index, 1);
@@ -381,12 +388,37 @@ function renderBackoffTable() {
     }
 
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>#${attempt}</strong></td>
-      <td style="color: var(--text-muted);">${base} × (1 + ${growth}%)<sup>${i}</sup></td>
-      <td><strong style="color: var(--accent); font-size: 1.05rem;">${delay} сек</strong></td>
-      <td><span style="color: ${diffColor}; font-weight: 600;">${difficulty}</span></td>
-    `;
+
+    const tdAttempt = document.createElement('td');
+    const strongAttempt = document.createElement('strong');
+    strongAttempt.textContent = `#${attempt}`;
+    tdAttempt.appendChild(strongAttempt);
+
+    const tdFormula = document.createElement('td');
+    tdFormula.style.color = 'var(--text-muted)';
+    tdFormula.append(`${base} × (1 + ${growth}%)`);
+    const sup = document.createElement('sup');
+    sup.textContent = String(i);
+    tdFormula.appendChild(sup);
+
+    const tdDelay = document.createElement('td');
+    const strongDelay = document.createElement('strong');
+    strongDelay.style.color = 'var(--accent)';
+    strongDelay.style.fontSize = '1.05rem';
+    strongDelay.textContent = `${delay} сек`;
+    tdDelay.appendChild(strongDelay);
+
+    const tdDiff = document.createElement('td');
+    const spanDiff = document.createElement('span');
+    spanDiff.style.color = diffColor;
+    spanDiff.style.fontWeight = '600';
+    spanDiff.textContent = difficulty;
+    tdDiff.appendChild(spanDiff);
+
+    tr.appendChild(tdAttempt);
+    tr.appendChild(tdFormula);
+    tr.appendChild(tdDelay);
+    tr.appendChild(tdDiff);
     backoffTableBody.appendChild(tr);
   }
 }
@@ -441,7 +473,11 @@ function renderSchedules() {
   const schedules = storageData.schedules || [];
 
   if (schedules.length === 0) {
-    schedulesList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Расписаний пока нет. Создайте правило выше.</div>';
+    const emptySched = document.createElement('div');
+    emptySched.style.color = 'var(--text-muted)';
+    emptySched.style.fontSize = '0.85rem';
+    emptySched.textContent = 'Расписаний пока нет. Создайте правило выше.';
+    schedulesList.appendChild(emptySched);
     return;
   }
 
@@ -497,7 +533,7 @@ function renderSchedules() {
     // Delete
     const btnDelete = document.createElement('button');
     btnDelete.className = 'btn-icon-delete';
-    btnDelete.innerHTML = '🗑️';
+    btnDelete.textContent = '🗑️';
     btnDelete.title = 'Удалить расписание';
     btnDelete.addEventListener('click', async () => {
       storageData.schedules.splice(index, 1);
@@ -527,16 +563,21 @@ function initThemesTab() {
 
     const header = document.createElement('div');
     header.className = 'theme-header';
-    header.innerHTML = `<span>${theme.icon}</span><span>${theme.name}</span>`;
+    const spanIcon = document.createElement('span');
+    spanIcon.textContent = theme.icon;
+    const spanName = document.createElement('span');
+    spanName.textContent = theme.name;
+    header.appendChild(spanIcon);
+    header.appendChild(spanName);
 
     const palette = document.createElement('div');
     palette.className = 'theme-palette-preview';
-    palette.innerHTML = `
-      <div class="palette-swatch" style="background: ${theme.colors.bgPrimary}"></div>
-      <div class="palette-swatch" style="background: ${theme.colors.bgSurface}"></div>
-      <div class="palette-swatch" style="background: ${theme.colors.accent}"></div>
-      <div class="palette-swatch" style="background: ${theme.colors.accentSecondary}"></div>
-    `;
+    [theme.colors.bgPrimary, theme.colors.bgSurface, theme.colors.accent, theme.colors.accentSecondary].forEach(color => {
+      const swatch = document.createElement('div');
+      swatch.className = 'palette-swatch';
+      swatch.style.background = color;
+      palette.appendChild(swatch);
+    });
 
     const desc = document.createElement('div');
     desc.className = 'theme-desc';

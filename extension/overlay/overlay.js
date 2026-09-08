@@ -311,58 +311,51 @@
             <span class="dot dot-yellow"></span>
             <span class="dot dot-green"></span>
           </div>
-          <div class="terminal-prompt">${isHardBlock ? '$ wattim --hard-block' : '$ wattim --breathe'}</div>
-          <div class="terminal-target-badge">${data.targetDomain || window.location.hostname}</div>
+          <div class="terminal-prompt" id="terminalPrompt"></div>
+          <div class="terminal-target-badge" id="terminalTargetBadge"></div>
         </header>
 
-        ${isHardBlock ? `
-          <section class="intervention-card card-blocked">
-            <div class="blocked-icon">🔒</div>
-            <h1 class="blocked-title">Сайт заблокирован</h1>
-            <p class="blocked-desc">Действует расписание полной блокировки. Пора вернуться к важным делам.</p>
-            <div class="actions-group">
-              <button class="btn btn-exit" id="btnExit">
-                <span>🚪</span>
-                <span>ЗАКРЫТЬ ВКЛАДКУ</span>
-              </button>
-            </div>
-          </section>
-        ` : `
-          <section class="intervention-card">
-            ${data.attempts > 0 ? `
-              <div class="backoff-badge">
-                ⚡ Экспоненциальный рост: +${data.growthPercent || 20}% (попытка #${data.attempts + 1})
-              </div>
-            ` : ''}
-            <div class="phase-container">
-              <h1 class="phase-label" id="phaseLabel">Вдох...</h1>
-              <div class="timer-countdown" id="timerDisplay">${data.delay || 10}с</div>
-            </div>
-            <p class="quote-text" id="quoteText">«${randomPhrase}»</p>
-            <div class="actions-group">
-              <button class="btn btn-exit" id="btnExit">
-                <span>🚪</span>
-                <span>ВЫЙТИ</span>
-                <span class="btn-subtext">(закрыть вкладку)</span>
-              </button>
-              <button class="btn btn-continue" id="btnContinue" style="display: none;">
-                <span>🌿</span>
-                <span>ПРОДОЛЖИТЬ НА САЙТ</span>
-                <span class="btn-subtext">(допуск на ${formatDuration(configuredSeconds)} · без перезагрузки)</span>
-              </button>
-            </div>
-            <div class="emergency-wrapper">
-              <button class="btn-link" id="btnEmergencyTrigger">⚡ Экстренный вход...</button>
-            </div>
-          </section>
-        `}
+        <section class="intervention-card card-blocked" id="cardBlocked" style="display: none;">
+          <div class="blocked-icon">🔒</div>
+          <h1 class="blocked-title">Сайт заблокирован</h1>
+          <p class="blocked-desc">Действует расписание полной блокировки. Пора вернуться к важным делам.</p>
+          <div class="actions-group">
+            <button class="btn btn-exit" id="btnExitBlocked">
+              <span>🚪</span>
+              <span>ЗАКРЫТЬ ВКЛАДКУ</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="intervention-card" id="cardBreathe" style="display: none;">
+          <div class="backoff-badge" id="backoffBadge" style="display: none;"></div>
+          <div class="phase-container">
+            <h1 class="phase-label" id="phaseLabel">Вдох...</h1>
+            <div class="timer-countdown" id="timerDisplay">10с</div>
+          </div>
+          <p class="quote-text" id="quoteText"></p>
+          <div class="actions-group">
+            <button class="btn btn-exit" id="btnExit">
+              <span>🚪</span>
+              <span>ВЫЙТИ</span>
+              <span class="btn-subtext">(закрыть вкладку)</span>
+            </button>
+            <button class="btn btn-continue" id="btnContinue" style="display: none;">
+              <span>🌿</span>
+              <span>ПРОДОЛЖИТЬ НА САЙТ</span>
+              <span class="btn-subtext" id="continueSubtext"></span>
+            </button>
+          </div>
+          <div class="emergency-wrapper">
+            <button class="btn-link" id="btnEmergencyTrigger">⚡ Экстренный вход...</button>
+          </div>
+        </section>
 
         <footer class="terminal-footer">
-          <span>🌱 Сбережено: <strong>${(data.stats && data.stats.savedMinutes) || 0}</strong> минут · <strong>${(data.stats && data.stats.savedImpulses) || 0}</strong> импульсов</span>
+          <span>🌱 Сбережено: <strong id="savedMinutes">0</strong> минут · <strong id="savedImpulses">0</strong> импульсов</span>
         </footer>
       </main>
 
-      <!-- Emergency Modal -->
       <div class="modal-backdrop" id="emergencyModal" style="display: none;">
         <div class="modal-card">
           <div class="modal-header">
@@ -386,6 +379,43 @@
 
     shadow.appendChild(backdrop);
 
+    const promptEl = shadow.getElementById('terminalPrompt');
+    if (promptEl) promptEl.textContent = isHardBlock ? '$ wattim --hard-block' : '$ wattim --breathe';
+
+    const badgeEl = shadow.getElementById('terminalTargetBadge');
+    if (badgeEl) badgeEl.textContent = data.targetDomain || window.location.hostname;
+
+    const savedMinEl = shadow.getElementById('savedMinutes');
+    if (savedMinEl) savedMinEl.textContent = String((data.stats && data.stats.savedMinutes) || 0);
+
+    const savedImpEl = shadow.getElementById('savedImpulses');
+    if (savedImpEl) savedImpEl.textContent = String((data.stats && data.stats.savedImpulses) || 0);
+
+    if (isHardBlock) {
+      const cardBlocked = shadow.getElementById('cardBlocked');
+      if (cardBlocked) cardBlocked.style.display = 'block';
+    } else {
+      const cardBreathe = shadow.getElementById('cardBreathe');
+      if (cardBreathe) cardBreathe.style.display = 'block';
+
+      if (data.attempts > 0) {
+        const backoffBadge = shadow.getElementById('backoffBadge');
+        if (backoffBadge) {
+          backoffBadge.textContent = `⚡ Экспоненциальный рост: +${data.growthPercent || 20}% (попытка #${data.attempts + 1})`;
+          backoffBadge.style.display = 'block';
+        }
+      }
+
+      const timerCountdown = shadow.getElementById('timerDisplay');
+      if (timerCountdown) timerCountdown.textContent = `${data.delay || 10}с`;
+
+      const quoteEl = shadow.getElementById('quoteText');
+      if (quoteEl) quoteEl.textContent = `«${randomPhrase}»`;
+
+      const subtextEl = shadow.getElementById('continueSubtext');
+      if (subtextEl) subtextEl.textContent = `(допуск на ${formatDuration(configuredSeconds)} · без перезагрузки)`;
+    }
+
     // Mount to document
     (document.body || document.documentElement).appendChild(host);
 
@@ -398,7 +428,7 @@
     const canvas = shadow.getElementById('breathCanvas');
     const phaseLabel = shadow.getElementById('phaseLabel');
     const timerDisplay = shadow.getElementById('timerDisplay');
-    const btnExit = shadow.getElementById('btnExit');
+    const btnExit = shadow.getElementById(isHardBlock ? 'btnExitBlocked' : 'btnExit');
     const btnContinue = shadow.getElementById('btnContinue');
     const btnEmergencyTrigger = shadow.getElementById('btnEmergencyTrigger');
     const emergencyModal = shadow.getElementById('emergencyModal');
