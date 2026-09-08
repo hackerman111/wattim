@@ -133,9 +133,12 @@ Both Android and the browser extension share identical aesthetic themes:
 - ABIs: ARM64, ARMv7, x86_64
 
 ### Required Permissions
-Two system permissions are required for intervention functionality:
-1. **Accessibility Service (`AppMonitorService`)** — Listens to window state change events (`TYPE_WINDOW_STATE_CHANGED`) to identify foreground app launches. It does not inspect screen text or capture user input.
-2. **Display Over Other Apps (`SYSTEM_ALERT_WINDOW`)** — Required to display the full-screen intervention view over target apps (`WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY`).
+wattim requires the following permissions for reliable, privacy-preserving operation:
+1. **Accessibility Service (`AppMonitorService`)** — Uses adaptive event filtering (`TYPE_WINDOW_STATE_CHANGED`) to identify foreground app launches. It does not inspect screen text, passwords, or capture keystrokes.
+2. **Display Over Other Apps (`SYSTEM_ALERT_WINDOW`)** — Displays the full-screen Compose intervention view over target apps (`TYPE_APPLICATION_OVERLAY`).
+3. **Foreground Service (`FOREGROUND_SERVICE_SPECIAL_USE`)** — Keeps background protection active and manages transient audio focus without volume mutation (Android 14+).
+4. **Notifications (`POST_NOTIFICATIONS`)** — Displays a low-priority ongoing notification showing current active protection status (Android 13+).
+5. **Package Visibility (`QUERY_ALL_PACKAGES`)** — Allows selecting any installed user application to be protected.
 
 ### Installing the APK
 1. Download [wattim.apk](./wattim.apk) onto your device.
