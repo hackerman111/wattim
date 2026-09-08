@@ -8,14 +8,17 @@ console.log('🌿 Running Full wattim Extension Test Suite');
 console.log('========================================\n');
 
 // 1. Run Unit Tests
-console.log('[1/4] Running Rule Engine tests...');
+console.log('[1/5] Running Rule Engine unit tests...');
 execSync('node tests/rule-engine.test.mjs', { stdio: 'inherit' });
 
-console.log('\n[2/4] Running Storage tests...');
+console.log('\n[2/5] Running Shared Rule Engine Parity Specification tests...');
+execSync('node tests/rule-engine-spec.test.mjs', { stdio: 'inherit' });
+
+console.log('\n[3/5] Running Storage tests...');
 execSync('node tests/storage.test.mjs', { stdio: 'inherit' });
 
-// 3. Syntax check all JS files
-console.log('\n[3/4] Verifying JavaScript syntax...');
+// 4. Syntax check all JS files
+console.log('\n[4/5] Verifying JavaScript syntax...');
 const jsFiles = [
   'extension/background/rule-engine.js',
   'extension/background/background.js',
@@ -35,8 +38,8 @@ for (const file of jsFiles) {
   console.log(`✓ Syntax OK: ${file}`);
 }
 
-// 4. Validate Manifest references
-console.log('\n[4/4] Validating Manifest V3 schema and assets...');
+// 5. Validate Manifest references
+console.log('\n[5/5] Validating Manifest V3 schema and assets...');
 const manifestPath = 'extension/manifest.json';
 assert.ok(fs.existsSync(manifestPath), 'manifest.json must exist');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));

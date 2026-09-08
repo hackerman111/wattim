@@ -1,0 +1,97 @@
+{
+  "name": "grants",
+  "cases": [
+    {
+      "id": "active_timed_permit",
+      "description": "Unexpired timed grant allows access",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725796800000,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true, "durationMs": 10000 }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": [
+          { "target": "example.com", "expiresAt": 1725797700000 }
+        ]
+      },
+      "expected": {
+        "action": "ALLOW",
+        "reason": "ACTIVE_TIMED_PERMIT"
+      }
+    },
+    {
+      "id": "expired_timed_permit",
+      "description": "Expired timed grant triggers intervention",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725798000000,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true, "durationMs": 10000 }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": [
+          { "target": "example.com", "expiresAt": 1725797700000 }
+        ]
+      },
+      "expected": {
+        "action": "INTERVENTION",
+        "durationMs": 10000
+      }
+    },
+    {
+      "id": "active_session_permit",
+      "description": "Active session permit with matching sessionId allows access",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725796800000,
+      "sessionId": 42,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true, "durationMs": 10000 }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": [],
+        "sessionPermits": {
+          "example.com": 42
+        }
+      },
+      "expected": {
+        "action": "ALLOW",
+        "reason": "ACTIVE_SESSION_PERMIT"
+      }
+    },
+    {
+      "id": "mismatched_session_permit",
+      "description": "Session permit with stale sessionId triggers intervention",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725796800000,
+      "sessionId": 43,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true, "durationMs": 10000 }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": [],
+        "sessionPermits": {
+          "example.com": 42
+        }
+      },
+      "expected": {
+        "action": "INTERVENTION",
+        "durationMs": 10000
+      }
+    }
+  ]
+}

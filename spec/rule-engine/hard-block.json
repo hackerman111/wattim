@@ -1,0 +1,71 @@
+{
+  "name": "hard-block",
+  "cases": [
+    {
+      "id": "single_block_session",
+      "description": "Active manual block session blocks target until endTime",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725796800000,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true, "durationMs": 10000 }
+        ],
+        "activeBlockSessions": [
+          {
+            "id": 101,
+            "name": "Focus",
+            "active": true,
+            "startTime": 1725796000000,
+            "endTime": 1725800000000,
+            "packages": ["example.com"]
+          }
+        ],
+        "schedules": [],
+        "grants": []
+      },
+      "expected": {
+        "action": "BLOCK",
+        "until": 1725800000000
+      }
+    },
+    {
+      "id": "multiple_block_sessions_max_end",
+      "description": "Multiple overlapping block sessions resolve to maximum endTime",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725796800000,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true, "durationMs": 10000 }
+        ],
+        "activeBlockSessions": [
+          {
+            "id": 101,
+            "name": "Focus 1",
+            "active": true,
+            "startTime": 1725796000000,
+            "endTime": 1725800000000,
+            "packages": ["example.com"]
+          },
+          {
+            "id": 102,
+            "name": "Focus 2",
+            "active": true,
+            "startTime": 1725796500000,
+            "endTime": 1725804000000,
+            "packages": ["example.com"]
+          }
+        ],
+        "schedules": [],
+        "grants": []
+      },
+      "expected": {
+        "action": "BLOCK",
+        "until": 1725804000000
+      }
+    }
+  ]
+}

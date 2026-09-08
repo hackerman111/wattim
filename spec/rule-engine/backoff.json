@@ -1,0 +1,95 @@
+{
+  "name": "backoff",
+  "cases": [
+    {
+      "id": "attempts_zero_base_delay",
+      "description": "Zero recent attempts yields base duration",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725796800000,
+      "recentAttemptsCount": 0,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          {
+            "domain": "example.com",
+            "packageName": "example.com",
+            "enabled": true,
+            "durationMs": 10000,
+            "durationSeconds": 10,
+            "exponentialGrowthEnabled": true,
+            "growthPercent": 20
+          }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": []
+      },
+      "expected": {
+        "action": "INTERVENTION",
+        "durationMs": 10000,
+        "durationSeconds": 10
+      }
+    },
+    {
+      "id": "attempts_one_growth",
+      "description": "One recent attempt scales duration by growth percent (20%)",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725796800000,
+      "recentAttemptsCount": 1,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          {
+            "domain": "example.com",
+            "packageName": "example.com",
+            "enabled": true,
+            "durationMs": 10000,
+            "durationSeconds": 10,
+            "exponentialGrowthEnabled": true,
+            "growthPercent": 20
+          }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": []
+      },
+      "expected": {
+        "action": "INTERVENTION",
+        "durationMs": 12000,
+        "durationSeconds": 12
+      }
+    },
+    {
+      "id": "growth_disabled",
+      "description": "When exponential growth is disabled, duration remains at base",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725796800000,
+      "recentAttemptsCount": 5,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          {
+            "domain": "example.com",
+            "packageName": "example.com",
+            "enabled": true,
+            "durationMs": 10000,
+            "durationSeconds": 10,
+            "exponentialGrowthEnabled": false,
+            "growthPercent": 20
+          }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": []
+      },
+      "expected": {
+        "action": "INTERVENTION",
+        "durationMs": 10000,
+        "durationSeconds": 10
+      }
+    }
+  ]
+}

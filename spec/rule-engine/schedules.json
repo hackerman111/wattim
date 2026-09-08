@@ -1,0 +1,110 @@
+{
+  "name": "schedules",
+  "cases": [
+    {
+      "id": "daytime_schedule_active",
+      "description": "Schedule active during work hours with custom intervention duration",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1788867000000,
+      "zoneId": "UTC",
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true, "durationMs": 10000 }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [
+          {
+            "id": 1,
+            "name": "Work",
+            "enabled": true,
+            "scheduleType": "INTERVENTION",
+            "days": ["TUESDAY"],
+            "daysInt": [2],
+            "start": "09:00",
+            "end": "18:00",
+            "packages": ["example.com"],
+            "targetDomain": "example.com",
+            "customDurationMs": 25000
+          }
+        ],
+        "grants": []
+      },
+      "expected": {
+        "action": "INTERVENTION",
+        "durationMs": 25000
+      }
+    },
+    {
+      "id": "daytime_schedule_outside_window",
+      "description": "Schedule inactive outside hours falls back to standard duration",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1788897000000,
+      "zoneId": "UTC",
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true, "durationMs": 10000 }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [
+          {
+            "id": 1,
+            "name": "Work",
+            "enabled": true,
+            "scheduleType": "INTERVENTION",
+            "days": ["TUESDAY"],
+            "daysInt": [2],
+            "start": "09:00",
+            "end": "18:00",
+            "packages": ["example.com"],
+            "targetDomain": "example.com",
+            "customDurationMs": 25000
+          }
+        ],
+        "grants": []
+      },
+      "expected": {
+        "action": "INTERVENTION",
+        "durationMs": 10000
+      }
+    },
+    {
+      "id": "daytime_schedule_disabled",
+      "description": "Disabled schedule ignored, standard intervention applies",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1788867000000,
+      "zoneId": "UTC",
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true, "durationMs": 10000 }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [
+          {
+            "id": 1,
+            "name": "Work",
+            "enabled": false,
+            "scheduleType": "INTERVENTION",
+            "days": ["TUESDAY"],
+            "daysInt": [2],
+            "start": "09:00",
+            "end": "18:00",
+            "packages": ["example.com"],
+            "targetDomain": "example.com",
+            "customDurationMs": 25000
+          }
+        ],
+        "grants": []
+      },
+      "expected": {
+        "action": "INTERVENTION",
+        "durationMs": 10000
+      }
+    }
+  ]
+}

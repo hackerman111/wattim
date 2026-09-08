@@ -7,6 +7,7 @@ class InterventionCoordinator(
     private val ruleEngine: RuleEngine = RuleEngine(),
     private val appLabelResolver: (String) -> String = { it.substringAfterLast('.') },
     private val savedTimeTextResolver: (RuntimeState) -> String? = { null },
+    val journal: ProtectionEventJournal = ProtectionEventJournal(),
     private val onEffect: (ProtectionEffect) -> Unit
 ) {
     private var currentState: ProtectionState = ProtectionState.Idle
@@ -45,6 +46,7 @@ class InterventionCoordinator(
 
     private fun dispatchToReducer(event: ProtectionEvent) {
         val nextId = currentSessionId.next()
+        val stateBefore = currentState
         val transition = InterventionReducer.reduce(
             state = currentState,
             event = event,
@@ -66,6 +68,15 @@ class InterventionCoordinator(
             is ProtectionState.Idle,
             is ProtectionState.Suspended -> Unit
         }
+
+        journal.record(
+            sessionId = currentSessionId.takeIf { it != SessionId.NONE },
+            eventType = event::class.simpleName ?: event.toString(),
+            packageName = getActiveTargetPackage(),
+            stateBefore = stateBefore,
+            stateAfter = currentState,
+            effects = transition.effects
+        )
 
         for (effect in transition.effects) {
             onEffect(effect)

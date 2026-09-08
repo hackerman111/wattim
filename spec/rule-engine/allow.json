@@ -1,0 +1,65 @@
+{
+  "name": "allow",
+  "cases": [
+    {
+      "id": "global_pause_active",
+      "description": "Global pause active allows access immediately",
+      "target": "example.com",
+      "url": "https://example.com/feed",
+      "now": 1725796800000,
+      "state": {
+        "globalPauseUntil": 1725800400000,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": []
+      },
+      "expected": {
+        "action": "ALLOW",
+        "reason": "GLOBAL_PAUSE"
+      }
+    },
+    {
+      "id": "not_target",
+      "description": "Unmonitored domain or package is allowed",
+      "target": "other.com",
+      "url": "https://other.com",
+      "now": 1725796800000,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": true }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": []
+      },
+      "expected": {
+        "action": "ALLOW",
+        "reason": "NOT_TARGET"
+      }
+    },
+    {
+      "id": "target_disabled",
+      "description": "Explicitly disabled target is allowed",
+      "target": "example.com",
+      "url": "https://example.com",
+      "now": 1725796800000,
+      "state": {
+        "globalPauseUntil": 0,
+        "targets": [
+          { "domain": "example.com", "packageName": "example.com", "enabled": false }
+        ],
+        "activeBlockSessions": [],
+        "schedules": [],
+        "grants": []
+      },
+      "expected": {
+        "action": "ALLOW",
+        "reason": "TARGET_DISABLED"
+      }
+    }
+  ]
+}
