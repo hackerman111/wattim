@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 class RonesecRepository private constructor(
@@ -44,10 +43,6 @@ class RonesecRepository private constructor(
 
     private val _isPolicyReady = MutableStateFlow(false)
     val isPolicyReady = _isPolicyReady.asStateFlow()
-
-    private val activeGrantsMap = ConcurrentHashMap<String, AccessGrant>()
-    private val activeSessionPermitsMap = ConcurrentHashMap<String, Long>()
-    private val lastExitMap = ConcurrentHashMap<String, Instant>()
 
     init {
         val readySourcesCount = AtomicInteger(0)
@@ -70,9 +65,7 @@ class RonesecRepository private constructor(
         scope.launch {
             accessGrantDao.getAllFlow().collect { entities ->
                 val grants = entities.associate { it.packageName to it.toDomain() }
-                activeGrantsMap.clear()
-                activeGrantsMap.putAll(grants)
-                _runtimeState.update { it.copy(activeGrants = HashMap(activeGrantsMap)) }
+                _runtimeState.update { it.copy(activeGrants = grants) }
                 markSourceReady()
             }
         }
@@ -102,13 +95,7 @@ class RonesecRepository private constructor(
         }
     }
 
-    fun getHotRuntimeState(): RuntimeState {
-        return _runtimeState.value.copy(
-            activeGrants = HashMap(activeGrantsMap),
-            activeSessionPermits = HashMap(activeSessionPermitsMap),
-            lastExitTimes = HashMap(lastExitMap)
-        )
-    }
+    fun getHotRuntimeState(): RuntimeState = _runtimeState.value
 
     fun getTargetsFlow(): Flow<List<TargetApp>> {
         return targetAppDao.getAllFlow().map { list -> list.map { it.toDomain() } }
@@ -125,13 +112,23 @@ class RonesecRepository private constructor(
     suspend fun updateTargetEnabled(packageName: String, enabled: Boolean) {
         val target = getTarget(packageName) ?: return
         saveTarget(target.copy(enabled = enabled))
+        if (!enabled) {
+            accessGrantDao.deleteByPackage(packageName)
+            clearSessionPermit(packageName)
+        }
     }
 
     suspend fun deleteTarget(packageName: String) {
         targetAppDao.deleteByPackage(packageName)
         accessGrantDao.deleteByPackage(packageName)
-        activeSessionPermitsMap.remove(packageName)
-        lastExitMap.remove(packageName)
+        _runtimeState.update { current ->
+            current.copy(
+                targets = current.targets - packageName,
+                activeGrants = current.activeGrants - packageName,
+                activeSessionPermits = current.activeSessionPermits - packageName,
+                lastExitTimes = current.lastExitTimes - packageName
+            )
+        }
     }
 
     suspend fun recordAttempt(packageName: String, outcome: AttemptOutcome, timestamp: Instant = Instant.now()) {
@@ -171,14 +168,19 @@ class RonesecRepository private constructor(
 
     // Session permit: in-memory RAM permit tied strictly to sessionId
     fun grantSessionPermit(packageName: String, sessionId: Long) {
-        activeSessionPermitsMap[packageName] = sessionId
-        _runtimeState.update { it.copy(activeSessionPermits = HashMap(activeSessionPermitsMap)) }
+        _runtimeState.update { current ->
+            current.copy(activeSessionPermits = current.activeSessionPermits + (packageName to sessionId))
+        }
     }
 
     fun clearSessionPermit(packageName: String, sessionId: Long? = null) {
-        if (sessionId == null || activeSessionPermitsMap[packageName] == sessionId) {
-            activeSessionPermitsMap.remove(packageName)
-            _runtimeState.update { it.copy(activeSessionPermits = HashMap(activeSessionPermitsMap)) }
+        _runtimeState.update { current ->
+            val existing = current.activeSessionPermits[packageName]
+            if (sessionId == null || existing == sessionId) {
+                current.copy(activeSessionPermits = current.activeSessionPermits - packageName)
+            } else {
+                current
+            }
         }
     }
 
@@ -191,8 +193,9 @@ class RonesecRepository private constructor(
             createdAt = now,
             expiresAt = expiresAt
         )
-        activeGrantsMap[packageName] = grant
-        _runtimeState.update { it.copy(activeGrants = HashMap(activeGrantsMap)) }
+        _runtimeState.update { current ->
+            current.copy(activeGrants = current.activeGrants + (packageName to grant))
+        }
         accessGrantDao.insertOrUpdate(AccessGrantEntity.fromDomain(grant))
     }
 
@@ -207,18 +210,36 @@ class RonesecRepository private constructor(
     }
 
     suspend fun revokeAccess(packageName: String, sessionId: Long? = null) {
-        if (sessionId != null && activeSessionPermitsMap[packageName] != null && activeSessionPermitsMap[packageName] != sessionId) return
-        clearSessionPermit(packageName, sessionId)
-        activeGrantsMap.remove(packageName)
-        _runtimeState.update { it.copy(activeGrants = HashMap(activeGrantsMap)) }
-        accessGrantDao.deleteByPackage(packageName)
+        var shouldRevokeDb = false
+        _runtimeState.update { current ->
+            val existing = current.activeSessionPermits[packageName]
+            if (sessionId != null && existing != null && existing != sessionId) {
+                current
+            } else {
+                shouldRevokeDb = true
+                current.copy(
+                    activeSessionPermits = current.activeSessionPermits - packageName,
+                    activeGrants = current.activeGrants - packageName
+                )
+            }
+        }
+        if (shouldRevokeDb) {
+            accessGrantDao.deleteByPackage(packageName)
+        }
     }
 
     fun recordExit(packageName: String, exitTime: Instant = Instant.now(), sessionId: Long? = null) {
-        if (sessionId != null && activeSessionPermitsMap[packageName] != null && activeSessionPermitsMap[packageName] != sessionId) return
-        lastExitMap[packageName] = exitTime
-        clearSessionPermit(packageName, sessionId)
-        _runtimeState.update { it.copy(lastExitTimes = HashMap(lastExitMap)) }
+        _runtimeState.update { current ->
+            val existing = current.activeSessionPermits[packageName]
+            if (sessionId != null && existing != null && existing != sessionId) {
+                current
+            } else {
+                current.copy(
+                    lastExitTimes = current.lastExitTimes + (packageName to exitTime),
+                    activeSessionPermits = current.activeSessionPermits - packageName
+                )
+            }
+        }
     }
 
     suspend fun startHardBlock(name: String, durationMinutes: Int, packages: Set<String>): Long {
