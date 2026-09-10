@@ -1,9 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="media_control_service_label">Wattim media control</string>
+    <string name="badge_media_control">MEDIA CONTROL</string>
+    <string name="permission_media_control_desc">Allows Wattim to pause the protected app\'s active media session</string>
+    <string name="audio_diagnostics_title">AUDIO DIAGNOSTICS</string>
+    <string name="audio_diagnostics_target">TARGET: %1$s</string>
+    <string name="audio_diagnostics_none">NONE</string>
+    <string name="audio_diagnostics_focus">FOCUS: %1$s</string>
+    <string name="audio_diagnostics_media">MEDIA PAUSE: %1$s</string>
+    <string name="audio_diagnostics_commands">COMMANDS: TARGETED %1$d / FALLBACK %2$d</string>
+    <string name="audio_status_idle">IDLE</string>
+    <string name="audio_status_granted">GRANTED</string>
+    <string name="audio_status_denied">DENIED</string>
+    <string name="audio_status_lost">LOST</string>
+    <string name="audio_status_recovering">RECOVERING</string>
+    <string name="audio_status_access_denied">ACCESS DENIED</string>
+    <string name="audio_status_no_session">NO ACTIVE SESSION</string>
+    <string name="audio_status_command_sent">COMMAND SENT</string>
+    <string name="audio_status_confirmed">CONFIRMED PAUSED</string>
+    <string name="audio_status_not_confirmed">NOT CONFIRMED</string>
+    <string name="audio_status_failed">FAILED</string>
     <string name="app_name">wattim</string>
-    <string name="accessibility_service_description">Required by wattim to detect launches of protected apps and trigger mindful breathing pauses.</string>
-    <string name="channel_name_protection">wattim: Focus Protection</string>
-    <string name="channel_desc_protection">Displays foreground protection service status</string>
-    <string name="notif_protection_active">Protection active</string>
-    <string name="notif_protection_active_count">Protection active · %d apps</string>
-    <string name="notif_protection_idle">Protection standby · 0 apps</string>
+    <string name="default_phrase">Сделай глубокий вдох и выдох</string>
+
+    <!-- Navigation -->
+    <string name="nav_apps">FOCUS</string>
+    <string name="nav_block">BLOCKS</string>
+    <string name="nav_stats">STATS</string>
+    <string name="nav_config">SETTINGS</string>
+
+    <!-- Breathing -->
+    <string name="breathing_inhale">INHALE</string>
+    <string name="breathing_exhale">EXHALE</string>
+    <string name="breathing_complete">COMPLETE</string>
+
+    <!-- Actions -->
+    <string name="action_continue">CONTINUE</string>
+    <string name="action_exit">EXIT</string>
+    <string name="action_cancel">CANCEL</string>
+    <string name="action_save">SAVE</string>
+    <string name="action_remove">REMOVE</string>
+    <string name="action_add_app">ADD APP</string>
+    <string name="action_stop">STOP</string>
+    <string name="action_resume">RESUME</string>
+    <string name="action_pause">PAUSE</string>
+    <string name="action_return">RETURN</string>
+    <string name="action_check_status">CHECK STATUS</string>
+    <string name="action_enable">ENABLE</string>
+    <string name="action_open_accessibility">OPEN ACCESSIBILITY</string>
+    <string name="action_allow_overlay">ALLOW OVERLAY</string>
+    <string name="action_disable_battery_optimization">DISABLE BATTERY OPTIMIZATION</string>
+    <string name="action_start_wattim">START WATTIM</string>
+    <string name="action_emergency">EMERGENCY</string>
+
+    <!-- Statuses -->
+    <string name="status_active">ACTIVE</string>
+    <string name="status_off">OFF</string>
+    <string name="status_on">ON</string>
+    <string name="status_system_ready">SYSTEM READY</string>
+    <string name="status_blocked">BLOCKED</string>
+    <string name="status_paused">PAUSED</string>
+    <string name="status_protected">PROTECTED</string>
+
+    <!-- Units & time -->
+    <string name="unit_sec">SEC</string>
+    <string name="unit_min">MIN</string>
+    <string name="unit_hours">HOURS</string>
+    <string name="unit_percent">%</string>
+    <string name="time_colon">:</string>
+
+    <!-- Themes -->
+    <string name="theme_cyber_terminal">CYBER TERMINAL</string>
+    <string name="theme_nord">NORD</string>
+    <string name="theme_catppuccin">CATPPUCCIN</string>
+    <string name="theme_dracula">DRACULA</string>
+    <string name="theme_gruvbox">GRUVBOX</string>
+    <string name="theme_tokyo_night">TOKYO NIGHT</string>
+
+    <!-- Animation styles -->
+    <string name="anim_fill">FILL</string>
+    <string name="anim_pulse">PULSE</string>
+    <string name="anim_circle">CIRCLE</string>
+
+    <!-- Accessibility descriptions -->
+    <string name="cd_step_decrease">Decrease value</string>
+    <string name="cd_step_increase">Increase value</string>
+    <string name="cd_active_badge">Status active</string>
+    <string name="cd_inactive_badge">Status inactive</string>
+    <string name="cd_error_indicator">Error</string>
+    <string name="cd_breathing_canvas">Breathing animation</string>
+    <string name="cd_time_hours">Hours</string>
+    <string name="cd_time_minutes">Minutes</string>
+    <string name="cd_saved_time_badge">Saved time badge</string>
+
+    <!-- Emergency dialog -->
+    <string name="emergency_dialog_title">Are you sure?</string>
+    <string name="emergency_dialog_message">Are you sure you want to skip the mindful breathing pause? Choose an action:</string>
+    <string name="emergency_enter_once">ENTER ONCE</string>
+    <string name="emergency_pause_app">PAUSE PROTECTION FOR</string>
+    <string name="emergency_resume_breath">RETURN TO BREATHING</string>
+    <string name="emergency_15m">15 MIN</string>
+    <string name="emergency_30m">30 MIN</string>
+    <string name="emergency_1h">1 HOUR</string>
+    <string name="emergency_forever">FOREVER</string>
+    <string name="emergency_custom_badge_format">%1$d MIN</string>
+    <string name="emergency_config_title">EMERGENCY ACCESS</string>
+    <string name="emergency_config_desc">Configure a custom temporary access duration for the emergency menu.</string>
+    <string name="emergency_config_active_status">ACTIVE IN MENU: %1$d MIN</string>
+    <string name="emergency_config_not_set">NOT IN MENU (STANDARD PRESETS)</string>
+    <string name="emergency_config_add_btn">SET FOR MENU</string>
+    <string name="emergency_config_remove_btn">REMOVE FROM MENU</string>
+
+    <!-- Feature explanations -->
+    <string name="help_dialog_dismiss">UNDERSTOOD</string>
+    <string name="help_pause_duration_title">PAUSE DURATION (INHALE AND EXHALE)</string>
+    <string name="help_pause_duration_desc">A mindful breathing pause before opening the application. It helps interrupt the automatic impulse and decide whether you truly need to use the app right now. The timer is split equally into inhale and exhale phases.</string>
+    <string name="help_reintervention_title">RE-INTERVENTION</string>
+    <string name="help_reintervention_desc">Continuous session time limit. If enabled, the breathing screen reappears after the specified interval of app usage, reminding you to take a mindful break.</string>
+    <string name="help_quick_return_title">QUICK RETURN GRACE</string>
+    <string name="help_quick_return_desc">The grace window after exiting the app during which you can return without another breathing intervention (e.g. to answer a phone call or copy a verification code).</string>
+    <string name="help_backoff_title">EXPONENTIAL GROWTH</string>
+    <string name="help_backoff_desc">Each confirmed entry into the application within the rolling window increases the breathing pause duration by the configured percentage. This gently curbs the habit of compulsive checks. Exiting during breathing does not increase the timer.</string>
+    <string name="help_quick_lock_title">QUICK LOCK</string>
+    <string name="help_quick_lock_desc">Instantly hard-blocks access to the application for the chosen duration (15m, 30m, 1h, or 2h). During an active hard block, entering via breathing is completely disabled.</string>
+
+    <!-- Block overlay -->
+    <string name="block_overlay_title">APPLICATION BLOCKED</string>
+    <string name="block_overlay_close">RETURN TO HOME SCREEN</string>
+
+    <!-- Badges and prefixes -->
+    <string name="full_block_badge">🔒 Full Block</string>
+    <string name="scheduled_interventions_badge">🧘 Scheduled Interventions</string>
+    <string name="blocked_prefix">Blocked</string>
+    <string name="interventions_prefix">Interventions</string>
+    <string name="save_changes_button">SAVE CHANGES</string>
+    <string name="remove_from_protection_button">REMOVE FROM PROTECTION</string>
+    <string name="quick_focus_session">QUICK FOCUS SESSION</string>
+    <string name="for_apps_count">FOR APPS (%1$d/%2$d)</string>
+    <string name="deselect_all">Deselect all</string>
+    <string name="select_all">Select all</string>
+    <string name="preview_saved_time">Preview: you have saved 2 days of life</string>
+    <string name="target_pause_duration">PAUSE DURATION (INHALE &amp; EXHALE)</string>
+    <string name="target_preview_animation">PREVIEW ANIMATION</string>
+    <string name="target_animation_type">ANIMATION TYPE</string>
+    <string name="target_mindfulness_phrase">MINDFULNESS PHRASE</string>
+    <string name="target_protection_status_label">PROTECTION STATUS</string>
+
+    <!-- Onboarding & Permissions (F17-F22) -->
+    <string name="accessibility_service_description">Monitors foreground applications to display breathing pause before distraction.</string>
+    <string name="step_01_03">01/03</string>
+    <string name="step_02_03">02/03</string>
+    <string name="step_03_03">03/03</string>
+
+    <string name="onboarding_step1_title">ACCESSIBILITY SERVICE</string>
+    <string name="onboarding_step1_desc">Wattim uses Accessibility Service to detect when protected apps are opened and present breathing pauses.</string>
+
+    <string name="onboarding_step2_title">DRAW OVER OTHER APPS</string>
+    <string name="onboarding_step2_desc">Overlay permission is required to display the fullscreen breathing screen over selected apps.</string>
+
+    <string name="onboarding_step3_title">BATTERY OPTIMIZATION</string>
+    <string name="onboarding_step3_desc">Disable battery optimization so Wattim protection remains active in the background without system termination.</string>
+
+    <string name="restricted_settings_title">RESTRICTED SETTINGS WARNING</string>
+    <string name="restricted_settings_desc">On Android 13+, system may restrict accessibility for manually installed apps. If blocked: open App Info → tap ⋮ (top-right) → tap \'Allow restricted settings\' → enter PIN/fingerprint → return here.</string>
+    <string name="action_open_app_info">OPEN APP INFO</string>
+
+    <string name="onboarding_ready_title">SYSTEM READY</string>
+    <string name="onboarding_ready_desc">All core capabilities granted. Protection is armed and ready.</string>
+    <string name="badge_accessibility">ACCESSIBILITY</string>
+    <string name="badge_overlay">OVERLAY</string>
+    <string name="badge_battery">BATTERY</string>
+    <string name="badge_ready">READY</string>
+
+    <!-- Foreground service & notifications (F22) -->
+    <string name="fgs_channel_name">Protection Status</string>
+    <string name="fgs_channel_desc">Ongoing notification showing protection service status</string>
+    <string name="fgs_status_active">Protection active</string>
+    <string name="fgs_status_degraded">Protection paused: permissions required</string>
+    <string name="fgs_status_starting">Protection starting…</string>
+    <string name="fgs_status_start_failed">Protection service start failed</string>
+
+    <!-- Settings intent error -->
+    <string name="settings_intent_error">Unable to open system settings directly. Please navigate to settings manually.</string>
+
+    <!-- Home screen (F44, F45, F48, F59) -->
+    <string name="home_header_protected_count">PROTECTED APPS</string>
+    <string name="home_empty_title">NO PROTECTED APPS</string>
+    <string name="home_empty_description">Select launchable apps to configure mindful breathing pauses before distraction.</string>
+    <string name="today_stats_title">TODAY</string>
+    <string name="today_stats_attempts">ATTEMPTS</string>
+    <string name="today_stats_closed">CLOSED</string>
+    <string name="today_stats_prevented">PREVENTED</string>
+    <string name="global_pause_title">GLOBAL PAUSE</string>
+    <string name="global_pause_15m">15M</string>
+    <string name="global_pause_30m">30M</string>
+    <string name="global_pause_1h">1H</string>
+    <string name="global_pause_forever">FOREVER</string>
+
+    <!-- Add App dialog (F46, F47) -->
+    <string name="add_app_dialog_title">ADD PROTECTED APP</string>
+    <string name="search_apps_placeholder">Search apps by name or package…</string>
+    <string name="catalog_loading">Scanning applications…</string>
+    <string name="catalog_empty">No launchable apps available</string>
+    <string name="catalog_no_results">No apps match your search</string>
+    <string name="catalog_error">Failed to load application catalog</string>
+
+    <!-- Target Settings (F49-F58) -->
+    <string name="action_preview">PREVIEW</string>
+    <string name="target_settings_title">TARGET SETTINGS</string>
+    <string name="phrase_label">MINDFUL PHRASE</string>
+    <string name="target_protection_status">PROTECTION STATUS</string>
+    <string name="target_status_active">ACTIVE</string>
+    <string name="target_status_disabled">DISABLED</string>
+    <string name="phrase_hint">Enter breathing phrase (max 80 chars, 3 lines)</string>
+    <string name="animation_style_label">ANIMATION STYLE</string>
+    <string name="anim_pulse_sphere">SPHERE</string>
+    <string name="anim_circle_vortex">VORTEX</string>
+    <string name="duration_label">PAUSE DURATION</string>
+    <string name="reintervention_label">RE-INTERVENTION</string>
+    <string name="reintervention_custom">CUSTOM</string>
+    <string name="reintervention_explanation">Re-challenge after %1$s of foreground usage.</string>
+    <string name="reintervention_explanation_off">No repeating challenge during continuous session.</string>
+    <string name="quick_return_label">QUICK RETURN GRACE</string>
+    <string name="growth_label">EXPONENTIAL GROWTH</string>
+    <string name="growth_percent_label">GROWTH RATE</string>
+    <string name="growth_window_label">ROLLING WINDOW</string>
+    <string name="backoff_calculator_title">DELAY PROJECTION</string>
+    <string name="backoff_base_note">Base: %1$ds (+%2$d%% per attempt in %3$s)</string>
+    <string name="status_stale_warning">Settings were modified externally. Please reload.</string>
+    <string name="error_commit_failed">Failed to save changes. Please try again.</string>
+
+    <!-- S08 Manual Blocks & Schedules (F60-F68) -->
+    <string name="quick_lock_title">QUICK LOCK</string>
+    <string name="quick_lock_desc">Block this application immediately</string>
+    <string name="duration_15m">15M</string>
+    <string name="duration_30m">30M</string>
+    <string name="duration_1h">1H</string>
+    <string name="duration_2h">2H</string>
+
+    <string name="quick_focus_title">QUICK FOCUS</string>
+    <string name="quick_focus_desc">Temporarily block selected applications</string>
+    <string name="action_start_focus">START FOCUS</string>
+    <string name="no_apps_for_focus">No protected applications configured. Add applications on the Apps tab first.</string>
+
+    <string name="active_session_title">ACTIVE BLOCK SESSION</string>
+    <string name="apps_count_format">%1$d APPS</string>
+    <string name="one_app_format">1 APP</string>
+
+    <string name="schedules_title">SCHEDULES</string>
+    <string name="blocks_screen_title">BLOCKING</string>
+    <string name="block_schedules_title">BLOCK SCHEDULES</string>
+    <string name="action_create_schedule_full">+ CREATE SCHEDULE</string>
+    <string name="action_create_schedule">CREATE</string>
+    <string name="no_schedules">NO SCHEDULES CONFIGURED</string>
+    <string name="no_schedules_desc">Set recurring hard blocks or mindful intervention routines.</string>
+    <string name="action_edit">EDIT</string>
+    <string name="action_delete">DELETE</string>
+    <string name="all_applications_format">ALL APPLICATIONS (%1$d)</string>
+    <string name="overnight_badge">OVERNIGHT</string>
+    <string name="schedule_type_hard_block">HARD BLOCK</string>
+    <string name="schedule_type_intervention">INTERVENTION</string>
+
+    <string name="schedule_editor_create_title">NEW SCHEDULE</string>
+    <string name="schedule_editor_edit_title">EDIT SCHEDULE</string>
+    <string name="schedule_name_label">SCHEDULE NAME</string>
+    <string name="schedule_name_hint">e.g. Work Hours, Deep Sleep</string>
+    <string name="schedule_type_label">SCHEDULE TYPE</string>
+    <string name="schedule_type_hard_block_desc">Completely blocks access to selected apps without breathing pause or bypass.</string>
+    <string name="schedule_type_intervention_desc">Enforces custom breathing pauses and repeat rules for selected apps.</string>
+    <string name="schedule_days_label">ACTIVE DAYS</string>
+    <string name="schedule_time_label">TIME WINDOW</string>
+    <string name="schedule_time_start">START TIME</string>
+    <string name="schedule_time_end">END TIME</string>
+    <string name="preset_work">WORK (09:00 - 18:00)</string>
+    <string name="preset_night">NIGHT (23:00 - 07:00)</string>
+    <string name="preset_morning">MORNING (07:00 - 12:00)</string>
+    <string name="preset_evening">EVENING (18:00 - 23:00)</string>
+    <string name="schedule_targets_label">TARGET APPLICATIONS</string>
+    <string name="schedule_overrides_label">PER-APP OVERRIDES</string>
+    <string name="override_inherit">INHERIT</string>
+    <string name="override_custom">CUSTOM</string>
+    <string name="override_duration_label">DURATION</string>
+    <string name="override_repeat_label">REPEAT</string>
+    <string name="error_empty_name">Name cannot be empty</string>
+    <string name="error_empty_days">Select at least one day</string>
+    <string name="error_equal_times">Start and end times cannot be equal</string>
+    <string name="error_empty_targets">Select at least one target application</string>
+
+    <!-- S09 Statistics (F69-F71) -->
+    <string name="stats_saved_life_title">ALL-TIME SAVED LIFE</string>
+    <string name="stats_screen_title">STATISTICS</string>
+    <string name="settings_screen_title">SETTINGS</string>
+    <string name="stats_avoided_impulses">AVOIDED IMPULSES</string>
+    <string name="stats_saved_today">SAVED TODAY</string>
+    <string name="stats_multiplier_note">Multiplier: %1$d min / impulse</string>
+    <string name="today_stats_continued">CONTINUED</string>
+    <string name="stats_apps_today_title">APPLICATIONS TODAY</string>
+    <string name="stats_col_app">APP</string>
+    <string name="stats_col_open">OPEN</string>
+    <string name="stats_col_closed">CLOSED</string>
+    <string name="stats_no_activity_today">NO ACTIVITY RECORDED TODAY</string>
+
+    <!-- S09 Config & Settings (F72-F78) -->
+    <string name="config_language_title">LANGUAGE</string>
+    <string name="lang_auto">AUTO</string>
+    <string name="lang_english">ENGLISH</string>
+    <string name="lang_russian">РУССКИЙ</string>
+
+    <string name="config_theme_title">THEME</string>
+
+    <string name="config_saved_session_title">SAVED SESSION DURATION</string>
+    <string name="config_saved_session_desc">Estimated time saved for each avoided distraction impulse (5, 7, 10, or 15 min).</string>
+
+    <string name="config_overlay_stats_title">OVERLAY STATISTICS</string>
+    <string name="config_overlay_stats_desc">Display saved time badge during breathing pause overlay.</string>
+
+    <string name="config_permissions_title">PERMISSIONS &amp; STATUS</string>
+    <string name="permission_accessibility_desc">Detects foreground app openings</string>
+    <string name="permission_overlay_desc">Displays breathing overlay</string>
+    <string name="permission_battery_desc">Keeps protection alive in background</string>
+
+    <string name="config_privacy_title">PRIVACY &amp; SECURITY</string>
+    <string name="config_privacy_offline">100% OFFLINE</string>
+    <string name="config_privacy_offline_desc">Wattim has no network permission and never communicates with external servers or cloud services.</string>
+    <string name="config_privacy_local">LOCAL STORAGE</string>
+    <string name="config_privacy_local_desc">All configuration, schedules, and statistics are stored exclusively in a private on-device database.</string>
+    <string name="config_privacy_telemetry">NO TRACKING</string>
+    <string name="config_privacy_telemetry_desc">Zero analytics, crash-reporting libraries, or third-party telemetry SDKs are included.</string>
+    <string name="config_privacy_accessibility">SAFE ACCESSIBILITY</string>
+    <string name="config_privacy_accessibility_desc">Accessibility Service is used solely to detect when configured target apps open. Keystrokes, screen text, and inputs are never inspected or stored.</string>
 </resources>

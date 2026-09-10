@@ -100,3 +100,22 @@ This bundle intentionally does not mandate:
 - a 300-line hard build failure.
 
 Those patterns can improve large repositories but can also create needless indirection in a smaller project. The enforced invariants are ownership, dependency direction, explicit state, structured concurrency, measured performance, event-driven background behavior, and design-system consistency.
+
+## Antigravity multi-agent documentation reviewed
+
+- Custom/subagents specification: https://antigravity.google/docs/subagents/
+- CLI agents panel and workspace agent discovery: https://antigravity.google/docs/cli/commands/agents/
+- SDK subagent overview: https://antigravity.google/docs/sdk/subagents
+- Models: https://antigravity.google/docs/models/
+
+Multi-agent bundle choices based on those docs:
+
+- workspace custom agents are stored under `.agents/agents/`;
+- custom agents use Markdown with YAML frontmatter;
+- worker roles use `subagent: true` and `mainAgent: false`;
+- the coordinator uses `mainAgent: true` and is not exposed as a worker;
+- all supplied roles currently pin `model: flash`;
+- the coordinator is granted the documented `invoke_subagent` tool;
+- worker tool lists use documented tool names only;
+- worker agents intentionally do not receive `invoke_subagent`, keeping delegation shallow;
+- read-only roles rely on instructions plus omission of file-edit tools; shell commands remain available for inspection and verification.
