@@ -69,7 +69,10 @@ class TargetSettingsViewModel(
             backoffEnabled = existing?.growthConfig?.enabled ?: false,
             backoffPercent = existing?.growthConfig?.percent ?: 20,
             backoffWindowMs = existing?.growthConfig?.windowMs ?: 3600_000L,
-            baseRowVersion = existing?.rowVersion ?: 1L
+            baseRowVersion = existing?.rowVersion ?: 1L,
+            twoStageUnlock = existing?.twoStageUnlock ?: false,
+            unlockCodeLength = existing?.unlockCodeLength ?: 4,
+            requireEmergencyCode = existing?.requireEmergencyCode ?: false
         )
 
         val delays = Backoff.calculateFirstTen(
@@ -140,6 +143,18 @@ class TargetSettingsViewModel(
         updateDraft { it.copy(enabled = !it.enabled) }
     }
 
+    fun onTwoStageUnlockChange(enabled: Boolean) {
+        updateDraft { it.copy(twoStageUnlock = enabled) }
+    }
+
+    fun onUnlockCodeLengthChange(length: Int) {
+        updateDraft { it.copy(unlockCodeLength = length.coerceIn(1, 10)) }
+    }
+
+    fun onRequireEmergencyCodeChange(enabled: Boolean) {
+        updateDraft { it.copy(requireEmergencyCode = enabled) }
+    }
+
     fun onOpenPreview() {
         _uiState.update { it.copy(isPreviewOpen = true) }
     }
@@ -188,7 +203,10 @@ class TargetSettingsViewModel(
                 percent = draft.backoffPercent,
                 windowMs = draft.backoffWindowMs
             ),
-            rowVersion = draft.baseRowVersion
+            rowVersion = draft.baseRowVersion,
+            twoStageUnlock = draft.twoStageUnlock,
+            unlockCodeLength = draft.unlockCodeLength,
+            requireEmergencyCode = draft.requireEmergencyCode
         )
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }

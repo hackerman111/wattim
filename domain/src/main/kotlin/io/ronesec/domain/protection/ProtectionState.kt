@@ -23,6 +23,7 @@ data class ActiveSession(
 }
 
 sealed interface InterveningSubstate {
+    data object CodeGate : InterveningSubstate
     data object AwaitingAttachment : InterveningSubstate
     data class Breathing(
         val startElapsedMs: Long,
@@ -56,7 +57,8 @@ sealed interface ProtectionState {
 
     data class Intervening(
         val session: ActiveSession,
-        val substate: InterveningSubstate
+        val substate: InterveningSubstate,
+        val codes: SessionCodes = SessionCodes()
     ) : ProtectionState
 
     data class Blocked(

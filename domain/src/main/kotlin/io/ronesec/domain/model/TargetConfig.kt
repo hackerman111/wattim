@@ -30,10 +30,14 @@ data class TargetConfig(
     val reinterventionMs: Long = DEFAULT_REINTERVENTION_MS,
     val quickReturnGraceMs: Long = DEFAULT_GRACE_MS,
     val growthConfig: BackoffConfig = BackoffConfig(),
-    val rowVersion: Long = 1L
+    val rowVersion: Long = 1L,
+    val twoStageUnlock: Boolean = false,
+    val unlockCodeLength: Int = 4,
+    val requireEmergencyCode: Boolean = false
 ) {
     init {
         require(packageName.isNotBlank()) { "Package name cannot be blank" }
+        require(unlockCodeLength in 1..10) { "Unlock code length must be between 1 and 10" }
         require(durationMs in MIN_DURATION_MS..MAX_DURATION_MS) {
             "Duration must be between $MIN_DURATION_MS and $MAX_DURATION_MS ms, was $durationMs"
         }

@@ -11,6 +11,7 @@ import android.widget.FrameLayout
 import androidx.compose.ui.platform.ComposeView
 import io.ronesec.android.protection.OverlayPort
 import io.ronesec.domain.model.SessionId
+import io.ronesec.domain.protection.CodeChallengeUi
 import io.ronesec.domain.policy.EffectiveInterventionConfig
 import java.time.Instant
 
@@ -263,6 +264,10 @@ class OverlayHost(
 
     override fun updateOverlayComplete(sessionId: SessionId, cycle: Int) {
         presenter.updateOverlayComplete(sessionId, cycle)
+    }
+
+    override fun updateCodeChallenge(sessionId: SessionId, cycle: Int, snapshot: CodeChallengeUi) {
+        if (activeSessionId == sessionId) presenter.updateCodeChallenge(sessionId, cycle, snapshot)
     }
 
     override fun dismissOverlay(sessionId: SessionId?) {

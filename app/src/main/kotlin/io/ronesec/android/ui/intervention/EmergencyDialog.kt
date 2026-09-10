@@ -18,6 +18,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,10 +57,19 @@ fun EmergencyDialog(
     onEmergencyTimed: (Long) -> Unit,
     onEmergencyForever: () -> Unit,
     customEmergencyMinutes: Int? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    requireCode: Boolean = false,
+    codeError: Boolean = false,
+    onOnceWithCode: ((String) -> Unit)? = null,
+    onTimedWithCode: ((Long, String) -> Unit)? = null,
+    onForeverWithCode: ((String) -> Unit)? = null
 ) {
     val colors = WattimTheme.colors
     val typography = WattimTheme.typography
+    var code by remember { mutableStateOf("") }
+    val timedAction: (Long) -> Unit = { duration ->
+        if (onTimedWithCode != null) onTimedWithCode(duration, code) else onEmergencyTimed(duration)
+    }
 
     // 75% black scrim as in app_1
     val scrimColor = Color.Black.copy(alpha = 0.75f)
@@ -62,6 +77,7 @@ fun EmergencyDialog(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .background(scrimColor)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -86,6 +102,7 @@ fun EmergencyDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -115,9 +132,14 @@ fun EmergencyDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Enter once button (primary)
+                if (requireCode) {
+                    DigitCodeInput(code, 10, { code = it }, stringResource(R.string.code_emergency_enter))
+                    if (codeError) Text(stringResource(R.string.code_invalid), color = colors.error)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
                 TerminalButton(
                     text = stringResource(R.string.emergency_enter_once).uppercase(),
-                    onClick = onEmergencyOnce,
+                    onClick = { if (onOnceWithCode != null) onOnceWithCode(code) else onEmergencyOnce() },
                     isPrimary = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -143,25 +165,25 @@ fun EmergencyDialog(
                 ) {
                     TerminalBadge(
                         text = stringResource(R.string.emergency_15m),
-                        onClick = { onEmergencyTimed(15L * 60L * 1000L) }
+                        onClick = { timedAction(15L * 60L * 1000L) }
                     )
                     TerminalBadge(
                         text = stringResource(R.string.emergency_30m),
-                        onClick = { onEmergencyTimed(30L * 60L * 1000L) }
+                        onClick = { timedAction(30L * 60L * 1000L) }
                     )
                     TerminalBadge(
                         text = stringResource(R.string.emergency_1h),
-                        onClick = { onEmergencyTimed(60L * 60L * 1000L) }
+                        onClick = { timedAction(60L * 60L * 1000L) }
                     )
                     if (customEmergencyMinutes != null) {
                         TerminalBadge(
                             text = stringResource(R.string.emergency_custom_badge_format, customEmergencyMinutes),
-                            onClick = { onEmergencyTimed(customEmergencyMinutes * 60L * 1000L) }
+                            onClick = { timedAction(customEmergencyMinutes * 60L * 1000L) }
                         )
                     }
                     TerminalBadge(
                         text = stringResource(R.string.emergency_forever),
-                        onClick = onEmergencyForever
+                        onClick = { if (onForeverWithCode != null) onForeverWithCode(code) else onEmergencyForever() }
                     )
                 }
 

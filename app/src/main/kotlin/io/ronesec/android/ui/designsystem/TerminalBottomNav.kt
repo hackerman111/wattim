@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 
 enum class TerminalTab(val defaultTitle: String) {
     APPS("APPS"),
+    CODES("CODES"),
     BLOCK("BLOCK"),
     STATS("STATS"),
     CONFIG("CONFIG")
@@ -52,6 +53,7 @@ fun TerminalBottomNav(
 
             Box(
                 modifier = Modifier
+                    .weight(1f)
                     .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                     .selectable(
                         selected = isSelected,
@@ -70,7 +72,7 @@ fun TerminalBottomNav(
                             if (isSelected) Modifier.border(1.dp, colors.accent, RoundedCornerShape(4.dp))
                             else Modifier
                         )
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(

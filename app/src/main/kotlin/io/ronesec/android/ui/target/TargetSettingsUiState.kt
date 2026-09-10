@@ -19,7 +19,10 @@ data class TargetSettingsDraft(
     val backoffEnabled: Boolean = false,
     val backoffPercent: Int = 20,
     val backoffWindowMs: Long = 60 * 60 * 1000L,
-    val baseRowVersion: Long = 1L
+    val baseRowVersion: Long = 1L,
+    val twoStageUnlock: Boolean = false,
+    val unlockCodeLength: Int = 4,
+    val requireEmergencyCode: Boolean = false
 )
 
 enum class ReinterventionChoice(val labelResName: String, val durationMs: Long?) {

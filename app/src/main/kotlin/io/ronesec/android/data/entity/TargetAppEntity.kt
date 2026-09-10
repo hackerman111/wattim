@@ -1,6 +1,7 @@
 package io.ronesec.android.data.entity
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "target_apps")
@@ -17,5 +18,8 @@ data class TargetAppEntity(
     val growthEnabled: Boolean = false,
     val growthPercent: Int = 20,
     val growthWindowMs: Long = 3_600_000L,
-    val rowVersion: Long = 1L
+    val rowVersion: Long = 1L,
+    @ColumnInfo(defaultValue = "0") val twoStageUnlock: Boolean = false,
+    @ColumnInfo(defaultValue = "4") val unlockCodeLength: Int = 4,
+    @ColumnInfo(defaultValue = "0") val requireEmergencyCode: Boolean = false
 )

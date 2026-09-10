@@ -4,10 +4,16 @@ import io.ronesec.domain.model.RuntimePolicySnapshot
 import io.ronesec.domain.model.SessionId
 
 sealed interface ProtectionEvent {
+    data class GenerateUnlockCode(val sessionId: SessionId, val cycle: Int) : ProtectionEvent
+    data class CodeTripFailed(val sessionId: SessionId, val cycle: Int) : ProtectionEvent
+    data class SubmitUnlockCode(val sessionId: SessionId, val cycle: Int, val code: String) : ProtectionEvent {
+        override fun toString(): String = "SubmitUnlockCode(sessionId=$sessionId, cycle=$cycle, redacted)"
+    }
     data class ForegroundCandidate(
         val packageName: String,
         val sourceUptimeMs: Long,
-        val eventSequence: Long
+        val eventSequence: Long,
+        val isLauncher: Boolean = false
     ) : ProtectionEvent
 
     data class CoherentReady(
@@ -49,19 +55,28 @@ sealed interface ProtectionEvent {
 
     data class ActionEmergencyOnce(
         val sessionId: SessionId,
-        val cycle: Int
-    ) : ProtectionEvent
+        val cycle: Int,
+        val code: String? = null
+    ) : ProtectionEvent {
+        override fun toString(): String = "ActionEmergencyOnce(sessionId=$sessionId, cycle=$cycle, redacted)"
+    }
 
     data class ActionEmergencyTimed(
         val sessionId: SessionId,
         val cycle: Int,
-        val durationMs: Long
-    ) : ProtectionEvent
+        val durationMs: Long,
+        val code: String? = null
+    ) : ProtectionEvent {
+        override fun toString(): String = "ActionEmergencyTimed(sessionId=$sessionId, cycle=$cycle, redacted)"
+    }
 
     data class ActionEmergencyForever(
         val sessionId: SessionId,
-        val cycle: Int
-    ) : ProtectionEvent
+        val cycle: Int,
+        val code: String? = null
+    ) : ProtectionEvent {
+        override fun toString(): String = "ActionEmergencyForever(sessionId=$sessionId, cycle=$cycle, redacted)"
+    }
 
     data object ScreenOff : ProtectionEvent
     data object ScreenOnLocked : ProtectionEvent

@@ -25,7 +25,10 @@ data class EffectiveInterventionConfig(
     val reinterventionMs: Long,
     val quickReturnGraceMs: Long,
     val baseDurationMs: Long,
-    val backoffExponent: Int
+    val backoffExponent: Int,
+    val twoStageUnlock: Boolean = false,
+    val unlockCodeLength: Int = 4,
+    val requireEmergencyCode: Boolean = false
 )
 
 sealed interface Decision {
@@ -158,7 +161,10 @@ object RuleEngine {
                     reinterventionMs = reinterventionMs,
                     quickReturnGraceMs = target.quickReturnGraceMs,
                     baseDurationMs = baseDurationMs,
-                    backoffExponent = priorEntryCount
+                    backoffExponent = priorEntryCount,
+                    twoStageUnlock = target.twoStageUnlock,
+                    unlockCodeLength = target.unlockCodeLength,
+                    requireEmergencyCode = target.requireEmergencyCode
                 )
             )
         }
@@ -193,7 +199,10 @@ object RuleEngine {
                 reinterventionMs = target.reinterventionMs,
                 quickReturnGraceMs = target.quickReturnGraceMs,
                 baseDurationMs = target.durationMs,
-                backoffExponent = priorEntryCount
+                backoffExponent = priorEntryCount,
+                twoStageUnlock = target.twoStageUnlock,
+                unlockCodeLength = target.unlockCodeLength,
+                requireEmergencyCode = target.requireEmergencyCode
             )
         )
     }

@@ -15,6 +15,7 @@ import io.ronesec.android.platform.audio.AudioDiagnostics
 import io.ronesec.android.platform.system.PermissionMonitor
 import io.ronesec.android.platform.system.SettingsIntentAdapter
 import io.ronesec.android.ui.blocks.BlocksViewModel
+import io.ronesec.android.ui.codes.CodesPanelState
 import io.ronesec.android.ui.blocks.editor.ScheduleEditorScreen
 import io.ronesec.android.ui.blocks.editor.ScheduleEditorViewModel
 import io.ronesec.android.ui.config.ConfigViewModel
@@ -26,6 +27,9 @@ import io.ronesec.android.ui.stats.StatsViewModel
 import io.ronesec.android.ui.target.TargetSettingsScreen
 import io.ronesec.android.ui.target.TargetSettingsViewModel
 import io.ronesec.domain.model.WallClock
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
 
 @Composable
 fun WattimNavHost(
@@ -38,6 +42,8 @@ fun WattimNavHost(
     packageCatalog: PackageCatalog? = null,
     wallClock: WallClock? = null,
     audioDiagnostics: AudioDiagnostics? = null,
+    codesPanelState: CodesPanelState = CodesPanelState.Empty,
+    routeRequests: Flow<AppRoute> = emptyFlow(),
     modifier: Modifier = Modifier,
     onRouteChange: (AppRoute) -> Unit = {}
 ) {
@@ -54,6 +60,12 @@ fun WattimNavHost(
 
     LaunchedEffect(currentRoute) {
         onRouteChange(currentRoute)
+    }
+
+    LaunchedEffect(routeRequests) {
+        routeRequests.collect { requestedRoute ->
+            currentRoute = requestedRoute
+        }
     }
 
     // Auto-return to onboarding if required permissions are revoked while in Main or Detail (F21)
@@ -139,6 +151,7 @@ fun WattimNavHost(
                 blocksViewModel = blocksViewModel,
                 statsViewModel = statsViewModel,
                 configViewModel = configViewModel,
+                codesPanelState = codesPanelState,
                 onOpenScheduleEditor = { scheduleId ->
                     currentRoute = AppRoute.ScheduleEditor(scheduleId)
                 },
@@ -169,6 +182,9 @@ fun WattimNavHost(
                     onBackoffEnabledChange = { targetViewModel.onBackoffEnabledChange(it) },
                     onBackoffPercentChange = { targetViewModel.onBackoffPercentChange(it) },
                     onBackoffWindowChange = { targetViewModel.onBackoffWindowChange(it) },
+                    onTwoStageUnlockChange = targetViewModel::onTwoStageUnlockChange,
+                    onUnlockCodeLengthChange = targetViewModel::onUnlockCodeLengthChange,
+                    onRequireEmergencyCodeChange = targetViewModel::onRequireEmergencyCodeChange,
                     onToggleEnabled = { targetViewModel.onToggleEnabled() },
                     onOpenPreview = { targetViewModel.onOpenPreview() },
                     onDismissPreview = { targetViewModel.onDismissPreview() },

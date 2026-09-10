@@ -44,7 +44,10 @@ object PolicyCompiler {
                 percent = entity.growthPercent,
                 windowMs = entity.growthWindowMs
             ),
-            rowVersion = entity.rowVersion
+            rowVersion = entity.rowVersion,
+            twoStageUnlock = entity.twoStageUnlock,
+            unlockCodeLength = entity.unlockCodeLength,
+            requireEmergencyCode = entity.requireEmergencyCode
         )
     }
 
@@ -61,7 +64,10 @@ object PolicyCompiler {
             growthEnabled = config.growthConfig.enabled,
             growthPercent = config.growthConfig.percent,
             growthWindowMs = config.growthConfig.windowMs,
-            rowVersion = config.rowVersion
+            rowVersion = config.rowVersion,
+            twoStageUnlock = config.twoStageUnlock,
+            unlockCodeLength = config.unlockCodeLength,
+            requireEmergencyCode = config.requireEmergencyCode
         )
     }
 

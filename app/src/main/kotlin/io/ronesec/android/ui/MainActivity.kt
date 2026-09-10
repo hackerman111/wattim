@@ -17,11 +17,22 @@ import io.ronesec.android.WattimApplication
 import io.ronesec.android.data.PresentationSettings
 import io.ronesec.android.platform.system.FocusForegroundService
 import io.ronesec.android.platform.system.SettingsIntentAdapter
+import io.ronesec.android.protection.InterventionCoordinator
 import io.ronesec.android.ui.designsystem.WattimTheme
+import io.ronesec.android.ui.designsystem.TerminalTab
+import io.ronesec.android.ui.codes.CodesPanelState
+import io.ronesec.android.ui.codes.toCodesPanelState
 import io.ronesec.android.ui.locale.ProvideWattimLocale
+import io.ronesec.domain.protection.ProtectionState
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        const val EXTRA_OPEN_CODES = "io.ronesec.android.extra.OPEN_CODES"
+    }
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -35,6 +46,8 @@ class MainActivity : ComponentActivity() {
     private var hasRequestedNotificationPermission = false
 
     private var activeRoute: AppRoute? = null
+    private val isActivityResumed = MutableStateFlow(false)
+    private val routeRequests = Channel<AppRoute>(capacity = Channel.CONFLATED)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +68,9 @@ class MainActivity : ComponentActivity() {
         val packageCatalog = app?.packageCatalog
         val wallClock = app?.wallClock
         val settingsAdapter = SettingsIntentAdapter(this)
+        val activeCoordinator = app?.activeCoordinator
+            ?: MutableStateFlow<InterventionCoordinator?>(null)
+        val routeRequestFlow = routeRequests.receiveAsFlow()
 
         // Request POST_NOTIFICATIONS once on API 33+ if needed
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasRequestedNotificationPermission) {
@@ -63,12 +79,17 @@ class MainActivity : ComponentActivity() {
         }
 
         // Restore saved route if available, otherwise determine based on permissions
-        val restoredRoute = AppRoute.fromBundle(savedInstanceState)
+        val restoredRoute = AppRoute.fromBundle(savedInstanceState) ?: intent.codesRouteOrNull()
         activeRoute = restoredRoute
 
         setContent {
             val fallbackSettingsFlow = remember { MutableStateFlow(PresentationSettings()) }
             val presentationSettings by (policyStore?.presentationSettings ?: fallbackSettingsFlow).collectAsState()
+            val coordinator by activeCoordinator.collectAsState()
+            val fallbackProtectionState = remember { MutableStateFlow<ProtectionState?>(null) }
+            val protectionState by (coordinator?.protectionState ?: fallbackProtectionState).collectAsState()
+            val activityResumed by isActivityResumed.collectAsState()
+            val codesPanelState = protectionState.toCodesPanelState(activityResumed)
 
             ProvideWattimLocale(language = presentationSettings.language) {
                 WattimTheme(themeId = presentationSettings.themeId) {
@@ -83,6 +104,8 @@ class MainActivity : ComponentActivity() {
                                 packageCatalog = packageCatalog,
                                 wallClock = wallClock,
                                 audioDiagnostics = app.audioDiagnostics,
+                                codesPanelState = codesPanelState,
+                                routeRequests = routeRequestFlow,
                                 onRouteChange = { activeRoute = it },
                                 onStartFgs = { FocusForegroundService.start(this) }
                             )
@@ -95,12 +118,19 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        isActivityResumed.value = true
         (applicationContext as? WattimApplication)?.permissionMonitor?.refresh()
+    }
+
+    override fun onPause() {
+        isActivityResumed.value = false
+        super.onPause()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        intent.codesRouteOrNull()?.let(routeRequests::trySend)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -109,4 +139,12 @@ class MainActivity : ComponentActivity() {
             outState.putAll(AppRoute.toBundle(route))
         }
     }
+
+
+    private fun Intent.codesRouteOrNull(): AppRoute? =
+        if (getBooleanExtra(EXTRA_OPEN_CODES, false)) {
+            AppRoute.Main(TerminalTab.CODES)
+        } else {
+            null
+        }
 }

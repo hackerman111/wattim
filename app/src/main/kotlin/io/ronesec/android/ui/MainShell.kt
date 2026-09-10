@@ -22,6 +22,8 @@ import io.ronesec.android.ui.stats.StatsScreen
 import io.ronesec.android.ui.stats.StatsViewModel
 import io.ronesec.android.ui.config.ConfigScreen
 import io.ronesec.android.ui.config.ConfigViewModel
+import io.ronesec.android.ui.codes.CodesPanelState
+import io.ronesec.android.ui.codes.CodesScreen
 
 @Composable
 fun MainShell(
@@ -33,12 +35,14 @@ fun MainShell(
     blocksViewModel: BlocksViewModel? = null,
     statsViewModel: StatsViewModel? = null,
     configViewModel: ConfigViewModel? = null,
+    codesPanelState: CodesPanelState = CodesPanelState.Empty,
     onOpenScheduleEditor: ((Long?) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val colors = WattimTheme.colors
     val tabLabels = mapOf(
         TerminalTab.APPS to stringResource(R.string.nav_apps),
+        TerminalTab.CODES to stringResource(R.string.nav_codes),
         TerminalTab.BLOCK to stringResource(R.string.nav_block),
         TerminalTab.STATS to stringResource(R.string.nav_stats),
         TerminalTab.CONFIG to stringResource(R.string.nav_config)
@@ -84,6 +88,7 @@ fun MainShell(
                         )
                     }
                 }
+                TerminalTab.CODES -> CodesScreen(state = codesPanelState)
                 TerminalTab.BLOCK -> {
                     if (blocksViewModel != null) {
                         val blocksUiState by blocksViewModel.uiState.collectAsState()

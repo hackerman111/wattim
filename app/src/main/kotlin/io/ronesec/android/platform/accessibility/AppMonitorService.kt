@@ -131,6 +131,9 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
         audioGuard = audio
 
         val overlayActionDispatcher = object : OverlayActionDispatcher {
+            override fun onCodeEvent(event: ProtectionEvent) {
+                ingress.sendControlEvent(event)
+            }
             override fun onContinue(sessionId: SessionId, cycle: Int) {
                 ingress.sendControlEvent(ProtectionEvent.ActionContinue(sessionId, cycle))
             }
@@ -213,7 +216,10 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
             },
             storeWriter = app.protectionStoreWriter,
             scheduler = scheduler,
-            subscriptionController = subscriptionController
+            subscriptionController = subscriptionController,
+            codesNavigationPort = io.ronesec.android.protection.AndroidCodesNavigationPort(this) { sessionId, cycle ->
+                ingress.sendControlEvent(ProtectionEvent.CodeTripFailed(sessionId, cycle))
+            }
         )
 
         val coord = InterventionCoordinator(

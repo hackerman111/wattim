@@ -8,6 +8,13 @@ import io.ronesec.domain.policy.EffectiveInterventionConfig
 import java.time.Instant
 
 sealed interface ProtectionEffect {
+    data class UpdateCodeChallenge(
+        val sessionId: SessionId,
+        val cycle: Int,
+        val snapshot: CodeChallengeUi
+    ) : ProtectionEffect
+
+    data class OpenWattim(val sessionId: SessionId, val cycle: Int) : ProtectionEffect
     data class ShowIntervention(
         val sessionId: SessionId,
         val cycle: Int,

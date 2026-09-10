@@ -1,0 +1,9 @@
+<resources>
+    <string name="code_gate_instruction">Generate a code, remember it in Wattim → Codes, then return here and enter it to start breathing.</string>
+    <string name="code_generate">Generate code</string>
+    <string name="code_enter">Session code</string>
+    <string name="code_confirm">Confirm code</string>
+    <string name="code_invalid">Incorrect or expired code</string>
+    <string name="code_emergency_display">Emergency access code: %1$s</string>
+    <string name="code_emergency_enter">Enter the 10-digit code from the intervention screen</string>
+</resources>

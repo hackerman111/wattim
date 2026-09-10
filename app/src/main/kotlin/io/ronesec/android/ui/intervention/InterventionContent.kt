@@ -74,7 +74,8 @@ fun InterventionContent(
     customEmergencyMinutes: Int? = null,
     modifier: Modifier = Modifier,
     reducedMotion: Boolean = false,
-    isAutofocusEnabled: Boolean = true
+    isAutofocusEnabled: Boolean = true,
+    emergencyCode: String? = null
 ) {
     val colors = WattimTheme.colors
     val typography = WattimTheme.typography
@@ -195,6 +196,8 @@ fun InterventionContent(
                     .padding(bottom = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                EmergencyCodeLabel(emergencyCode)
                 if (!progress.isComplete) {
                     // During breathing: Exit + Emergency
                     Row(
@@ -241,6 +244,7 @@ fun InterventionContent(
                             variant = TerminalButtonVariant.PRIMARY
                         )
                     }
+                }
                 }
             }
         }
