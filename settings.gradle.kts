@@ -20,5 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ronesec"
+rootProject.name = "wattim"
+include(":domain")
 include(":app")

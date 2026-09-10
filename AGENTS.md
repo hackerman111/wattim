@@ -17,13 +17,30 @@ Do not trade correctness for fewer lines, architectural separation for fewer fil
 
 ## Start here
 
-1. Read `.agents/README.md` and load only the references relevant to the task.
+1. Read `.agents/README.md` and load only the references relevant to the task. For complex work that may benefit from delegation, also read `.agents/reference/multi-agent.md`.
 2. Inspect the affected module/package, neighboring implementations, tests, Gradle configuration, and current diff before editing.
 3. Identify ownership of state, lifecycle, threading, persistence, and UI before changing behavior.
 4. Make the smallest coherent change that fixes the actual cause. Do not mix unrelated cleanup into the same change.
 5. Add or update tests for behavior changes. For bugs, add a regression test whenever the affected logic can be isolated.
 6. Run the narrowest useful checks first, then broaden verification in proportion to the change.
 7. Report what changed, what was measured, what checks ran, and what could not be verified. Never claim a check passed if it was not run.
+
+
+## Multi-agent execution
+
+- The primary agent owns acceptance criteria, decomposition, architectural decisions, integration, final verification, and the final report.
+- Delegate only independent investigation, bounded implementation, testing, review, or measurement work. Do not spawn agents merely to increase parallelism.
+- Every subagent receives an explicit task packet: goal, scope, write ownership, constraints, verification, and required return information.
+- Read-only agents may inspect the same area concurrently. Two active agents must not edit the same file or the same mutable-state owner.
+- Parallel writers require disjoint write sets; prefer isolated branches/worktrees when supported. Serialize overlapping edits.
+- For ambiguous bugs, investigate in parallel first, decide the invariant/root cause centrally, then assign implementation.
+- Worker agents must not silently broaden scope. Cross-boundary dependencies are reported to the primary agent instead of patched opportunistically.
+- For meaningful multi-file, lifecycle, concurrency, architecture, or persistence changes, use an independent reviewer or verifier after implementation.
+- The primary agent must inspect the integrated diff and rerun important checks on the integrated tree. A worker's report is evidence, not a substitute for integration verification.
+- Worker agents should not recursively delegate by default. Keep the orchestration graph shallow and explicit.
+
+Detailed protocol: `.agents/reference/multi-agent.md`
+Workflow: `.agents/skills/multi-agent-task.md`
 
 ## Non-negotiable architecture rules
 
@@ -131,6 +148,7 @@ Load only what is needed:
 
 Task workflows:
 
+- Multi-agent task: `.agents/skills/multi-agent-task.md`
 - Bug fix: `.agents/skills/bug-fix.md`
 - New feature: `.agents/skills/add-feature.md`
 - Architecture refactor: `.agents/skills/architecture-refactor.md`

@@ -1,9 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="media_control_service_label">Управление мультимедиа Wattim</string>
+    <string name="badge_media_control">УПРАВЛЕНИЕ МЕДИА</string>
+    <string name="permission_media_control_desc">Позволяет Wattim ставить на паузу медиасессию защищённого приложения</string>
+    <string name="audio_diagnostics_title">ДИАГНОСТИКА АУДИО</string>
+    <string name="audio_diagnostics_target">ПРИЛОЖЕНИЕ: %1$s</string>
+    <string name="audio_diagnostics_none">НЕТ</string>
+    <string name="audio_diagnostics_focus">АУДИОФОКУС: %1$s</string>
+    <string name="audio_diagnostics_media">МЕДИАПАУЗА: %1$s</string>
+    <string name="audio_diagnostics_commands">КОМАНДЫ: АДРЕСНЫЕ %1$d / РЕЗЕРВНЫЕ %2$d</string>
+    <string name="audio_status_idle">ОЖИДАНИЕ</string>
+    <string name="audio_status_granted">ПОЛУЧЕН</string>
+    <string name="audio_status_denied">ОТКЛОНЁН</string>
+    <string name="audio_status_lost">ПОТЕРЯН</string>
+    <string name="audio_status_recovering">ВОССТАНОВЛЕНИЕ</string>
+    <string name="audio_status_access_denied">НЕТ ДОСТУПА</string>
+    <string name="audio_status_no_session">НЕТ АКТИВНОЙ МЕДИАСЕССИИ</string>
+    <string name="audio_status_command_sent">КОМАНДА ОТПРАВЛЕНА</string>
+    <string name="audio_status_confirmed">ПАУЗА ПОДТВЕРЖДЕНА</string>
+    <string name="audio_status_not_confirmed">ПАУЗА НЕ ПОДТВЕРЖДЕНА</string>
+    <string name="audio_status_failed">ОШИБКА</string>
     <string name="app_name">wattim</string>
-    <string name="accessibility_service_description">Необходимо wattim для обнаружения запуска защищаемых приложений и включения осознанной паузы.</string>
-    <string name="channel_name_protection">wattim: Защита фокуса</string>
-    <string name="channel_desc_protection">Отображает текущий статус защиты приложений</string>
-    <string name="notif_protection_active">Защита активна</string>
-    <string name="notif_protection_active_count">Защита активна · %d прилож.</string>
-    <string name="notif_protection_idle">Защита в ожидании · 0 прилож.</string>
+    <string name="default_phrase">Сделай глубокий вдох и выдох</string>
+
+    <!-- Navigation -->
+    <string name="nav_apps">ФОКУС</string>
+    <string name="nav_block">БЛОК</string>
+    <string name="nav_stats">СТАТИСТИКА</string>
+    <string name="nav_config">НАСТРОЙКИ</string>
+
+    <!-- Breathing -->
+    <string name="breathing_inhale">ВДОХ</string>
+    <string name="breathing_exhale">ВЫДОХ</string>
+    <string name="breathing_complete">ГОТОВО</string>
+
+    <!-- Actions -->
+    <string name="action_continue">ПРОДОЛЖИТЬ</string>
+    <string name="action_exit">ВЫХОД</string>
+    <string name="action_cancel">ОТМЕНА</string>
+    <string name="action_save">СОХРАНИТЬ</string>
+    <string name="action_remove">УДАЛИТЬ</string>
+    <string name="action_add_app">ДОБАВИТЬ</string>
+    <string name="action_stop">ОСТАНОВИТЬ</string>
+    <string name="action_resume">ВОЗОБНОВИТЬ</string>
+    <string name="action_pause">ПАУЗА</string>
+    <string name="action_return">НАЗАД</string>
+    <string name="action_check_status">ПРОВЕРИТЬ СТАТУС</string>
+    <string name="action_enable">ВКЛЮЧИТЬ</string>
+    <string name="action_open_accessibility">ОТКРЫТЬ СПЕЦ. ВОЗМОЖНОСТИ</string>
+    <string name="action_allow_overlay">РАЗРЕШИТЬ ОТОБРАЖЕНИЕ</string>
+    <string name="action_disable_battery_optimization">ОТКЛЮЧИТЬ ОПТИМИЗАЦИЮ БАТАРЕИ</string>
+    <string name="action_start_wattim">ПЕРЕЙТИ В WATTIM</string>
+    <string name="action_emergency">ЭКСТРЕННО</string>
+
+    <!-- Statuses -->
+    <string name="status_active">АКТИВНО</string>
+    <string name="status_off">ВЫКЛ</string>
+    <string name="status_on">ВКЛ</string>
+    <string name="status_system_ready">СИСТЕМА ГОТОВА</string>
+    <string name="status_blocked">ЗАБЛОКИРОВАНО</string>
+    <string name="status_paused">ПАУЗА</string>
+    <string name="status_protected">ЗАЩИЩЕНО</string>
+
+    <!-- Units & time -->
+    <string name="unit_sec">СЕК</string>
+    <string name="unit_min">МИН</string>
+    <string name="unit_hours">Ч</string>
+    <string name="unit_percent">%</string>
+    <string name="time_colon">:</string>
+
+    <!-- Themes -->
+    <string name="theme_cyber_terminal">CYBER TERMINAL</string>
+    <string name="theme_nord">NORD</string>
+    <string name="theme_catppuccin">CATPPUCCIN</string>
+    <string name="theme_dracula">DRACULA</string>
+    <string name="theme_gruvbox">GRUVBOX</string>
+    <string name="theme_tokyo_night">TOKYO NIGHT</string>
+
+    <!-- Animation styles -->
+    <string name="anim_fill">ЗАЛИВКА</string>
+    <string name="anim_pulse">ПУЛЬС</string>
+    <string name="anim_circle">ОРБИТА</string>
+
+    <!-- Accessibility descriptions -->
+    <string name="cd_step_decrease">Уменьшить значение</string>
+    <string name="cd_step_increase">Увеличить значение</string>
+    <string name="cd_active_badge">Статус активно</string>
+    <string name="cd_inactive_badge">Статус неактивно</string>
+    <string name="cd_error_indicator">Ошибка</string>
+    <string name="cd_breathing_canvas">Анимация дыхания</string>
+    <string name="cd_time_hours">Часы</string>
+    <string name="cd_time_minutes">Минуты</string>
+    <string name="cd_saved_time_badge">Значок сохраненного времени</string>
+
+    <!-- Emergency dialog -->
+    <string name="emergency_dialog_title">ВЫ УВЕРЕНЫ?</string>
+    <string name="emergency_dialog_message">Вы уверены, что хотите пропустить дыхательную паузу? Выберите действие:</string>
+    <string name="emergency_enter_once">ВОЙТИ РАЗОВО</string>
+    <string name="emergency_pause_app">ПРИОСТАНОВИТЬ ЗАЩИТУ ПРИЛОЖЕНИЯ</string>
+    <string name="emergency_resume_breath">ВЕРНУТЬСЯ К ДЫХАНИЮ</string>
+    <string name="emergency_15m">15 МИН</string>
+    <string name="emergency_30m">30 МИН</string>
+    <string name="emergency_1h">1 ЧАС</string>
+    <string name="emergency_forever">БЕССРОЧНО</string>
+    <string name="emergency_custom_badge_format">%1$d МИН</string>
+    <string name="emergency_config_title">ЭКСТРЕННЫЙ ВХОД</string>
+    <string name="emergency_config_desc">Настройте свой промежуток временного доступа в меню экстренного входа.</string>
+    <string name="emergency_config_active_status">В МЕНЮ: %1$d МИН</string>
+    <string name="emergency_config_not_set">НЕ ЗАДАН (СТАНДАРТНОЕ МЕНЮ)</string>
+    <string name="emergency_config_add_btn">ДОБАВИТЬ В МЕНЮ</string>
+    <string name="emergency_config_remove_btn">УБРАТЬ ИЗ МЕНЮ</string>
+
+    <!-- Feature explanations -->
+    <string name="help_dialog_dismiss">ПОНЯТНО</string>
+    <string name="help_pause_duration_title">ДЛИТЕЛЬНОСТЬ ПАУЗЫ (ВДОХ И ВЫДОХ)</string>
+    <string name="help_pause_duration_desc">Осознанная пауза перед открытием приложения. Она позволяет прервать автоматический импульс и решить, действительно ли вам нужно это приложение прямо сейчас. Таймер делится пополам на фазы вдоха и выдоха.</string>
+    <string name="help_reintervention_title">ПОВТОРНОЕ ВМЕШАТЕЛЬСТВО</string>
+    <string name="help_reintervention_desc">Ограничение времени непрерывной сессии. Если включено, экран дыхания снова появится через заданный интервал использования приложения, напоминая сделать паузу.</string>
+    <string name="help_quick_return_title">БЫСТРОЕ ВОЗВРАЩЕНИЕ</string>
+    <string name="help_quick_return_desc">Время после выхода из приложения, в течение которого вы можете вернуться назад без повторного экрана дыхания (например, чтобы ответить на звонок или скопировать код подтверждения).</string>
+    <string name="help_backoff_title">ЭКСПОНЕНЦИАЛЬНЫЙ РОСТ</string>
+    <string name="help_backoff_desc">Каждое подтверждённое открытие приложения в течение скользящего окна увеличивает длительность дыхания на выбранный процент. Это мягко охлаждает привычку проверять приложение слишком часто. При выходе из дыхания таймер не растёт.</string>
+    <string name="help_quick_lock_title">БЫСТРАЯ БЛОКИРОВКА</string>
+    <string name="help_quick_lock_desc">Мгновенная жёсткая блокировка приложения на выбранный срок (15 мин, 30 мин, 1 час или 2 часа). Во время действия блокировки войти в приложение нельзя даже через паузу дыхания.</string>
+
+    <!-- Block overlay -->
+    <string name="block_overlay_title">ПРИЛОЖЕНИЕ ЗАБЛОКИРОВАНО</string>
+    <string name="block_overlay_close">ВЕРНУТЬСЯ НА ГЛАВНЫЙ ЭКРАН</string>
+
+    <!-- Badges and prefixes -->
+    <string name="full_block_badge">🔒 Полная блокировка</string>
+    <string name="scheduled_interventions_badge">🧘 Интервенции по расписанию</string>
+    <string name="blocked_prefix">Заблокировано</string>
+    <string name="interventions_prefix">Интервенции</string>
+    <string name="save_changes_button">СОХРАНИТЬ ИЗМЕНЕНИЯ</string>
+    <string name="remove_from_protection_button">УДАЛИТЬ ИЗ ЗАЩИТЫ</string>
+    <string name="quick_focus_session">БЫСТРАЯ СЕССИЯ ФОКУСА</string>
+    <string name="for_apps_count">ДЛЯ ПРИЛОЖЕНИЙ (%1$d/%2$d)</string>
+    <string name="deselect_all">Снять все</string>
+    <string name="select_all">Выбрать все</string>
+    <string name="preview_saved_time">Предпросмотр: вы сберегли 2 дня жизни</string>
+    <string name="target_pause_duration">ДЛИТЕЛЬНОСТЬ ПАУЗЫ (ВДОХ И ВЫДОХ)</string>
+    <string name="target_preview_animation">ПРЕДПРОСМОТР АНИМАЦИИ</string>
+    <string name="target_animation_type">ТИП АНИМАЦИИ</string>
+    <string name="target_mindfulness_phrase">ФРАЗА ОСОЗНАННОСТИ</string>
+    <string name="target_protection_status_label">СТАТУС ЗАЩИТЫ</string>
+
+    <!-- Onboarding & Permissions (F17-F22) -->
+    <string name="accessibility_service_description">Отслеживает запуск приложений для показа паузы осознанности.</string>
+    <string name="step_01_03">01/03</string>
+    <string name="step_02_03">02/03</string>
+    <string name="step_03_03">03/03</string>
+
+    <string name="onboarding_step1_title">СПЕЦИАЛЬНЫЕ ВОЗМОЖНОСТИ</string>
+    <string name="onboarding_step1_desc">Wattim использует специальные возможности для обнаружения запуска приложений и показа паузы осознанности.</string>
+
+    <string name="onboarding_step2_title">ПОВЕРХ ДРУГИХ ПРИЛОЖЕНИЙ</string>
+    <string name="onboarding_step2_desc">Разрешение необходимо для отображения полноэкранного окна дыхания поверх выбранных приложений.</string>
+
+    <string name="onboarding_step3_title">ОПТИМИЗАЦИЯ БАТАРЕИ</string>
+    <string name="onboarding_step3_desc">Отключите оптимизацию батареи, чтобы служба защиты Wattim работала стабильно в фоновом режиме.</string>
+
+    <string name="restricted_settings_title">ОГРАНИЧЕННЫЕ НАСТРОЙКИ</string>
+    <string name="restricted_settings_desc">В Android 13+ система может ограничить доступ для установленных вручную приложений. Если заблокировано: откройте \'О приложении\' → меню ⋮ вверху → \'Разрешить ограниченные настройки\' → введите пароль.</string>
+    <string name="action_open_app_info">О ПРИЛОЖЕНИИ</string>
+
+    <string name="onboarding_ready_title">СИСТЕМА ГОТОВА</string>
+    <string name="onboarding_ready_desc">Все ключевые возможности предоставлены. Защита готова к работе.</string>
+    <string name="badge_accessibility">СПЕЦ. ВОЗМОЖНОСТИ</string>
+    <string name="badge_overlay">ПОВЕРХ ОКОН</string>
+    <string name="badge_battery">БАТАРЕЯ</string>
+    <string name="badge_ready">ГОТОВО</string>
+
+    <!-- Foreground service & notifications (F22) -->
+    <string name="fgs_channel_name">Статус защиты</string>
+    <string name="fgs_channel_desc">Уведомление о текущем статусе службы защиты</string>
+    <string name="fgs_status_active">Защита активна</string>
+    <string name="fgs_status_degraded">Защита приостановлена: требуются разрешения</string>
+    <string name="fgs_status_starting">Запуск защиты…</string>
+    <string name="fgs_status_start_failed">Сбой запуска службы защиты</string>
+
+    <!-- Settings intent error -->
+    <string name="settings_intent_error">Не удалось открыть настройки автоматически. Откройте настройки устройства вручную.</string>
+
+    <!-- Home screen (F44, F45, F48, F59) -->
+    <string name="home_header_protected_count">ПОД ЗАЩИТОЙ</string>
+    <string name="home_empty_title">НЕТ ЗАЩИЩЕННЫХ ПРИЛОЖЕНИЙ</string>
+    <string name="home_empty_description">Выберите приложения, чтобы настроить паузы осознанности перед отвлечением.</string>
+    <string name="today_stats_title">СЕГОДНЯ</string>
+    <string name="today_stats_attempts">ПОПЫТКИ</string>
+    <string name="today_stats_closed">ЗАКРЫТО</string>
+    <string name="today_stats_prevented">ПРЕДОТВРАЩЕНО</string>
+    <string name="global_pause_title">ГЛОБАЛЬНАЯ ПАУЗА</string>
+    <string name="global_pause_15m">15 МИН</string>
+    <string name="global_pause_30m">30 МИН</string>
+    <string name="global_pause_1h">1 Ч</string>
+    <string name="global_pause_forever">НАВСЕГДА</string>
+
+    <!-- Add App dialog (F46, F47) -->
+    <string name="add_app_dialog_title">ДОБАВИТЬ ПРИЛОЖЕНИЕ</string>
+    <string name="search_apps_placeholder">Поиск по названию или пакету…</string>
+    <string name="catalog_loading">Сканирование приложений…</string>
+    <string name="catalog_empty">Нет доступных приложений</string>
+    <string name="catalog_no_results">Приложения не найдены</string>
+    <string name="catalog_error">Ошибка загрузки каталога</string>
+
+    <!-- Target Settings (F49-F58) -->
+    <string name="action_preview">ПРЕДПРОСМОТР</string>
+    <string name="target_settings_title">НАСТРОЙКИ ПРИЛОЖЕНИЯ</string>
+    <string name="phrase_label">ФРАЗА ОСОЗНАННОСТИ</string>
+    <string name="target_protection_status">СТАТУС ЗАЩИТЫ</string>
+    <string name="target_status_active">АКТИВЕН</string>
+    <string name="target_status_disabled">ОТКЛЮЧЕН</string>
+    <string name="phrase_hint">Введите фразу (до 80 симв., 3 строки)</string>
+    <string name="animation_style_label">СТИЛЬ АНИМАЦИИ</string>
+    <string name="anim_pulse_sphere">СФЕРА</string>
+    <string name="anim_circle_vortex">ВИХРЬ</string>
+    <string name="duration_label">ДЛИТЕЛЬНОСТЬ ПАУЗЫ</string>
+    <string name="reintervention_label">ПОВТОРНАЯ ПАУЗА</string>
+    <string name="reintervention_custom">СВОЙ</string>
+    <string name="reintervention_explanation">Повторный вызов через %1$s использования.</string>
+    <string name="reintervention_explanation_off">Без повторного вызова во время непрерывной сессии.</string>
+    <string name="quick_return_label">БЫСТРЫЙ ВОЗВРАТ</string>
+    <string name="growth_label">ЭКСПОНЕНЦИАЛЬНЫЙ РОСТ</string>
+    <string name="growth_percent_label">ШАГ РОСТА</string>
+    <string name="growth_window_label">ОКНО СБРОСА</string>
+    <string name="backoff_calculator_title">РАСЧЕТ ЗАДЕРЖЕК</string>
+    <string name="backoff_base_note">База: %1$dс (+%2$d%% за попытку в %3$s)</string>
+    <string name="status_stale_warning">Настройки были изменены извне. Пожалуйста, перезагрузите.</string>
+    <string name="error_commit_failed">Не удалось сохранить изменения. Попробуйте снова.</string>
+
+    <!-- S08 Manual Blocks & Schedules (F60-F68) -->
+    <string name="quick_lock_title">БЫСТРАЯ БЛОКИРОВКА</string>
+    <string name="quick_lock_desc">Заблокировать это приложение немедленно</string>
+    <string name="duration_15m">15 МИН</string>
+    <string name="duration_30m">30 МИН</string>
+    <string name="duration_1h">1 Ч</string>
+    <string name="duration_2h">2 Ч</string>
+
+    <string name="quick_focus_title">БЫСТРЫЙ ФОКУС</string>
+    <string name="quick_focus_desc">Временная блокировка выбранных приложений</string>
+    <string name="action_start_focus">НАЧАТЬ</string>
+    <string name="no_apps_for_focus">Нет защищенных приложений. Сначала добавьте приложения на вкладке фокуса.</string>
+
+    <string name="active_session_title">АКТИВНАЯ БЛОКИРОВКА</string>
+    <string name="apps_count_format">%1$d ПРИЛ.</string>
+    <string name="one_app_format">1 ПРИЛ.</string>
+
+    <string name="schedules_title">РАСПИСАНИЯ</string>
+    <string name="blocks_screen_title">БЛОКИРОВКА</string>
+    <string name="block_schedules_title">РАСПИСАНИЕ БЛОКИРОВОК</string>
+    <string name="action_create_schedule_full">+ СОЗДАТЬ РАСПИСАНИЕ</string>
+    <string name="action_create_schedule">СОЗДАТЬ</string>
+    <string name="no_schedules">НЕТ РАСПИСАНИЙ</string>
+    <string name="no_schedules_desc">Настройте периодические жесткие блокировки или сеансы осознанности.</string>
+    <string name="action_edit">ИЗМЕНИТЬ</string>
+    <string name="action_delete">УДАЛИТЬ</string>
+    <string name="all_applications_format">ВСЕ ПРИЛОЖЕНИЯ (%1$d)</string>
+    <string name="overnight_badge">НОЧНОЕ</string>
+    <string name="schedule_type_hard_block">ЖЕСТКИЙ БЛОК</string>
+    <string name="schedule_type_intervention">ИНТЕРВЕНЦИЯ</string>
+
+    <string name="schedule_editor_create_title">НОВОЕ РАСПИСАНИЕ</string>
+    <string name="schedule_editor_edit_title">РЕДАКТИРОВАНИЕ</string>
+    <string name="schedule_name_label">НАЗВАНИЕ РАСПИСАНИЯ</string>
+    <string name="schedule_name_hint">напр. Рабочие часы, Сон</string>
+    <string name="schedule_type_label">ТИП РАСПИСАНИЯ</string>
+    <string name="schedule_type_hard_block_desc">Полная блокировка доступа к приложениям без паузы дыхания и обхода.</string>
+    <string name="schedule_type_intervention_desc">Применяет дыхательные паузы и правила повтора для выбранных приложений.</string>
+    <string name="schedule_days_label">ДНИ НЕДЕЛИ</string>
+    <string name="schedule_time_label">ВРЕМЕННОЙ ИНТЕРВАЛ</string>
+    <string name="schedule_time_start">ВРЕМЯ НАЧАЛА</string>
+    <string name="schedule_time_end">ВРЕМЯ ОКОНЧАНИЯ</string>
+    <string name="preset_work">РАБОТА (09:00 - 18:00)</string>
+    <string name="preset_night">НОЧЬ (23:00 - 07:00)</string>
+    <string name="preset_morning">УТРО (07:00 - 12:00)</string>
+    <string name="preset_evening">ВЕЧЕР (18:00 - 23:00)</string>
+    <string name="schedule_targets_label">ПРИЛОЖЕНИЯ</string>
+    <string name="schedule_overrides_label">ПЕРСОНАЛЬНЫЕ НАСТРОЙКИ</string>
+    <string name="override_inherit">ПО УМОЛЧАНИЮ</string>
+    <string name="override_custom">СВОИ</string>
+    <string name="override_duration_label">ДЛИТЕЛЬНОСТЬ</string>
+    <string name="override_repeat_label">ПОВТОР</string>
+    <string name="error_empty_name">Название не может быть пустым</string>
+    <string name="error_empty_days">Выберите хотя бы один день</string>
+    <string name="error_equal_times">Время начала и окончания не могут совпадать</string>
+    <string name="error_empty_targets">Выберите хотя бы одно приложение</string>
+
+    <!-- S09 Statistics (F69-F71) -->
+    <string name="stats_saved_life_title">СОХРАНЕННАЯ ЖИЗНЬ</string>
+    <string name="stats_screen_title">СТАТИСТИКА</string>
+    <string name="settings_screen_title">НАСТРОЙКИ</string>
+    <string name="stats_avoided_impulses">ПРЕДОТВРАЩЕНО</string>
+    <string name="stats_saved_today">СЕГОДНЯ СЭКОНОМЛЕНО</string>
+    <string name="stats_multiplier_note">Множитель: %1$d мин / импульс</string>
+    <string name="today_stats_continued">ПРОДОЛЖЕНО</string>
+    <string name="stats_apps_today_title">ПРИЛОЖЕНИЯ СЕГОДНЯ</string>
+    <string name="stats_col_app">ПРИЛОЖЕНИЕ</string>
+    <string name="stats_col_open">ОТКРЫТИЙ</string>
+    <string name="stats_col_closed">ЗАКРЫТО</string>
+    <string name="stats_no_activity_today">СЕГОДНЯ НЕТ ЗАПИСЕЙ АКТИВНОСТИ</string>
+
+    <!-- S09 Config & Settings (F72-F78) -->
+    <string name="config_language_title">ЯЗЫК</string>
+    <string name="lang_auto">АВТО</string>
+    <string name="lang_english">ENGLISH</string>
+    <string name="lang_russian">РУССКИЙ</string>
+
+    <string name="config_theme_title">ТЕМА ОФОРМЛЕНИЯ</string>
+
+    <string name="config_saved_session_title">ДЛИТЕЛЬНОСТЬ СОХРАНЕННОЙ СЕССИИ</string>
+    <string name="config_saved_session_desc">Оценка сэкономленного времени за каждый предотвращенный запуск (5, 7, 10 или 15 мин).</string>
+
+    <string name="config_overlay_stats_title">СТАТИСТИКА НА ЭКРАНЕ</string>
+    <string name="config_overlay_stats_desc">Показывать значок сэкономленного времени на экране дыхания.</string>
+
+    <string name="config_permissions_title">РАЗРЕШЕНИЯ И СТАТУС</string>
+    <string name="permission_accessibility_desc">Обнаружение запуска приложений</string>
+    <string name="permission_overlay_desc">Отображение экрана дыхания</string>
+    <string name="permission_battery_desc">Стабильная работа в фоне</string>
+
+    <string name="config_privacy_title">ПРИВАТНОСТЬ И БЕЗОПАСНОСТЬ</string>
+    <string name="config_privacy_offline">100% ОФФЛАЙН</string>
+    <string name="config_privacy_offline_desc">Wattim не имеет разрешения на доступ в интернет и не отправляет данные на внешние серверы.</string>
+    <string name="config_privacy_local">ЛОКАЛЬНОЕ ХРАНЕНИЕ</string>
+    <string name="config_privacy_local_desc">Все настройки, расписания и статистика хранятся исключительно в базе данных на устройстве.</string>
+    <string name="config_privacy_telemetry">БЕЗ СЛЕЖКИ</string>
+    <string name="config_privacy_telemetry_desc">Никаких аналитических систем, трекеров и сторонних SDK.</string>
+    <string name="config_privacy_accessibility">БЕЗОПАСНЫЙ ДОСТУП</string>
+    <string name="config_privacy_accessibility_desc">Служба специальных возможностей используется только для фиксации открытия выбранных приложений. Текст экрана и ввод никогда не читаются.</string>
 </resources>
