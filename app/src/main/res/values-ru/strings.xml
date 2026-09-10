@@ -81,6 +81,7 @@
     <string name="anim_fill">ЗАЛИВКА</string>
     <string name="anim_pulse">ПУЛЬС</string>
     <string name="anim_circle">ОРБИТА</string>
+    <string name="anim_wave">ВОЛНА</string>
 
     <!-- Accessibility descriptions -->
     <string name="cd_step_decrease">Уменьшить значение</string>

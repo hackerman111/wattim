@@ -81,6 +81,7 @@
     <string name="anim_fill">FILL</string>
     <string name="anim_pulse">PULSE</string>
     <string name="anim_circle">CIRCLE</string>
+    <string name="anim_wave">WAVE</string>
 
     <!-- Accessibility descriptions -->
     <string name="cd_step_decrease">Decrease value</string>

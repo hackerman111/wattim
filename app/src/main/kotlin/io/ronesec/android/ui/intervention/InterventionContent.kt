@@ -46,7 +46,7 @@ import io.ronesec.domain.policy.EffectiveInterventionConfig
  * Satisfies F34, F35, F36, F42, §2.5, §2.9, and §8.1.
  *
  * Elements:
- * - Background: breathing animation Canvas with selected mode (FILL, PULSE, CIRCLE).
+ * - Background: breathing animation Canvas with selected mode (FILL, PULSE, CIRCLE, WAVE).
  * - Target app title in uppercase.
  * - Optional leaf saved-time badge.
  * - INHALE / EXHALE / COMPLETE phase display.
@@ -166,13 +166,15 @@ fun InterventionContent(
                     textAlign = TextAlign.Center
                 )
 
-                // Countdown SS.S (silent without liveRegion to avoid TalkBack speech spam)
-                Text(
-                    text = progress.formattedCountdown,
-                    style = typography.displayLarge,
-                    color = colors.textPrimary,
-                    textAlign = TextAlign.Center
-                )
+                if (config.animation.revealsRemainingTime) {
+                    // Countdown SS.S (silent without liveRegion to avoid TalkBack speech spam)
+                    Text(
+                        text = progress.formattedCountdown,
+                        style = typography.displayLarge,
+                        color = colors.textPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                }
 
                 // Phrase (22sp, max 3 lines)
                 Text(

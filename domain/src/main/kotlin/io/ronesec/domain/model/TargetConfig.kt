@@ -1,9 +1,12 @@
 package io.ronesec.domain.model
 
-enum class AnimationMode {
+enum class AnimationMode(
+    val revealsRemainingTime: Boolean = true
+) {
     FILL,
     PULSE,
-    CIRCLE
+    CIRCLE,
+    WAVE(revealsRemainingTime = false)
 }
 
 data class BackoffConfig(

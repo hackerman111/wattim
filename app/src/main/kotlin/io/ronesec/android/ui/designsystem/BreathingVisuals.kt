@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
@@ -27,6 +28,13 @@ object BreathingGeometry {
     const val BASE_RADIUS_FRACTION = 0.40f
     const val CORE_BASE_RATIO = 0.32f
     const val CORE_GROWTH_RATIO = 0.68f
+    const val WAVE_CYCLE_MS = 6_000L
+    const val WAVE_AMPLITUDE_FRACTION = 0.08f
+
+    fun wavePhaseRadians(elapsedMs: Long): Float {
+        val cyclePositionMs = elapsedMs.coerceAtLeast(0L) % WAVE_CYCLE_MS
+        return (cyclePositionMs.toDouble() / WAVE_CYCLE_MS.toDouble() * 2.0 * PI).toFloat()
+    }
 }
 
 @Composable
@@ -52,8 +60,44 @@ fun BreathingCanvas(
             AnimationMode.FILL -> drawFill(effectiveProgress, colors)
             AnimationMode.PULSE -> drawPulse(effectiveProgress, colors)
             AnimationMode.CIRCLE -> drawCircleOrbit(effectiveProgress, effectiveElapsed, colors)
+            AnimationMode.WAVE -> drawCyclicWave(effectiveElapsed, colors)
         }
     }
+}
+
+fun DrawScope.drawCyclicWave(elapsedMs: Long, colors: WattimColors) {
+    val phase = BreathingGeometry.wavePhaseRadians(elapsedMs)
+    val centerY = size.height * 0.55f
+    val amplitude = size.height * BreathingGeometry.WAVE_AMPLITUDE_FRACTION
+    val wavePath = Path()
+    val fillPath = Path()
+    val steps = 64
+
+    for (step in 0..steps) {
+        val xFraction = step.toFloat() / steps.toFloat()
+        val x = size.width * xFraction
+        val y = centerY + amplitude * sin((xFraction * 4f * PI.toFloat()) + phase)
+        if (step == 0) {
+            wavePath.moveTo(x, y)
+            fillPath.moveTo(x, y)
+        } else {
+            wavePath.lineTo(x, y)
+            fillPath.lineTo(x, y)
+        }
+    }
+
+    fillPath.lineTo(size.width, size.height)
+    fillPath.lineTo(0f, size.height)
+    fillPath.close()
+    drawPath(
+        path = fillPath,
+        color = colors.accent.copy(alpha = BreathingGeometry.FILL_ALPHA)
+    )
+    drawPath(
+        path = wavePath,
+        color = colors.accent,
+        style = Stroke(width = 2f)
+    )
 }
 
 fun DrawScope.drawFill(progress: Float, colors: WattimColors) {

@@ -153,7 +153,41 @@ class T14_InterventionContentAndTimelineTest {
     }
 
     @Test
-    fun `renders without crash in all 3 animation modes across all 6 themes`() {
+    fun `wave mode hides remaining time while preserving breathing actions`() {
+        val progress = BreathingTimeline.calculate(
+            startElapsedMs = 10_000L,
+            nowElapsedMs = 11_250L,
+            durationMs = 5_000L
+        )
+
+        composeTestRule.setContent {
+            WattimTheme {
+                InterventionContent(
+                    config = testConfig.copy(animation = AnimationMode.WAVE),
+                    progress = progress,
+                    showSavedBadge = false,
+                    savedMinutes = 0L,
+                    isEmergencyDialogOpen = false,
+                    onContinue = {},
+                    onExit = {},
+                    onCancel = {},
+                    onEmergencyClick = {},
+                    onDismissEmergency = {},
+                    onEmergencyOnce = {},
+                    onEmergencyTimed = {},
+                    onEmergencyForever = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(progress.formattedCountdown).assertDoesNotExist()
+        composeTestRule.onNodeWithText("INHALE").assertIsDisplayed()
+        composeTestRule.onNodeWithText("EXIT").assertIsDisplayed()
+        composeTestRule.onNodeWithText("EMERGENCY", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `renders without crash in all animation modes across all 6 themes`() {
         composeTestRule.setContent {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState())

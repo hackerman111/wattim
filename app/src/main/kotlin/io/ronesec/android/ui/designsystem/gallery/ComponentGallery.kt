@@ -151,7 +151,7 @@ internal fun ComponentGallery(
 
             // Animation Modes Showcase
             Column(verticalArrangement = Arrangement.spacedBy(dimensions.space8)) {
-                Text(text = "BREATHING ANIMATIONS (FILL, PULSE, CIRCLE)", style = typography.labelSmall, color = colors.textSecondary)
+                Text(text = "BREATHING ANIMATIONS", style = typography.labelSmall, color = colors.textSecondary)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(dimensions.space8)
@@ -164,6 +164,9 @@ internal fun ComponentGallery(
                     }
                     Box(modifier = Modifier.weight(1f).height(120.dp).background(colors.surface)) {
                         BreathingCanvas(style = AnimationMode.CIRCLE, progress = 0.7f, elapsedMs = 3000L)
+                    }
+                    Box(modifier = Modifier.weight(1f).height(120.dp).background(colors.surface)) {
+                        BreathingCanvas(style = AnimationMode.WAVE, progress = 0.7f, elapsedMs = 3000L)
                     }
                 }
             }

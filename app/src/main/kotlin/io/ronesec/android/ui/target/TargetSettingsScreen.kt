@@ -178,7 +178,7 @@ fun TargetSettingsScreen(
             )
         }
 
-        // 2. Animation Mode Selection (F51): FILL, PULSE (Sphere), CIRCLE (Vortex)
+        // 2. Animation Mode Selection (F51)
         AnimationSelectorCard(
             selectedMode = draft.animation,
             onModeSelect = onAnimationChange
@@ -310,7 +310,8 @@ private fun AnimationSelectorCard(
                 listOf(
                     AnimationMode.FILL to stringResource(R.string.anim_fill),
                     AnimationMode.PULSE to stringResource(R.string.anim_pulse),
-                    AnimationMode.CIRCLE to stringResource(R.string.anim_circle)
+                    AnimationMode.CIRCLE to stringResource(R.string.anim_circle),
+                    AnimationMode.WAVE to stringResource(R.string.anim_wave)
                 ).forEach { (mode, label) ->
                     TerminalButton(
                         text = label,

@@ -44,6 +44,16 @@ class T18_AllThemeVisualStateMatrixTest {
     }
 
     @Test
+    fun `wave animation repeats independently on its own cycle`() {
+        val start = BreathingGeometry.wavePhaseRadians(0L)
+        val halfway = BreathingGeometry.wavePhaseRadians(BreathingGeometry.WAVE_CYCLE_MS / 2L)
+        val nextCycle = BreathingGeometry.wavePhaseRadians(BreathingGeometry.WAVE_CYCLE_MS)
+
+        assertNotEquals(start, halfway)
+        assertEquals(start, nextCycle, 0.0001f)
+    }
+
+    @Test
     fun `exercise full theme matrix across all terminal components and states`() {
         composeTestRule.setContent {
             androidx.compose.foundation.layout.Column(
@@ -131,8 +141,8 @@ class T18_AllThemeVisualStateMatrixTest {
     }
 
     @Test
-    fun `exercise all three animation modes across all six themes including reduced motion`() {
-        val animationStyles = listOf(AnimationMode.FILL, AnimationMode.PULSE, AnimationMode.CIRCLE)
+    fun `exercise all animation modes across all six themes including reduced motion`() {
+        val animationStyles = AnimationMode.entries
 
         composeTestRule.setContent {
             androidx.compose.foundation.layout.Column(

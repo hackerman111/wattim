@@ -127,7 +127,7 @@ class TargetSettingsViewModelTest {
         advanceUntilIdle()
 
         viewModel.onPhraseChange("Breathe deeply")
-        viewModel.onAnimationChange(AnimationMode.CIRCLE)
+        viewModel.onAnimationChange(AnimationMode.WAVE)
         viewModel.onDurationChange(15)
         viewModel.onReinterventionChoice(ReinterventionChoice.MIN_10)
         viewModel.onQuickReturnChange(30_000L)
@@ -144,7 +144,7 @@ class TargetSettingsViewModelTest {
         val saved = store.currentSnapshot.targets[targetPackage]
         assertNotNull(saved)
         assertEquals("Breathe deeply", saved!!.phrase)
-        assertEquals(AnimationMode.CIRCLE, saved.animation)
+        assertEquals(AnimationMode.WAVE, saved.animation)
         assertEquals(15_000L, saved.durationMs)
         assertEquals(600_000L, saved.reinterventionMs)
         assertEquals(30_000L, saved.quickReturnGraceMs)
