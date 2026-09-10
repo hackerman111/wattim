@@ -6,7 +6,8 @@ enum class AnimationMode(
     FILL,
     PULSE,
     CIRCLE,
-    WAVE(revealsRemainingTime = false)
+    WAVE(revealsRemainingTime = false),
+    FILL_2(revealsRemainingTime = false)
 }
 
 data class BackoffConfig(
