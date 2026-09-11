@@ -199,7 +199,6 @@ fun InterventionContent(
                 contentAlignment = Alignment.Center
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                EmergencyCodeLabel(emergencyCode)
                 if (!progress.isComplete) {
                     // During breathing: Exit + Emergency
                     Row(
@@ -259,7 +258,8 @@ fun InterventionContent(
                 onEmergencyOnce = onEmergencyOnce,
                 onEmergencyTimed = onEmergencyTimed,
                 onEmergencyForever = onEmergencyForever,
-                customEmergencyMinutes = customEmergencyMinutes
+                customEmergencyMinutes = customEmergencyMinutes,
+                emergencyCode = emergencyCode
             )
         }
     }

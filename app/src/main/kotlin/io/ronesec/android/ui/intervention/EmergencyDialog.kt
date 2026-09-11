@@ -2,9 +2,11 @@ package io.ronesec.android.ui.intervention
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -59,6 +61,7 @@ fun EmergencyDialog(
     customEmergencyMinutes: Int? = null,
     modifier: Modifier = Modifier,
     requireCode: Boolean = false,
+    emergencyCode: String? = null,
     codeError: Boolean = false,
     onOnceWithCode: ((String) -> Unit)? = null,
     onTimedWithCode: ((Long, String) -> Unit)? = null,
@@ -67,6 +70,7 @@ fun EmergencyDialog(
     val colors = WattimTheme.colors
     val typography = WattimTheme.typography
     var code by remember { mutableStateOf("") }
+    val isUnlocked = !requireCode || (emergencyCode != null && code.trim() == emergencyCode.trim())
     val timedAction: (Long) -> Unit = { duration ->
         if (onTimedWithCode != null) onTimedWithCode(duration, code) else onEmergencyTimed(duration)
     }
@@ -133,6 +137,27 @@ fun EmergencyDialog(
 
                 // Enter once button (primary)
                 if (requireCode) {
+                    if (emergencyCode != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(BorderStroke(1.dp, colors.accent.copy(alpha = 0.60f)), RoundedCornerShape(4.dp))
+                                .background(colors.surfaceElevated, RoundedCornerShape(4.dp))
+                                .padding(vertical = 10.dp, horizontal = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = stringResource(R.string.code_emergency_display, emergencyCode),
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                letterSpacing = 0.1.sp,
+                                color = colors.accent,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                     DigitCodeInput(code, 10, { code = it }, stringResource(R.string.code_emergency_enter))
                     if (codeError) Text(stringResource(R.string.code_invalid), color = colors.error)
                     Spacer(modifier = Modifier.height(16.dp))
@@ -141,6 +166,7 @@ fun EmergencyDialog(
                     text = stringResource(R.string.emergency_enter_once).uppercase(),
                     onClick = { if (onOnceWithCode != null) onOnceWithCode(code) else onEmergencyOnce() },
                     isPrimary = true,
+                    enabled = isUnlocked,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -160,30 +186,41 @@ fun EmergencyDialog(
 
                 // Timed options row
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .alpha(if (isUnlocked) 1f else 0.38f),
                     horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
                 ) {
                     TerminalBadge(
                         text = stringResource(R.string.emergency_15m),
-                        onClick = { timedAction(15L * 60L * 1000L) }
+                        enabled = isUnlocked,
+                        onClick = { if (isUnlocked) timedAction(15L * 60L * 1000L) }
                     )
                     TerminalBadge(
                         text = stringResource(R.string.emergency_30m),
-                        onClick = { timedAction(30L * 60L * 1000L) }
+                        enabled = isUnlocked,
+                        onClick = { if (isUnlocked) timedAction(30L * 60L * 1000L) }
                     )
                     TerminalBadge(
                         text = stringResource(R.string.emergency_1h),
-                        onClick = { timedAction(60L * 60L * 1000L) }
+                        enabled = isUnlocked,
+                        onClick = { if (isUnlocked) timedAction(60L * 60L * 1000L) }
                     )
                     if (customEmergencyMinutes != null) {
                         TerminalBadge(
                             text = stringResource(R.string.emergency_custom_badge_format, customEmergencyMinutes),
-                            onClick = { timedAction(customEmergencyMinutes * 60L * 1000L) }
+                            enabled = isUnlocked,
+                            onClick = { if (isUnlocked) timedAction(customEmergencyMinutes * 60L * 1000L) }
                         )
                     }
                     TerminalBadge(
                         text = stringResource(R.string.emergency_forever),
-                        onClick = { if (onForeverWithCode != null) onForeverWithCode(code) else onEmergencyForever() }
+                        enabled = isUnlocked,
+                        onClick = {
+                            if (isUnlocked) {
+                                if (onForeverWithCode != null) onForeverWithCode(code) else onEmergencyForever()
+                            }
+                        }
                     )
                 }
 

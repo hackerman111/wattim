@@ -62,23 +62,24 @@ class CodeChallengeUiTest {
         composeRule.onNodeWithText("EMERGENCY", substring = true).performClick()
         assertTrue(generated)
         assertTrue(emergency)
-        composeRule.onNodeWithText("Emergency access code: 1234567890").assertIsDisplayed()
     }
 
     @Test
-    fun `timed emergency submits exactly the manually entered ten digits`() {
+    fun `emergency code acts as safety fuse in EmergencyDialog`() {
         var submittedDuration = 0L
         var submittedCode = ""
-        var once = false
+        var onceCode = ""
         composeRule.setContent {
             WattimTheme {
                 EmergencyDialog(
                     targetName = "Target",
                     onDismissRequest = {},
-                    onEmergencyOnce = { once = true },
+                    onEmergencyOnce = {},
                     onEmergencyTimed = {},
                     onEmergencyForever = {},
                     requireCode = true,
+                    emergencyCode = "1234567890",
+                    onOnceWithCode = { onceCode = it },
                     onTimedWithCode = { duration, code ->
                         submittedDuration = duration
                         submittedCode = code
@@ -87,13 +88,25 @@ class CodeChallengeUiTest {
             }
         }
 
+        // Code banner is displayed inside the dialog
+        composeRule.onNodeWithText("Emergency access code: 1234567890").assertIsDisplayed()
+
+        // Initially fuse is locked: clicking buttons does nothing
+        composeRule.onNodeWithText("ENTER ONCE").performClick()
+        assertEquals("", onceCode)
+        composeRule.onNodeWithText("15 MIN").performClick()
+        assertEquals(0L, submittedDuration)
+
+        // Type matching 10 digits
         composeRule.onNodeWithContentDescription("Enter the 10-digit code from the intervention screen")
-            .performTextInput("12345678909")
+            .performTextInput("1234567890")
+
+        // Now fuse is unlocked: clicking triggers actions with code
         composeRule.onNodeWithText("15 MIN").performClick()
         assertEquals(15L * 60L * 1000L, submittedDuration)
         assertEquals("1234567890", submittedCode)
 
         composeRule.onNodeWithText("ENTER ONCE").performClick()
-        assertTrue(once)
+        assertEquals("1234567890", onceCode)
     }
 }

@@ -92,12 +92,15 @@ internal fun SessionInterventionContent(
                 onEmergencyTimed = {},
                 customEmergencyMinutes = uiState.customEmergencyMinutes,
                 requireCode = mode.config.requireEmergencyCode,
+                emergencyCode = challenge?.emergencyCode,
                 codeError = challenge?.emergencyError == true,
-                onEmergencyOnce = { send(ProtectionEvent.ActionEmergencyOnce(mode.sessionId, mode.cycle)) },
+                onEmergencyOnce = { send(ProtectionEvent.ActionEmergencyOnce(mode.sessionId, mode.cycle, challenge?.emergencyCode)) },
+                onOnceWithCode = { code -> send(ProtectionEvent.ActionEmergencyOnce(mode.sessionId, mode.cycle, code)) },
                 onTimedWithCode = { duration, code ->
                     send(ProtectionEvent.ActionEmergencyTimed(mode.sessionId, mode.cycle, duration, code))
                 },
-                onEmergencyForever = { send(ProtectionEvent.ActionEmergencyForever(mode.sessionId, mode.cycle)) }
+                onEmergencyForever = { send(ProtectionEvent.ActionEmergencyForever(mode.sessionId, mode.cycle, challenge?.emergencyCode)) },
+                onForeverWithCode = { code -> send(ProtectionEvent.ActionEmergencyForever(mode.sessionId, mode.cycle, code)) }
             )
         }
     }
