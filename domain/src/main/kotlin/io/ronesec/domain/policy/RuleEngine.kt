@@ -68,6 +68,9 @@ object RuleEngine {
                 val maxSec = (max / 1000L).toInt()
                 (minSec..maxSec).random().toLong() * 1000L
             } else min
+        },
+        randomAttentionCheckCountProvider: (min: Int, max: Int) -> Int = { min, max ->
+            if (max > min) (min..max).random() else min
         }
     ): Decision {
         val snapshot = runtimeState.snapshot
@@ -171,6 +174,13 @@ object RuleEngine {
                 Backoff.MAX_DELAY_MS
             )
 
+            val resolvedAttentionCheckCount = if (target.attentionChecksEnabled && target.attentionCheckRandomCountEnabled) {
+                randomAttentionCheckCountProvider(target.attentionCheckMinCount, target.attentionCheckMaxCount)
+                    .coerceIn(target.attentionCheckMinCount, target.attentionCheckMaxCount)
+            } else {
+                target.attentionCheckCount
+            }
+
             return Decision.Intervention(
                 EffectiveInterventionConfig(
                     packageName = target.packageName,
@@ -186,7 +196,7 @@ object RuleEngine {
                     unlockCodeLength = target.unlockCodeLength,
                     requireEmergencyCode = target.requireEmergencyCode,
                     attentionChecksEnabled = target.attentionChecksEnabled,
-                    attentionCheckCount = target.attentionCheckCount,
+                    attentionCheckCount = resolvedAttentionCheckCount,
                     attentionCheckCodeLength = target.attentionCheckCodeLength,
                     attentionCheckTimeoutMs = target.attentionCheckTimeoutMs
                 )
@@ -224,6 +234,13 @@ object RuleEngine {
             Backoff.MAX_DELAY_MS
         )
 
+        val resolvedAttentionCheckCount = if (target.attentionChecksEnabled && target.attentionCheckRandomCountEnabled) {
+            randomAttentionCheckCountProvider(target.attentionCheckMinCount, target.attentionCheckMaxCount)
+                .coerceIn(target.attentionCheckMinCount, target.attentionCheckMaxCount)
+        } else {
+            target.attentionCheckCount
+        }
+
         return Decision.Intervention(
             EffectiveInterventionConfig(
                 packageName = target.packageName,
@@ -239,7 +256,7 @@ object RuleEngine {
                 unlockCodeLength = target.unlockCodeLength,
                 requireEmergencyCode = target.requireEmergencyCode,
                 attentionChecksEnabled = target.attentionChecksEnabled,
-                attentionCheckCount = target.attentionCheckCount,
+                attentionCheckCount = resolvedAttentionCheckCount,
                 attentionCheckCodeLength = target.attentionCheckCodeLength,
                 attentionCheckTimeoutMs = target.attentionCheckTimeoutMs
             )
