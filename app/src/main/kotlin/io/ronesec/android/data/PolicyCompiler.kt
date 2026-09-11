@@ -47,7 +47,9 @@ object PolicyCompiler {
             rowVersion = entity.rowVersion,
             twoStageUnlock = entity.twoStageUnlock,
             unlockCodeLength = entity.unlockCodeLength,
-            requireEmergencyCode = entity.requireEmergencyCode
+            requireEmergencyCode = entity.requireEmergencyCode,
+            randomDurationEnabled = entity.randomDurationEnabled,
+            randomMaxDurationMs = entity.randomMaxDurationMs
         )
     }
 
@@ -67,7 +69,9 @@ object PolicyCompiler {
             rowVersion = config.rowVersion,
             twoStageUnlock = config.twoStageUnlock,
             unlockCodeLength = config.unlockCodeLength,
-            requireEmergencyCode = config.requireEmergencyCode
+            requireEmergencyCode = config.requireEmergencyCode,
+            randomDurationEnabled = config.randomDurationEnabled,
+            randomMaxDurationMs = config.randomMaxDurationMs
         )
     }
 

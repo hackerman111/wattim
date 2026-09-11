@@ -21,5 +21,7 @@ data class TargetAppEntity(
     val rowVersion: Long = 1L,
     @ColumnInfo(defaultValue = "0") val twoStageUnlock: Boolean = false,
     @ColumnInfo(defaultValue = "4") val unlockCodeLength: Int = 4,
-    @ColumnInfo(defaultValue = "0") val requireEmergencyCode: Boolean = false
+    @ColumnInfo(defaultValue = "0") val requireEmergencyCode: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val randomDurationEnabled: Boolean = false,
+    @ColumnInfo(defaultValue = "8000") val randomMaxDurationMs: Long = 8_000L
 )
