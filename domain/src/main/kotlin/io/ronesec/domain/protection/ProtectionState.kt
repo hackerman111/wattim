@@ -28,7 +28,17 @@ sealed interface InterveningSubstate {
     data class Breathing(
         val startElapsedMs: Long,
         val durationMs: Long,
-        val deadlineElapsedMs: Long
+        val deadlineElapsedMs: Long,
+        val remainingCheckOffsetsMs: List<Long> = emptyList()
+    ) : InterveningSubstate
+    data class AttentionCheck(
+        val pausedElapsedProgressMs: Long,
+        val durationMs: Long,
+        val code: String,
+        val deadlineElapsedMs: Long,
+        val timeoutMs: Long,
+        val remainingCheckOffsetsMs: List<Long> = emptyList(),
+        val hasError: Boolean = false
     ) : InterveningSubstate
     data class Complete(
         val startElapsedMs: Long,

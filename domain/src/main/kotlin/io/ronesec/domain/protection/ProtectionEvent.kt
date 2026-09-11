@@ -18,6 +18,9 @@ sealed interface ProtectionEvent {
     data class SubmitUnlockCode(val sessionId: SessionId, val cycle: Int, val code: String) : ProtectionEvent {
         override fun toString(): String = "SubmitUnlockCode(sessionId=$sessionId, cycle=$cycle, redacted)"
     }
+    data class SubmitAttentionCheckCode(val sessionId: SessionId, val cycle: Int, val code: String) : ProtectionEvent {
+        override fun toString(): String = "SubmitAttentionCheckCode(sessionId=$sessionId, cycle=$cycle, redacted)"
+    }
     data class ForegroundCandidate(
         val packageName: String,
         val sourceUptimeMs: Long,

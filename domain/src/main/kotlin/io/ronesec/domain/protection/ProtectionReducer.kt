@@ -52,6 +52,7 @@ object ProtectionReducer {
     ): ReducerResult {
         return when (event) {
             is ProtectionEvent.GenerateUnlockCode, is ProtectionEvent.SubmitUnlockCode,
+            is ProtectionEvent.SubmitAttentionCheckCode,
             is ProtectionEvent.CodeTripFailed, is ProtectionEvent.CodePanelShown ->
                 ReducerResult(currentState, emptyList(), context.runtimeState)
             is ProtectionEvent.ServiceDisconnected -> {
@@ -417,7 +418,7 @@ object ProtectionReducer {
                     currentState.session.cycle == event.cycle &&
                     currentState.substate is InterveningSubstate.Breathing
                 ) {
-                    if (context.nowElapsedMs >= currentState.substate.deadlineElapsedMs) {
+                    if (context.nowElapsedMs >= currentState.substate.startElapsedMs + currentState.substate.durationMs) {
                         val completeSubstate = InterveningSubstate.Complete(
                             startElapsedMs = currentState.substate.startElapsedMs,
                             durationMs = currentState.substate.durationMs
@@ -636,7 +637,7 @@ object ProtectionReducer {
                     }
                     is ProtectionState.Intervening -> {
                         if (currentState.substate is InterveningSubstate.Breathing) {
-                            if (context.nowElapsedMs >= currentState.substate.deadlineElapsedMs) {
+                            if (context.nowElapsedMs >= currentState.substate.startElapsedMs + currentState.substate.durationMs) {
                                 val completeSubstate = InterveningSubstate.Complete(
                                     startElapsedMs = currentState.substate.startElapsedMs,
                                     durationMs = currentState.substate.durationMs
