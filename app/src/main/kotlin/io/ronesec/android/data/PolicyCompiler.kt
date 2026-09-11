@@ -49,7 +49,11 @@ object PolicyCompiler {
             unlockCodeLength = entity.unlockCodeLength,
             requireEmergencyCode = entity.requireEmergencyCode,
             randomDurationEnabled = entity.randomDurationEnabled,
-            randomMaxDurationMs = entity.randomMaxDurationMs
+            randomMaxDurationMs = entity.randomMaxDurationMs,
+            attentionChecksEnabled = entity.attentionChecksEnabled,
+            attentionCheckCount = entity.attentionCheckCount,
+            attentionCheckCodeLength = entity.attentionCheckCodeLength,
+            attentionCheckTimeoutMs = entity.attentionCheckTimeoutMs
         )
     }
 
@@ -71,7 +75,11 @@ object PolicyCompiler {
             unlockCodeLength = config.unlockCodeLength,
             requireEmergencyCode = config.requireEmergencyCode,
             randomDurationEnabled = config.randomDurationEnabled,
-            randomMaxDurationMs = config.randomMaxDurationMs
+            randomMaxDurationMs = config.randomMaxDurationMs,
+            attentionChecksEnabled = config.attentionChecksEnabled,
+            attentionCheckCount = config.attentionCheckCount,
+            attentionCheckCodeLength = config.attentionCheckCodeLength,
+            attentionCheckTimeoutMs = config.attentionCheckTimeoutMs
         )
     }
 

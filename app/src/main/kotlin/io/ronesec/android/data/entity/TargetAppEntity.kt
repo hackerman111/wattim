@@ -23,5 +23,9 @@ data class TargetAppEntity(
     @ColumnInfo(defaultValue = "4") val unlockCodeLength: Int = 4,
     @ColumnInfo(defaultValue = "0") val requireEmergencyCode: Boolean = false,
     @ColumnInfo(defaultValue = "0") val randomDurationEnabled: Boolean = false,
-    @ColumnInfo(defaultValue = "8000") val randomMaxDurationMs: Long = 8_000L
+    @ColumnInfo(defaultValue = "8000") val randomMaxDurationMs: Long = 8_000L,
+    @ColumnInfo(defaultValue = "0") val attentionChecksEnabled: Boolean = false,
+    @ColumnInfo(defaultValue = "1") val attentionCheckCount: Int = 1,
+    @ColumnInfo(defaultValue = "4") val attentionCheckCodeLength: Int = 4,
+    @ColumnInfo(defaultValue = "5000") val attentionCheckTimeoutMs: Long = 5_000L
 )

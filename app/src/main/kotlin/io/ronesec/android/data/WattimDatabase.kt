@@ -36,7 +36,7 @@ import io.ronesec.android.data.entity.TargetAppEntity
         AppSettingsEntity::class,
         PolicyRevisionEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class WattimDatabase : RoomDatabase() {
@@ -74,6 +74,15 @@ abstract class WattimDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : androidx.room.migration.Migration(4, 5) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE target_apps ADD COLUMN attentionChecksEnabled INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE target_apps ADD COLUMN attentionCheckCount INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE target_apps ADD COLUMN attentionCheckCodeLength INTEGER NOT NULL DEFAULT 4")
+                db.execSQL("ALTER TABLE target_apps ADD COLUMN attentionCheckTimeoutMs INTEGER NOT NULL DEFAULT 5000")
+            }
+        }
+
         @Volatile
         private var INSTANCE: WattimDatabase? = null
 
@@ -84,7 +93,7 @@ abstract class WattimDatabase : RoomDatabase() {
                     WattimDatabase::class.java,
                     DATABASE_NAME
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build().also { INSTANCE = it }
             }
         }
