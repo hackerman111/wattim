@@ -40,11 +40,7 @@ object BreathingGeometry {
     }
 
     fun fill2TargetHeight(segmentIndex: Long): Float {
-        var x = segmentIndex.toULong() * 0x9E3779B97F4A7C15UL
-        x = (x xor (x shr 30)) * 0xBF58476D1CE4E5B9UL
-        x = (x xor (x shr 27)) * 0x94D049BB133111EBUL
-        x = x xor (x shr 31)
-        val norm = (x and 0xFFFFFFFUL).toFloat() / 0xFFFFFFFUL.toFloat()
+        val norm = kotlin.random.Random(segmentIndex).nextFloat()
         return FILL_2_MIN_HEIGHT + norm * (FILL_2_MAX_HEIGHT - FILL_2_MIN_HEIGHT)
     }
 

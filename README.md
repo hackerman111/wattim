@@ -108,11 +108,12 @@ Both Android and the browser extension share identical aesthetic themes:
 - `Tokyo Night` — Neon cyberpunk accents.
 - `Cyber Terminal` — Monochrome matrix green.
 
-### 4 Canvas Animation Styles (60 FPS)
+### 5 Canvas Animation Styles (60 FPS)
 - **Pulse**: Breathing pulsating sphere with inhale/exhale rhythm.
 - **Fill**: Smooth vertical ambient wave fill.
 - **Zen Orbit**: Particle orbiting with dynamic expansion and contraction.
 - **Wave**: A continuous ambient wave that does not reveal intervention progress or remaining time.
+- **Fill 2**: Smooth untimed vertical fill wandering between random heights without revealing remaining time.
 
 ---
 
