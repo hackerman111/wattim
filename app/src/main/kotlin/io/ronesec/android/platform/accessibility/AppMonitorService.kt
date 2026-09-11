@@ -103,6 +103,7 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
         // The framework can reconnect this instance without first destroying it.
         tearDownConnection()
         val app = application as? WattimApplication ?: return
+        packageManager.homePackages().forEach(foregroundTracker::addKnownLauncher)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         serviceScope = scope
 
@@ -333,7 +334,8 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
                         ProtectionEvent.ForegroundCandidate(
                             packageName = pkg,
                             sourceUptimeMs = SystemClock.uptimeMillis(),
-                            eventSequence = foregroundTracker.currentSequence + 1
+                            eventSequence = foregroundTracker.currentSequence + 1,
+                            isLauncher = foregroundTracker.isLauncher(pkg)
                         )
                     )
                 }

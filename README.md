@@ -31,6 +31,7 @@ Instead of permanently blocking apps, wattim interrupts the automatic impulse: w
 
 The project is structured as a monorepo with two standalone clients:
 - **`app/`** — Native Android client (Kotlin, Jetpack Compose, Room, Accessibility Service, `WindowManager` overlay).
+- **`domain/`** — Platform-independent protection policy, reducer, session state, breathing timing, and typed effects.
 - **`extension/`** — Browser extension for Chromium-based browsers and Firefox (Manifest V3, closed Shadow DOM overlay without page reload, zero dependencies).
 
 ---
@@ -46,7 +47,7 @@ The project is structured as a monorepo with two standalone clients:
                ▼
    ┌───────────────────────┐
    │  Intervention Screen  │
-   │  (60 FPS breath cycle)│
+   │  (breathing / attention)│
    └───────────┬───────────┘
                │
         ┌──────┴──────┐
@@ -61,7 +62,8 @@ The project is structured as a monorepo with two standalone clients:
 2. **Intervention**: A breathing animation renders over the screen. Underlying page interactions are blocked, and media audio/video is muted.
 3. **Choice**:
    - **"Exit" button**: Available at any second — immediately returns to the home screen or closes the tab, recording a saved impulse to local stats.
-   - **"Continue" button**: Becomes clickable only after the breathing timer finishes.
+   - **"Continue" button**: Becomes clickable only after the configured intervention finishes. Wave and Fill 2 loop without revealing remaining time.
+   - **Optional code gate**: Generate a per-session code, read it manually from the Wattim **Codes** tab, and enter it before breathing starts.
 4. **Session Watchdog (Re-intervention)**: If you stay inside the app longer than your configured threshold (e.g. 15 minutes), the intervention triggers again.
 
 ---
@@ -74,7 +76,7 @@ If you frequently re-open a protected app within a short window (1 hour by defau
 $$T = T_{\text{base}} \times \left(1 + \frac{r}{100}\right)^N$$
 
 Where:
-- $T_{\text{base}}$ — Base duration (default: 10s);
+- $T_{\text{base}}$ — Base duration (default: 8s on Android);
 - $r$ — Growth percentage per attempt (default: 20%);
 - $N$ — Number of re-open attempts within the current time window.
 
@@ -94,12 +96,18 @@ An interactive calculation table is embedded directly in the settings for the fi
 - **Custom Intervention**: Configure custom pause durations and re-intervention frequencies per specific app or domain.
 - **Days & Minute Precision**: Select specific days of the week (Mon–Sun) with minute-level precision (`09:30` → `18:15`).
 
+### Per-target timing and attention controls
+- **Random addition**: Add a random delay from 0 up to a configured maximum for each intervention.
+- **Attention checks**: Require one to five short numeric checks during an intervention, with configurable code length and entry timeout.
+
 ### Emergency Access & Global Pause
 - **One-time Pass**: Quick confirmation to skip the pause in urgent situations.
 - **Temporary Suspension**: Pause protection for an individual app or globally across the entire device for **15 min**, **30 min**, **1 hour**, or **until manually resumed**.
 - **Optional Two-stage Unlock**: Generate a per-session code, view it manually in the **Codes** tab, and enter it on the intervention screen before breathing starts. Code length is configurable per app.
+- **Stability note**: Two-stage (2FA) unlock is experimental and may currently behave unreliably during transitions between Wattim, the launcher, and the protected app.
 - **Optional Emergency Code**: Timed emergency access can require the separate 10-digit code displayed on the intervention screen.
-- **Status Widget**: Home screen card with a live countdown timer and instant resumption button.
+- **Codes panel**: The main Wattim app shows the active session code or clearly reports that no code request is active. Codes are session-bound, expire, and have no copy button.
+- **Status card**: The home screen shows active protection, pause status, and resume controls.
 
 ### 6 Terminal Themes
 Both Android and the browser extension share identical aesthetic themes:
@@ -113,7 +121,7 @@ Both Android and the browser extension share identical aesthetic themes:
 ### 5 Canvas Animation Styles (60 FPS)
 - **Pulse**: Breathing pulsating sphere with inhale/exhale rhythm.
 - **Fill**: Smooth vertical ambient wave fill.
-- **Zen Orbit**: Particle orbiting with dynamic expansion and contraction.
+- **Circle / Zen Orbit**: Particle orbiting with dynamic expansion and contraction.
 - **Wave**: A continuous ambient wave that does not reveal intervention progress or remaining time.
 - **Fill 2**: Smooth untimed vertical fill wandering between random heights without revealing remaining time.
 
@@ -188,13 +196,16 @@ Compatible with Chromium-based browsers (Google Chrome, Brave, Microsoft Edge, V
 ├── app/                              # Native Android app (Kotlin + Jetpack Compose)
 │   ├── src/main/
 │   │   ├── AndroidManifest.xml       # Manifest (strictly offline, no INTERNET)
-│   │   └── java/io/ronesec/android/
+│   │   └── kotlin/io/ronesec/android/
 │   │       ├── data/                 # Room DAO, Entities, Repository
-│   │       ├── domain/               # RuleEngine, animations, intervention logic
+│   │       ├── protection/            # Coordinator, reducer, typed effects
+│   │       ├── platform/              # Accessibility, overlay, audio, scheduler
 │   │       ├── overlay/              # WindowManager overlay + Edge-to-Edge insets
-│   │       ├── service/              # AppMonitorService (Accessibility Service)
 │   │       └── ui/                   # Jetpack Compose M3 screens, themes, components
 │   └── src/test/                     # Unit & acceptance tests
+│
+├── domain/                           # Pure Kotlin protection domain and reducer
+│   └── src/                           # Policy, session state, effects, and tests
 │
 ├── extension/                        # Browser extension (Manifest V3, Vanilla JS)
 │   ├── manifest.json                 # Extension declaration (Chromium + Firefox)
