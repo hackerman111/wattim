@@ -154,6 +154,27 @@ class TargetSettingsViewModelTest {
     }
 
     @Test
+    fun selectingFill2AnimationPersistsCorrectly() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
+        store.awaitReady()
+        advanceUntilIdle()
+
+        viewModel.onAnimationChange(AnimationMode.FILL_2)
+        assertEquals(AnimationMode.FILL_2, viewModel.uiState.value.draft.animation)
+
+        viewModel.onSave()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.first { it.isSaved }
+        assertTrue(state.isSaved)
+
+        val saved = store.currentSnapshot.targets[targetPackage]
+        assertNotNull(saved)
+        assertEquals(AnimationMode.FILL_2, saved!!.animation)
+    }
+
+    @Test
     fun immediateRemoveCleansTargetWithoutConfirmation() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
