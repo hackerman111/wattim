@@ -300,4 +300,42 @@ class TargetSettingsViewModelTest {
         viewModel.onRandomMaxDurationChange(5)
         assertEquals(5, viewModel.uiState.value.draft.randomMaxDurationSeconds)
     }
+
+    @Test
+    fun editingAttentionCheckSettingsUpdatesDraftAndPersistsOnSave() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
+        store.awaitReady()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.draft.attentionChecksEnabled)
+        assertEquals(1, viewModel.uiState.value.draft.attentionCheckCount)
+        assertEquals(4, viewModel.uiState.value.draft.attentionCheckCodeLength)
+        assertEquals(5, viewModel.uiState.value.draft.attentionCheckTimeoutSeconds)
+
+        viewModel.onToggleAttentionChecks()
+        viewModel.onAttentionCheckCountChange(3)
+        viewModel.onAttentionCheckCodeLengthChange(6)
+        viewModel.onAttentionCheckTimeoutSecondsChange(10)
+        advanceUntilIdle()
+
+        val updatedDraft = viewModel.uiState.value.draft
+        assertTrue(updatedDraft.attentionChecksEnabled)
+        assertEquals(3, updatedDraft.attentionCheckCount)
+        assertEquals(6, updatedDraft.attentionCheckCodeLength)
+        assertEquals(10, updatedDraft.attentionCheckTimeoutSeconds)
+
+        viewModel.onSave()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.first { it.isSaved }
+        assertTrue(state.isSaved)
+
+        val saved = store.currentSnapshot.targets[targetPackage]
+        assertNotNull(saved)
+        assertTrue(saved!!.attentionChecksEnabled)
+        assertEquals(3, saved.attentionCheckCount)
+        assertEquals(6, saved.attentionCheckCodeLength)
+        assertEquals(10_000L, saved.attentionCheckTimeoutMs)
+    }
 }

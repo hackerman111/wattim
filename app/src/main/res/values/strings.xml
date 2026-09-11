@@ -146,6 +146,16 @@
     <string name="target_random_duration_title">RANDOM ADDITION</string>
     <string name="target_random_duration_desc">Random additional delay from 0 up to configured value on each launch</string>
     <string name="target_random_max_duration_label">MAX RANDOM ADDITION</string>
+    <string name="target_attention_check_title">ATTENTION CHECK</string>
+    <string name="target_attention_check_desc">Requires entering a random password on a timer during wait</string>
+    <string name="target_attention_check_count_label">Checks: %1$d</string>
+    <string name="target_attention_check_length_label">Code length: %1$d digits</string>
+    <string name="target_attention_check_timeout_label">Time to enter: %1$d s</string>
+    <string name="attention_check_prompt_header">ATTENTION CHECK</string>
+    <string name="attention_check_instruction">Type the code to continue:</string>
+    <string name="attention_check_time_remaining">Remaining: %1$.1fs</string>
+    <string name="attention_check_error">Incorrect code</string>
+    <string name="attention_check_timeout_message">Time expired! Restarting wait...</string>
     <string name="target_preview_animation">PREVIEW ANIMATION</string>
     <string name="target_animation_type">ANIMATION TYPE</string>
     <string name="target_mindfulness_phrase">MINDFULNESS PHRASE</string>

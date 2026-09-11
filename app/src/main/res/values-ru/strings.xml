@@ -146,6 +146,16 @@
     <string name="target_random_duration_title">СЛУЧАЙНАЯ ДОБАВКА</string>
     <string name="target_random_duration_desc">Случайная добавка к паузе от 0 до заданного значения при каждом запуске</string>
     <string name="target_random_max_duration_label">СЛУЧАЙНАЯ ДОБАВКА (ДО)</string>
+    <string name="target_attention_check_title">ПРОВЕРКА ВНИМАНИЯ</string>
+    <string name="target_attention_check_desc">Запрос ввода проверочного пароля с мини-таймером во время ожидания</string>
+    <string name="target_attention_check_count_label">Проверок: %1$d</string>
+    <string name="target_attention_check_length_label">Длина пароля: %1$d цифр</string>
+    <string name="target_attention_check_timeout_label">Время на ввод: %1$d с</string>
+    <string name="attention_check_prompt_header">ПРОВЕРКА ВНИМАНИЯ</string>
+    <string name="attention_check_instruction">Введите код для продолжения:</string>
+    <string name="attention_check_time_remaining">Осталось: %1$.1f с</string>
+    <string name="attention_check_error">Неверный код</string>
+    <string name="attention_check_timeout_message">Время истекло! Начинаем заново...</string>
     <string name="target_preview_animation">ПРЕДПРОСМОТР АНИМАЦИИ</string>
     <string name="target_animation_type">ТИП АНИМАЦИИ</string>
     <string name="target_mindfulness_phrase">ФРАЗА ОСОЗНАННОСТИ</string>

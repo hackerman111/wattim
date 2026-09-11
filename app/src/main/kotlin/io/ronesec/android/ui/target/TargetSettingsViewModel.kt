@@ -57,6 +57,10 @@ class TargetSettingsViewModel(
 
         val randomDurEnabled = existing?.randomDurationEnabled ?: false
         val randomMaxDurSec = existing?.let { (it.randomMaxDurationMs / 1000L).toInt() } ?: 8
+        val attentionEnabled = existing?.attentionChecksEnabled ?: false
+        val attentionCount = existing?.attentionCheckCount ?: 1
+        val attentionCodeLen = existing?.attentionCheckCodeLength ?: 4
+        val attentionTimeoutSec = existing?.let { (it.attentionCheckTimeoutMs / 1000L).toInt() } ?: 5
 
         val initialDraft = TargetSettingsDraft(
             packageName = packageName,
@@ -77,7 +81,11 @@ class TargetSettingsViewModel(
             unlockCodeLength = existing?.unlockCodeLength ?: 4,
             requireEmergencyCode = existing?.requireEmergencyCode ?: false,
             randomDurationEnabled = randomDurEnabled,
-            randomMaxDurationSeconds = randomMaxDurSec.coerceIn(0, 120)
+            randomMaxDurationSeconds = randomMaxDurSec.coerceIn(0, 120),
+            attentionChecksEnabled = attentionEnabled,
+            attentionCheckCount = attentionCount,
+            attentionCheckCodeLength = attentionCodeLen,
+            attentionCheckTimeoutSeconds = attentionTimeoutSec
         )
 
         val delays = Backoff.calculateFirstTen(
@@ -117,6 +125,22 @@ class TargetSettingsViewModel(
 
     fun onRandomMaxDurationChange(seconds: Int) {
         updateDraft { it.copy(randomMaxDurationSeconds = seconds.coerceIn(0, 120)) }
+    }
+
+    fun onToggleAttentionChecks() {
+        updateDraft { it.copy(attentionChecksEnabled = !it.attentionChecksEnabled) }
+    }
+
+    fun onAttentionCheckCountChange(count: Int) {
+        updateDraft { it.copy(attentionCheckCount = count.coerceIn(1, 5)) }
+    }
+
+    fun onAttentionCheckCodeLengthChange(length: Int) {
+        updateDraft { it.copy(attentionCheckCodeLength = length.coerceIn(3, 8)) }
+    }
+
+    fun onAttentionCheckTimeoutSecondsChange(seconds: Int) {
+        updateDraft { it.copy(attentionCheckTimeoutSeconds = seconds.coerceIn(3, 30)) }
     }
 
     fun onReinterventionChoice(choice: ReinterventionChoice) {
@@ -223,7 +247,11 @@ class TargetSettingsViewModel(
             unlockCodeLength = draft.unlockCodeLength,
             requireEmergencyCode = draft.requireEmergencyCode,
             randomDurationEnabled = draft.randomDurationEnabled,
-            randomMaxDurationMs = maxOf(draft.durationSeconds, draft.randomMaxDurationSeconds) * 1000L
+            randomMaxDurationMs = maxOf(draft.durationSeconds, draft.randomMaxDurationSeconds) * 1000L,
+            attentionChecksEnabled = draft.attentionChecksEnabled,
+            attentionCheckCount = draft.attentionCheckCount,
+            attentionCheckCodeLength = draft.attentionCheckCodeLength,
+            attentionCheckTimeoutMs = draft.attentionCheckTimeoutSeconds * 1000L
         )
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }

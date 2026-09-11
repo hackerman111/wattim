@@ -69,7 +69,11 @@ fun TargetSettingsScreen(
     onUnlockCodeLengthChange: (Int) -> Unit = {},
     onRequireEmergencyCodeChange: (Boolean) -> Unit = {},
     onToggleRandomDuration: () -> Unit = {},
-    onRandomMaxDurationChange: (Int) -> Unit = {}
+    onRandomMaxDurationChange: (Int) -> Unit = {},
+    onToggleAttentionChecks: () -> Unit = {},
+    onAttentionCheckCountChange: (Int) -> Unit = {},
+    onAttentionCheckCodeLengthChange: (Int) -> Unit = {},
+    onAttentionCheckTimeoutSecondsChange: (Int) -> Unit = {}
 ) {
     val colors = WattimTheme.colors
     val dimensions = WattimTheme.dimensions
@@ -212,6 +216,18 @@ fun TargetSettingsScreen(
             maxDurationSeconds = draft.randomMaxDurationSeconds,
             onToggleEnabled = onToggleRandomDuration,
             onMaxDurationChange = onRandomMaxDurationChange,
+            isInteractive = !state.isLoading
+        )
+
+        AttentionCheckCard(
+            enabled = draft.attentionChecksEnabled,
+            count = draft.attentionCheckCount,
+            codeLength = draft.attentionCheckCodeLength,
+            timeoutSeconds = draft.attentionCheckTimeoutSeconds,
+            onToggleEnabled = onToggleAttentionChecks,
+            onCountChange = onAttentionCheckCountChange,
+            onCodeLengthChange = onAttentionCheckCodeLengthChange,
+            onTimeoutChange = onAttentionCheckTimeoutSecondsChange,
             isInteractive = !state.isLoading
         )
 

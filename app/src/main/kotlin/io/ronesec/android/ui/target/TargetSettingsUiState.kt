@@ -24,7 +24,11 @@ data class TargetSettingsDraft(
     val unlockCodeLength: Int = 4,
     val requireEmergencyCode: Boolean = false,
     val randomDurationEnabled: Boolean = false,
-    val randomMaxDurationSeconds: Int = 8
+    val randomMaxDurationSeconds: Int = 8,
+    val attentionChecksEnabled: Boolean = false,
+    val attentionCheckCount: Int = 1,
+    val attentionCheckCodeLength: Int = 4,
+    val attentionCheckTimeoutSeconds: Int = 5
 )
 
 enum class ReinterventionChoice(val labelResName: String, val durationMs: Long?) {
