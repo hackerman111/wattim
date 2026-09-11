@@ -153,19 +153,21 @@ fun InterventionContent(
                     .fillMaxWidth()
                     .widthIn(max = 500.dp)
             ) {
-                // Phase text
-                val phaseText = when (progress.phase) {
-                    BreathingPhase.INHALE -> stringResource(R.string.breathing_inhale)
-                    BreathingPhase.EXHALE -> stringResource(R.string.breathing_exhale)
-                    BreathingPhase.COMPLETE -> stringResource(R.string.breathing_complete)
-                }
+                val showPhaseText = config.animation.revealsRemainingTime || progress.phase == BreathingPhase.COMPLETE
+                if (showPhaseText) {
+                    val phaseText = when (progress.phase) {
+                        BreathingPhase.INHALE -> stringResource(R.string.breathing_inhale)
+                        BreathingPhase.EXHALE -> stringResource(R.string.breathing_exhale)
+                        BreathingPhase.COMPLETE -> stringResource(R.string.breathing_complete)
+                    }
 
-                Text(
-                    text = phaseText,
-                    style = typography.titleMedium,
-                    color = colors.accent,
-                    textAlign = TextAlign.Center
-                )
+                    Text(
+                        text = phaseText,
+                        style = typography.titleMedium,
+                        color = colors.accent,
+                        textAlign = TextAlign.Center
+                    )
+                }
 
                 if (config.animation.revealsRemainingTime) {
                     // Countdown SS.S (silent without liveRegion to avoid TalkBack speech spam)

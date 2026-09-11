@@ -181,13 +181,14 @@ class T14_InterventionContentAndTimelineTest {
         }
 
         composeTestRule.onNodeWithText(progress.formattedCountdown).assertDoesNotExist()
-        composeTestRule.onNodeWithText("INHALE").assertIsDisplayed()
+        composeTestRule.onNodeWithText("INHALE").assertDoesNotExist()
+        composeTestRule.onNodeWithText("EXHALE").assertDoesNotExist()
         composeTestRule.onNodeWithText("EXIT").assertIsDisplayed()
         composeTestRule.onNodeWithText("EMERGENCY", substring = true).assertIsDisplayed()
     }
 
     @Test
-    fun `fill_2 mode hides remaining time while preserving breathing actions`() {
+    fun `fill_2 mode hides remaining time and breathing phase text during breathing`() {
         val progress = BreathingTimeline.calculate(
             startElapsedMs = 10_000L,
             nowElapsedMs = 11_250L,
@@ -215,9 +216,42 @@ class T14_InterventionContentAndTimelineTest {
         }
 
         composeTestRule.onNodeWithText(progress.formattedCountdown).assertDoesNotExist()
-        composeTestRule.onNodeWithText("INHALE").assertIsDisplayed()
+        composeTestRule.onNodeWithText("INHALE").assertDoesNotExist()
+        composeTestRule.onNodeWithText("EXHALE").assertDoesNotExist()
         composeTestRule.onNodeWithText("EXIT").assertIsDisplayed()
         composeTestRule.onNodeWithText("EMERGENCY", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `untimed animation shows COMPLETE phase text when breathing is complete`() {
+        val progress = BreathingTimeline.calculate(
+            startElapsedMs = 10_000L,
+            nowElapsedMs = 15_000L,
+            durationMs = 5_000L
+        )
+
+        composeTestRule.setContent {
+            WattimTheme {
+                InterventionContent(
+                    config = testConfig.copy(animation = AnimationMode.FILL_2),
+                    progress = progress,
+                    showSavedBadge = false,
+                    savedMinutes = 0L,
+                    isEmergencyDialogOpen = false,
+                    onContinue = {},
+                    onExit = {},
+                    onCancel = {},
+                    onEmergencyClick = {},
+                    onDismissEmergency = {},
+                    onEmergencyOnce = {},
+                    onEmergencyTimed = {},
+                    onEmergencyForever = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("COMPLETE").assertIsDisplayed()
+        composeTestRule.onNodeWithText(progress.formattedCountdown).assertDoesNotExist()
     }
 
     @Test
