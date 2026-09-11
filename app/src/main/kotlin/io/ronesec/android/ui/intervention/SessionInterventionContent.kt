@@ -26,21 +26,30 @@ internal fun SessionInterventionContent(
 ) {
     val challenge = mode.challenge
     val isCodeGate = challenge?.gate ?: mode.config.twoStageUnlock
+    val attentionCheck = challenge?.attentionCheck
+    val isAttentionCheck = attentionCheck?.active == true
     val breathingStart = challenge?.breathingStartElapsedMs
     var progress by remember(mode.sessionId, mode.cycle, breathingStart) {
         val start = breathingStart ?: 0L
         mutableStateOf(BreathingTimeline.calculate(start, start, mode.config.durationMs))
     }
+    var nowElapsedMs by remember(mode.sessionId, mode.cycle) {
+        mutableStateOf(monotonicClock.elapsedRealtimeMs())
+    }
 
-    LaunchedEffect(mode.sessionId, mode.cycle, breathingStart, isCodeGate, mode.config.durationMs) {
-        if (!isCodeGate && breathingStart != null && !mode.isComplete) {
+    LaunchedEffect(mode.sessionId, mode.cycle, breathingStart, isCodeGate, isAttentionCheck, mode.config.durationMs) {
+        if (!isCodeGate && !mode.isComplete) {
             while (isActive) {
                 withFrameNanos {
-                    progress = BreathingTimeline.calculate(
-                        breathingStart,
-                        monotonicClock.elapsedRealtimeMs(),
-                        mode.config.durationMs
-                    )
+                    val now = monotonicClock.elapsedRealtimeMs()
+                    nowElapsedMs = now
+                    if (!isAttentionCheck && breathingStart != null) {
+                        progress = BreathingTimeline.calculate(
+                            breathingStart,
+                            now,
+                            mode.config.durationMs
+                        )
+                    }
                 }
             }
         }
@@ -59,6 +68,21 @@ internal fun SessionInterventionContent(
                 onSubmit = { send(ProtectionEvent.SubmitUnlockCode(mode.sessionId, mode.cycle, it)) },
                 onExit = { send(ProtectionEvent.ActionExit(mode.sessionId)) },
                 onEmergency = presenter::openEmergencyDialog
+            )
+        } else if (attentionCheck?.active == true) {
+            val pausedProgress = BreathingTimeline.calculate(
+                0L,
+                attentionCheck.pausedElapsedProgressMs,
+                mode.config.durationMs
+            )
+            AttentionCheckContent(
+                config = mode.config,
+                pausedProgress = pausedProgress,
+                attentionCheck = attentionCheck,
+                onSubmit = { send(ProtectionEvent.SubmitAttentionCheckCode(mode.sessionId, mode.cycle, it)) },
+                onExit = { send(ProtectionEvent.ActionExit(mode.sessionId)) },
+                onEmergency = presenter::openEmergencyDialog,
+                nowElapsedMs = nowElapsedMs
             )
         } else {
             val displayedProgress = if (mode.isComplete) {
