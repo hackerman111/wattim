@@ -70,18 +70,17 @@ internal object CodeChallengeReducer {
             is ProtectionEvent.ForegroundCandidate -> {
                 if (active.codes.travel != CodeTravel.NONE) {
                     if (event.packageName == active.session.packageName) {
-                        if (active.codes.travel == CodeTravel.TO_WATTIM) {
-                            val next = active.copy(codes = active.codes.copy(
-                                unlockCode = null,
-                                unlockExpiresElapsedMs = null,
-                                travel = CodeTravel.NONE
-                            ))
-                            return update(next, context, restart(next))
-                        }
                         val next = active.copy(codes = active.codes.copy(travel = CodeTravel.NONE))
                         return update(next, context, remount(next))
                     }
                     if (event.packageName == context.wattimPackageName) {
+                        if (active.codes.travel == CodeTravel.TO_WATTIM) {
+                            val next = active.copy(codes = active.codes.copy(travel = CodeTravel.IN_WATTIM))
+                            return update(next, context, listOf(
+                                ProtectionEffect.DismissOverlay(active.session.sessionId),
+                                ProtectionEffect.ReleaseAudioLease(active.session.sessionId)
+                            ))
+                        }
                         return unchanged()
                     }
                     if (event.isLauncher) {
@@ -145,11 +144,6 @@ internal object CodeChallengeReducer {
         ProtectionEffect.ShowIntervention(active.session.sessionId, active.session.cycle, requireNotNull(active.session.effectiveConfig)),
         ProtectionEffect.AcquireAudioLease(active.session.sessionId, active.session.packageName)
     )
-
-    private fun restart(active: ProtectionState.Intervening): List<ProtectionEffect> = listOf(
-        ProtectionEffect.DismissOverlay(active.session.sessionId),
-        ProtectionEffect.ReleaseAudioLease(active.session.sessionId)
-    ) + remount(active)
 
     private fun challenge(active: ProtectionState.Intervening) = ProtectionEffect.UpdateCodeChallenge(
         active.session.sessionId, active.session.cycle, active.codeChallengeUi()

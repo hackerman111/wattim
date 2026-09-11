@@ -156,16 +156,37 @@ class SessionCodesTest {
         assertTrue(failed.effects.any { it is ProtectionEffect.ShowIntervention })
     }
 
-    @Test fun targetReturnWithoutPanelAcknowledgementFailsClosed() {
+    @Test fun targetReturnWithoutPanelAcknowledgementKeepsGeneratedCodeForManualEntry() {
         enter(); generate()
         val result = step(ProtectionEvent.ForegroundCandidate(target, 2, 2))
         assertEquals(InterveningSubstate.CodeGate, active().substate)
-        assertNull(active().codes.unlockCode)
+        assertEquals("0123", active().codes.unlockCode)
         assertEquals(CodeTravel.NONE, active().codes.travel)
         assertTrue(result.effects.any { it is ProtectionEffect.ShowIntervention })
+        assertTrue(active().codeChallengeUi().generated)
     }
 
-    @Test fun overlayIsReleasedOnlyAfterCodesPanelAcknowledgesVisibility() {
+    @Test fun WattimForegroundFallbackPreservesCodeThroughLauncherReturn() {
+        enter(); generate()
+        val session = active().session
+
+        val wattim = step(ProtectionEvent.ForegroundCandidate(context.wattimPackageName, 2, 2))
+        assertEquals(CodeTravel.IN_WATTIM, active().codes.travel)
+        assertTrue(wattim.effects.any { it is ProtectionEffect.DismissOverlay })
+
+        step(ProtectionEvent.ForegroundCandidate("launcher", 3, 3, isLauncher = true))
+        val returned = step(ProtectionEvent.ForegroundCandidate(target, 4, 4))
+
+        assertEquals("0123", active().codes.unlockCode)
+        assertEquals(CodeTravel.NONE, active().codes.travel)
+        assertTrue(active().codeChallengeUi().generated)
+        assertTrue(returned.effects.any { it is ProtectionEffect.ShowIntervention })
+
+        step(ProtectionEvent.SubmitUnlockCode(session.sessionId, session.cycle, "0123"))
+        assertTrue(active().substate is InterveningSubstate.Breathing)
+    }
+
+    @Test fun codesPanelAcknowledgementReleasesOverlay() {
         enter()
         val session = active().session
         val generated = step(ProtectionEvent.GenerateUnlockCode(session.sessionId, session.cycle))
@@ -183,7 +204,7 @@ class SessionCodesTest {
         enter(); generate()
         val session = active().session
         val oldRevision = active().codes.unlockRequestRevision
-        step(ProtectionEvent.ForegroundCandidate(target, 2, 2))
+        step(ProtectionEvent.CodeTripFailed(session.sessionId, session.cycle, oldRevision))
         generate()
         val newRevision = active().codes.unlockRequestRevision
 
