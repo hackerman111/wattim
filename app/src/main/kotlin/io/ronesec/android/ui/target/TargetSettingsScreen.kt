@@ -67,7 +67,9 @@ fun TargetSettingsScreen(
     modifier: Modifier = Modifier,
     onTwoStageUnlockChange: (Boolean) -> Unit = {},
     onUnlockCodeLengthChange: (Int) -> Unit = {},
-    onRequireEmergencyCodeChange: (Boolean) -> Unit = {}
+    onRequireEmergencyCodeChange: (Boolean) -> Unit = {},
+    onToggleRandomDuration: () -> Unit = {},
+    onRandomMaxDurationChange: (Int) -> Unit = {}
 ) {
     val colors = WattimTheme.colors
     val dimensions = WattimTheme.dimensions
@@ -202,6 +204,15 @@ fun TargetSettingsScreen(
             seconds = draft.durationSeconds,
             onDurationChange = onDurationChange,
             onHelpClick = { activeHelpTopic = TargetHelpTopic.PAUSE_DURATION }
+        )
+
+        RandomDurationCard(
+            enabled = draft.randomDurationEnabled,
+            minDurationSeconds = draft.durationSeconds,
+            maxDurationSeconds = draft.randomMaxDurationSeconds,
+            onToggleEnabled = onToggleRandomDuration,
+            onMaxDurationChange = onRandomMaxDurationChange,
+            isInteractive = !state.isLoading
         )
 
         // 4. Preview Button (F53)

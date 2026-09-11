@@ -185,6 +185,8 @@ fun WattimNavHost(
                     onTwoStageUnlockChange = targetViewModel::onTwoStageUnlockChange,
                     onUnlockCodeLengthChange = targetViewModel::onUnlockCodeLengthChange,
                     onRequireEmergencyCodeChange = targetViewModel::onRequireEmergencyCodeChange,
+                    onToggleRandomDuration = targetViewModel::onToggleRandomDuration,
+                    onRandomMaxDurationChange = targetViewModel::onRandomMaxDurationChange,
                     onToggleEnabled = { targetViewModel.onToggleEnabled() },
                     onOpenPreview = { targetViewModel.onOpenPreview() },
                     onDismissPreview = { targetViewModel.onDismissPreview() },

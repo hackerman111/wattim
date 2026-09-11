@@ -143,6 +143,9 @@
     <string name="select_all">Выбрать все</string>
     <string name="preview_saved_time">Предпросмотр: вы сберегли 2 дня жизни</string>
     <string name="target_pause_duration">ДЛИТЕЛЬНОСТЬ ПАУЗЫ (ВДОХ И ВЫДОХ)</string>
+    <string name="target_random_duration_title">СЛУЧАЙНАЯ ДЛИТЕЛЬНОСТЬ</string>
+    <string name="target_random_duration_desc">Случайная длительность паузы от базовой до максимальной при каждом запуске</string>
+    <string name="target_random_max_duration_label">МАКСИМАЛЬНОЕ ВРЕМЯ</string>
     <string name="target_preview_animation">ПРЕДПРОСМОТР АНИМАЦИИ</string>
     <string name="target_animation_type">ТИП АНИМАЦИИ</string>
     <string name="target_mindfulness_phrase">ФРАЗА ОСОЗНАННОСТИ</string>

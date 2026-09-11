@@ -143,6 +143,9 @@
     <string name="select_all">Select all</string>
     <string name="preview_saved_time">Preview: you have saved 2 days of life</string>
     <string name="target_pause_duration">PAUSE DURATION (INHALE &amp; EXHALE)</string>
+    <string name="target_random_duration_title">RANDOM DURATION</string>
+    <string name="target_random_duration_desc">Random pause duration between base and maximum duration on each launch</string>
+    <string name="target_random_max_duration_label">MAX DURATION</string>
     <string name="target_preview_animation">PREVIEW ANIMATION</string>
     <string name="target_animation_type">ANIMATION TYPE</string>
     <string name="target_mindfulness_phrase">MINDFULNESS PHRASE</string>

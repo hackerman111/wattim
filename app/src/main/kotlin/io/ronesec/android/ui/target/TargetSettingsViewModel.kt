@@ -55,6 +55,9 @@ class TargetSettingsViewModel(
             ReinterventionChoice.fromDurationMs(it.reinterventionMs)
         } ?: Pair(ReinterventionChoice.MIN_5, Pair(5, 0))
 
+        val randomDurEnabled = existing?.randomDurationEnabled ?: false
+        val randomMaxDurSec = existing?.let { (it.randomMaxDurationMs / 1000L).toInt() } ?: maxOf(durationSec, 8)
+
         val initialDraft = TargetSettingsDraft(
             packageName = packageName,
             displayName = displayName,
@@ -72,7 +75,9 @@ class TargetSettingsViewModel(
             baseRowVersion = existing?.rowVersion ?: 1L,
             twoStageUnlock = existing?.twoStageUnlock ?: false,
             unlockCodeLength = existing?.unlockCodeLength ?: 4,
-            requireEmergencyCode = existing?.requireEmergencyCode ?: false
+            requireEmergencyCode = existing?.requireEmergencyCode ?: false,
+            randomDurationEnabled = randomDurEnabled,
+            randomMaxDurationSeconds = maxOf(durationSec, randomMaxDurSec)
         )
 
         val delays = Backoff.calculateFirstTen(
@@ -100,8 +105,21 @@ class TargetSettingsViewModel(
 
     fun onDurationChange(seconds: Int) {
         val clamped = seconds.coerceIn(1, 120)
-        updateDraft { it.copy(durationSeconds = clamped) }
+        updateDraft {
+            it.copy(
+                durationSeconds = clamped,
+                randomMaxDurationSeconds = maxOf(clamped, it.randomMaxDurationSeconds)
+            )
+        }
         recomputeDelays()
+    }
+
+    fun onToggleRandomDuration() {
+        updateDraft { it.copy(randomDurationEnabled = !it.randomDurationEnabled) }
+    }
+
+    fun onRandomMaxDurationChange(seconds: Int) {
+        updateDraft { it.copy(randomMaxDurationSeconds = seconds.coerceIn(it.durationSeconds, 120)) }
     }
 
     fun onReinterventionChoice(choice: ReinterventionChoice) {
@@ -206,7 +224,9 @@ class TargetSettingsViewModel(
             rowVersion = draft.baseRowVersion,
             twoStageUnlock = draft.twoStageUnlock,
             unlockCodeLength = draft.unlockCodeLength,
-            requireEmergencyCode = draft.requireEmergencyCode
+            requireEmergencyCode = draft.requireEmergencyCode,
+            randomDurationEnabled = draft.randomDurationEnabled,
+            randomMaxDurationMs = maxOf(draft.durationSeconds, draft.randomMaxDurationSeconds) * 1000L
         )
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }

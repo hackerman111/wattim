@@ -22,7 +22,9 @@ data class TargetSettingsDraft(
     val baseRowVersion: Long = 1L,
     val twoStageUnlock: Boolean = false,
     val unlockCodeLength: Int = 4,
-    val requireEmergencyCode: Boolean = false
+    val requireEmergencyCode: Boolean = false,
+    val randomDurationEnabled: Boolean = false,
+    val randomMaxDurationSeconds: Int = 8
 )
 
 enum class ReinterventionChoice(val labelResName: String, val durationMs: Long?) {

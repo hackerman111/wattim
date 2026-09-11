@@ -250,4 +250,50 @@ class TargetSettingsViewModelTest {
         assertEquals(setOf(targetPackage), session.targetPackages)
         assertEquals(wallClock.now().plusMillis(durationMs), session.endTime)
     }
+
+    @Test
+    fun randomDurationToggleAndMaxDurationEditing() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
+        store.awaitReady()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.draft.randomDurationEnabled)
+        assertEquals(8, viewModel.uiState.value.draft.randomMaxDurationSeconds)
+
+        viewModel.onToggleRandomDuration()
+        assertTrue(viewModel.uiState.value.draft.randomDurationEnabled)
+
+        viewModel.onRandomMaxDurationChange(20)
+        assertEquals(20, viewModel.uiState.value.draft.randomMaxDurationSeconds)
+
+        viewModel.onSave()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.first { it.isSaved }
+        assertTrue(state.isSaved)
+
+        val saved = store.currentSnapshot.targets[targetPackage]
+        assertNotNull(saved)
+        assertTrue(saved!!.randomDurationEnabled)
+        assertEquals(20_000L, saved.randomMaxDurationMs)
+    }
+
+    @Test
+    fun randomMaxDurationClampsWhenBaseDurationExceedsIt() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
+        store.awaitReady()
+        advanceUntilIdle()
+
+        viewModel.onToggleRandomDuration()
+        viewModel.onDurationChange(10)
+        viewModel.onRandomMaxDurationChange(15)
+        assertEquals(15, viewModel.uiState.value.draft.randomMaxDurationSeconds)
+
+        // Change base duration to 25s > 15s
+        viewModel.onDurationChange(25)
+        assertEquals(25, viewModel.uiState.value.draft.durationSeconds)
+        assertEquals(25, viewModel.uiState.value.draft.randomMaxDurationSeconds)
+    }
 }
