@@ -27,6 +27,9 @@ class TargetConfigAttentionCheckTest {
         )
         assertFalse(config.attentionChecksEnabled)
         assertEquals(1, config.attentionCheckCount)
+        assertFalse(config.attentionCheckRandomCountEnabled)
+        assertEquals(1, config.attentionCheckMinCount)
+        assertEquals(1, config.attentionCheckMaxCount)
         assertEquals(4, config.attentionCheckCodeLength)
         assertEquals(5_000L, config.attentionCheckTimeoutMs)
     }
@@ -38,11 +41,17 @@ class TargetConfigAttentionCheckTest {
             displayName = "Attention Target",
             attentionChecksEnabled = true,
             attentionCheckCount = 3,
+            attentionCheckRandomCountEnabled = true,
+            attentionCheckMinCount = 2,
+            attentionCheckMaxCount = 4,
             attentionCheckCodeLength = 6,
             attentionCheckTimeoutMs = 10_000L
         )
         assertTrue(config.attentionChecksEnabled)
         assertEquals(3, config.attentionCheckCount)
+        assertTrue(config.attentionCheckRandomCountEnabled)
+        assertEquals(2, config.attentionCheckMinCount)
+        assertEquals(4, config.attentionCheckMaxCount)
         assertEquals(6, config.attentionCheckCodeLength)
         assertEquals(10_000L, config.attentionCheckTimeoutMs)
     }
@@ -61,6 +70,48 @@ class TargetConfigAttentionCheckTest {
                 packageName = targetPackage,
                 displayName = "Target",
                 attentionCheckCount = 6
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            TargetConfig(
+                packageName = targetPackage,
+                displayName = "Target",
+                attentionCheckMinCount = 0
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            TargetConfig(
+                packageName = targetPackage,
+                displayName = "Target",
+                attentionCheckMinCount = 6
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            TargetConfig(
+                packageName = targetPackage,
+                displayName = "Target",
+                attentionCheckMaxCount = 0
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            TargetConfig(
+                packageName = targetPackage,
+                displayName = "Target",
+                attentionCheckMaxCount = 6
+            )
+        }
+    }
+
+    @Test
+    fun targetConfig_rejectsMinGreaterThanMaxWhenRandomEnabled() {
+        assertThrows(IllegalArgumentException::class.java) {
+            TargetConfig(
+                packageName = targetPackage,
+                displayName = "Target",
+                attentionChecksEnabled = true,
+                attentionCheckRandomCountEnabled = true,
+                attentionCheckMinCount = 4,
+                attentionCheckMaxCount = 2
             )
         }
     }

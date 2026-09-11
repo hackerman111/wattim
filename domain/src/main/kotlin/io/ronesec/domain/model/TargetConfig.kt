@@ -39,6 +39,9 @@ data class TargetConfig(
     val randomMaxDurationMs: Long = DEFAULT_DURATION_MS,
     val attentionChecksEnabled: Boolean = false,
     val attentionCheckCount: Int = 1,
+    val attentionCheckRandomCountEnabled: Boolean = false,
+    val attentionCheckMinCount: Int = 1,
+    val attentionCheckMaxCount: Int = 1,
     val attentionCheckCodeLength: Int = 4,
     val attentionCheckTimeoutMs: Long = DEFAULT_ATTENTION_CHECK_TIMEOUT_MS
 ) {
@@ -59,6 +62,17 @@ data class TargetConfig(
         }
         require(attentionCheckCount in MIN_ATTENTION_CHECK_COUNT..MAX_ATTENTION_CHECK_COUNT) {
             "Attention check count must be between $MIN_ATTENTION_CHECK_COUNT and $MAX_ATTENTION_CHECK_COUNT, was $attentionCheckCount"
+        }
+        require(attentionCheckMinCount in MIN_ATTENTION_CHECK_COUNT..MAX_ATTENTION_CHECK_COUNT) {
+            "Attention check min count must be between $MIN_ATTENTION_CHECK_COUNT and $MAX_ATTENTION_CHECK_COUNT, was $attentionCheckMinCount"
+        }
+        require(attentionCheckMaxCount in MIN_ATTENTION_CHECK_COUNT..MAX_ATTENTION_CHECK_COUNT) {
+            "Attention check max count must be between $MIN_ATTENTION_CHECK_COUNT and $MAX_ATTENTION_CHECK_COUNT, was $attentionCheckMaxCount"
+        }
+        if (attentionCheckRandomCountEnabled) {
+            require(attentionCheckMinCount <= attentionCheckMaxCount) {
+                "Attention check min count ($attentionCheckMinCount) must be <= max count ($attentionCheckMaxCount)"
+            }
         }
         require(attentionCheckCodeLength in MIN_ATTENTION_CHECK_CODE_LENGTH..MAX_ATTENTION_CHECK_CODE_LENGTH) {
             "Attention check code length must be between $MIN_ATTENTION_CHECK_CODE_LENGTH and $MAX_ATTENTION_CHECK_CODE_LENGTH, was $attentionCheckCodeLength"
