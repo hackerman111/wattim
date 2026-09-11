@@ -68,7 +68,7 @@ fun RandomDurationCard(
                         color = colors.textSecondary
                     )
                     Text(
-                        text = "$maxDurationSeconds ${stringResource(R.string.unit_sec)}",
+                        text = "+$maxDurationSeconds ${stringResource(R.string.unit_sec)}",
                         style = typography.titleMedium,
                         color = colors.accent
                     )
@@ -80,14 +80,14 @@ fun RandomDurationCard(
                 ) {
                     TerminalButton(
                         text = "-5s",
-                        onClick = { onMaxDurationChange(maxOf(minDurationSeconds, maxDurationSeconds - 5)) },
-                        enabled = isInteractive && maxDurationSeconds > minDurationSeconds,
+                        onClick = { onMaxDurationChange(maxOf(0, maxDurationSeconds - 5)) },
+                        enabled = isInteractive && maxDurationSeconds > 0,
                         modifier = Modifier.weight(1f)
                     )
                     TerminalButton(
                         text = "-1s",
-                        onClick = { onMaxDurationChange(maxOf(minDurationSeconds, maxDurationSeconds - 1)) },
-                        enabled = isInteractive && maxDurationSeconds > minDurationSeconds,
+                        onClick = { onMaxDurationChange(maxOf(0, maxDurationSeconds - 1)) },
+                        enabled = isInteractive && maxDurationSeconds > 0,
                         modifier = Modifier.weight(1f)
                     )
                     TerminalButton(

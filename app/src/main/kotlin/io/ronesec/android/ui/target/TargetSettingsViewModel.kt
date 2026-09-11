@@ -56,7 +56,7 @@ class TargetSettingsViewModel(
         } ?: Pair(ReinterventionChoice.MIN_5, Pair(5, 0))
 
         val randomDurEnabled = existing?.randomDurationEnabled ?: false
-        val randomMaxDurSec = existing?.let { (it.randomMaxDurationMs / 1000L).toInt() } ?: maxOf(durationSec, 8)
+        val randomMaxDurSec = existing?.let { (it.randomMaxDurationMs / 1000L).toInt() } ?: 8
 
         val initialDraft = TargetSettingsDraft(
             packageName = packageName,
@@ -77,7 +77,7 @@ class TargetSettingsViewModel(
             unlockCodeLength = existing?.unlockCodeLength ?: 4,
             requireEmergencyCode = existing?.requireEmergencyCode ?: false,
             randomDurationEnabled = randomDurEnabled,
-            randomMaxDurationSeconds = maxOf(durationSec, randomMaxDurSec)
+            randomMaxDurationSeconds = randomMaxDurSec.coerceIn(0, 120)
         )
 
         val delays = Backoff.calculateFirstTen(
@@ -106,10 +106,7 @@ class TargetSettingsViewModel(
     fun onDurationChange(seconds: Int) {
         val clamped = seconds.coerceIn(1, 120)
         updateDraft {
-            it.copy(
-                durationSeconds = clamped,
-                randomMaxDurationSeconds = maxOf(clamped, it.randomMaxDurationSeconds)
-            )
+            it.copy(durationSeconds = clamped)
         }
         recomputeDelays()
     }
@@ -119,7 +116,7 @@ class TargetSettingsViewModel(
     }
 
     fun onRandomMaxDurationChange(seconds: Int) {
-        updateDraft { it.copy(randomMaxDurationSeconds = seconds.coerceIn(it.durationSeconds, 120)) }
+        updateDraft { it.copy(randomMaxDurationSeconds = seconds.coerceIn(0, 120)) }
     }
 
     fun onReinterventionChoice(choice: ReinterventionChoice) {

@@ -280,7 +280,7 @@ class TargetSettingsViewModelTest {
     }
 
     @Test
-    fun randomMaxDurationClampsWhenBaseDurationExceedsIt() = runTest {
+    fun randomDurationAdditionIsIndependentOfBaseDuration() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
         store.awaitReady()
@@ -291,9 +291,13 @@ class TargetSettingsViewModelTest {
         viewModel.onRandomMaxDurationChange(15)
         assertEquals(15, viewModel.uiState.value.draft.randomMaxDurationSeconds)
 
-        // Change base duration to 25s > 15s
+        // Change base duration to 25s > 15s - random addition must remain 15s
         viewModel.onDurationChange(25)
         assertEquals(25, viewModel.uiState.value.draft.durationSeconds)
-        assertEquals(25, viewModel.uiState.value.draft.randomMaxDurationSeconds)
+        assertEquals(15, viewModel.uiState.value.draft.randomMaxDurationSeconds)
+
+        // Set random addition to 5s < 25s - must be allowed
+        viewModel.onRandomMaxDurationChange(5)
+        assertEquals(5, viewModel.uiState.value.draft.randomMaxDurationSeconds)
     }
 }
