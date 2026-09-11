@@ -23,7 +23,9 @@ data class ReducerContext(
     val zoneId: ZoneId,
     val runtimeState: RuntimeState,
     val nextSessionId: () -> SessionId,
-    val nextAttemptId: () -> String = { UUID.randomUUID().toString() }
+    val nextAttemptId: () -> String = { UUID.randomUUID().toString() },
+    val codePort: io.ronesec.domain.codes.SessionCodePort = io.ronesec.domain.codes.SecureSessionCodePort,
+    val wattimPackageName: String = "io.ronesec.android"
 )
 
 data class ReducerResult(
@@ -39,7 +41,18 @@ object ProtectionReducer {
         event: ProtectionEvent,
         context: ReducerContext
     ): ReducerResult {
+        CodeChallengeReducer.intercept(currentState, event, context)?.let { return it }
+        return CodeChallengeReducer.finish(currentState, reduceCore(currentState, event, context), context)
+    }
+
+    private fun reduceCore(
+        currentState: ProtectionState,
+        event: ProtectionEvent,
+        context: ReducerContext
+    ): ReducerResult {
         return when (event) {
+            is ProtectionEvent.GenerateUnlockCode, is ProtectionEvent.SubmitUnlockCode, is ProtectionEvent.CodeTripFailed ->
+                ReducerResult(currentState, emptyList(), context.runtimeState)
             is ProtectionEvent.ServiceDisconnected -> {
                 val effects = mutableListOf<ProtectionEffect>()
                 when (currentState) {

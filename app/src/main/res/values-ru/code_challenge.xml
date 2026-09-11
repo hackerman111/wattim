@@ -1,0 +1,9 @@
+<resources>
+    <string name="code_gate_instruction">Сгенерируйте код, запомните его в Wattim → Коды, затем вернитесь сюда и введите его, чтобы начать дыхание.</string>
+    <string name="code_generate">Сгенерировать код</string>
+    <string name="code_enter">Код сессии</string>
+    <string name="code_confirm">Подтвердить код</string>
+    <string name="code_invalid">Неверный код или срок действия истёк</string>
+    <string name="code_emergency_display">Код экстренного входа: %1$s</string>
+    <string name="code_emergency_enter">Введите 10-значный код с экрана intervention</string>
+</resources>

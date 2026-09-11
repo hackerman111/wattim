@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_codes">КОДЫ</string>
+    <string name="codes_screen_title">КОДЫ РАЗБЛОКИРОВКИ</string>
+    <string name="codes_empty_message">Нет активного кода разблокировки</string>
+    <string name="codes_active_label">АКТИВНЫЙ КОД ДЛЯ %1$s</string>
+</resources>

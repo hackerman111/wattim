@@ -1,0 +1,9 @@
+<resources>
+    <string name="code_settings_two_stage">Two-stage unlock</string>
+    <string name="code_settings_two_stage_description">Before breathing, retrieve a session code from Codes in Wattim and enter it here.</string>
+    <string name="code_settings_length">Code length: %1$d digits</string>
+    <string name="code_settings_shorter">−1 digit</string>
+    <string name="code_settings_longer">+1 digit</string>
+    <string name="code_settings_emergency">Require code for emergency delay</string>
+    <string name="code_settings_emergency_description">Manually enter the separate 10-digit code shown on the intervention screen to request emergency access.</string>
+</resources>

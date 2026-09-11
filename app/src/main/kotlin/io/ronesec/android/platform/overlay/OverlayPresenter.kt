@@ -4,6 +4,8 @@ import io.ronesec.android.data.PolicyStore
 import io.ronesec.android.data.StatisticsStore
 import io.ronesec.android.ui.designsystem.ThemeId
 import io.ronesec.domain.model.SessionId
+import io.ronesec.domain.protection.CodeChallengeUi
+import io.ronesec.domain.protection.ProtectionEvent
 import io.ronesec.domain.policy.EffectiveInterventionConfig
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +24,8 @@ sealed interface OverlayMode {
         val sessionId: SessionId,
         val cycle: Int,
         val config: EffectiveInterventionConfig,
-        val isComplete: Boolean = false
+        val isComplete: Boolean = false,
+        val challenge: CodeChallengeUi? = null
     ) : OverlayMode
 
     data class Block(
@@ -42,6 +45,7 @@ data class OverlayUiState(
 )
 
 interface OverlayActionDispatcher {
+    fun onCodeEvent(event: ProtectionEvent) {}
     fun onContinue(sessionId: SessionId, cycle: Int)
     fun onExit(sessionId: SessionId?)
     fun onCancel(sessionId: SessionId?)
@@ -138,6 +142,19 @@ class OverlayPresenter(
                 isEmergencyDialogOpen = false
             )
         }
+    }
+
+    fun updateCodeChallenge(sessionId: SessionId, cycle: Int, snapshot: CodeChallengeUi) {
+        _uiState.update { current ->
+            val mode = current.mode
+            if (mode is OverlayMode.Intervention && mode.sessionId == sessionId && mode.cycle == cycle) {
+                current.copy(mode = mode.copy(challenge = snapshot))
+            } else current
+        }
+    }
+
+    fun dispatchCodeEvent(event: ProtectionEvent) {
+        actionDispatcher.onCodeEvent(event)
     }
 
     fun updateOverlayComplete(sessionId: SessionId, cycle: Int) {

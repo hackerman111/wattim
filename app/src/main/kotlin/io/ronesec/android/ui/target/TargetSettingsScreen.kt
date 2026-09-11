@@ -64,7 +64,10 @@ fun TargetSettingsScreen(
     onQuickLock: (Long) -> Unit = {},
     onSave: () -> Unit,
     onRemove: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onTwoStageUnlockChange: (Boolean) -> Unit = {},
+    onUnlockCodeLengthChange: (Int) -> Unit = {},
+    onRequireEmergencyCodeChange: (Boolean) -> Unit = {}
 ) {
     val colors = WattimTheme.colors
     val dimensions = WattimTheme.dimensions
@@ -182,6 +185,16 @@ fun TargetSettingsScreen(
         AnimationSelectorCard(
             selectedMode = draft.animation,
             onModeSelect = onAnimationChange
+        )
+
+        CodeSettingsCard(
+            twoStageUnlock = draft.twoStageUnlock,
+            unlockCodeLength = draft.unlockCodeLength,
+            requireEmergencyCode = draft.requireEmergencyCode,
+            onTwoStageUnlockChange = onTwoStageUnlockChange,
+            onUnlockCodeLengthChange = onUnlockCodeLengthChange,
+            onRequireEmergencyCodeChange = onRequireEmergencyCodeChange,
+            enabled = !state.isLoading
         )
 
         // 3. Pause Duration Editor (F52): 1-120s, unit label, steppers, presets

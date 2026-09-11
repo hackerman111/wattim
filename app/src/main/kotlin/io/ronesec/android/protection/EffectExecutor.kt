@@ -5,9 +5,11 @@ import io.ronesec.android.platform.time.TemporalBoundaryScheduler
 import io.ronesec.domain.model.SessionId
 import io.ronesec.domain.policy.EffectiveInterventionConfig
 import io.ronesec.domain.protection.ProtectionEffect
+import io.ronesec.domain.protection.CodeChallengeUi
 import java.time.Instant
 
 interface OverlayPort {
+    fun updateCodeChallenge(sessionId: SessionId, cycle: Int, snapshot: CodeChallengeUi) {}
     fun showIntervention(sessionId: SessionId, cycle: Int, config: EffectiveInterventionConfig)
     fun showBlock(sessionId: SessionId, cycle: Int, packageName: String, until: Instant?)
     fun updateOverlayComplete(sessionId: SessionId, cycle: Int)
@@ -21,6 +23,10 @@ interface AudioPort {
 
 interface HomePort {
     fun sendToHome(): Boolean
+}
+
+fun interface CodesNavigationPort {
+    fun openWattim(sessionId: SessionId, cycle: Int)
 }
 
 interface ForegroundResyncPort {
@@ -45,11 +51,14 @@ class EffectExecutor(
     private val protectionStatusPort: ProtectionStatusPort,
     private val storeWriter: ProtectionStoreWriter,
     private val scheduler: TemporalBoundaryScheduler,
-    private val subscriptionController: SubscriptionController
+    private val subscriptionController: SubscriptionController,
+    private val codesNavigationPort: CodesNavigationPort = CodesNavigationPort { _, _ -> }
 ) {
     fun execute(effects: List<ProtectionEffect>) {
         for (effect in effects) {
             when (effect) {
+                is ProtectionEffect.UpdateCodeChallenge -> overlayPort.updateCodeChallenge(effect.sessionId, effect.cycle, effect.snapshot)
+                is ProtectionEffect.OpenWattim -> codesNavigationPort.openWattim(effect.sessionId, effect.cycle)
                 is ProtectionEffect.ShowIntervention -> {
                     overlayPort.showIntervention(effect.sessionId, effect.cycle, effect.config)
                 }

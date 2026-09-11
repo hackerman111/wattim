@@ -36,7 +36,7 @@ import io.ronesec.android.data.entity.TargetAppEntity
         AppSettingsEntity::class,
         PolicyRevisionEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class WattimDatabase : RoomDatabase() {
@@ -59,6 +59,14 @@ abstract class WattimDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : androidx.room.migration.Migration(2, 3) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE target_apps ADD COLUMN twoStageUnlock INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE target_apps ADD COLUMN unlockCodeLength INTEGER NOT NULL DEFAULT 4")
+                db.execSQL("ALTER TABLE target_apps ADD COLUMN requireEmergencyCode INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         @Volatile
         private var INSTANCE: WattimDatabase? = null
 
@@ -69,8 +77,7 @@ abstract class WattimDatabase : RoomDatabase() {
                     WattimDatabase::class.java,
                     DATABASE_NAME
                 )
-                .addMigrations(MIGRATION_1_2)
-                .fallbackToDestructiveMigration()
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build().also { INSTANCE = it }
             }
         }

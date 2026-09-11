@@ -139,7 +139,8 @@ class ForegroundTracker(
         return ProtectionEvent.ForegroundCandidate(
             packageName = pkg,
             sourceUptimeMs = payload.uptimeMs,
-            eventSequence = seq
+            eventSequence = seq,
+            isLauncher = isLauncher(pkg)
         )
     }
 

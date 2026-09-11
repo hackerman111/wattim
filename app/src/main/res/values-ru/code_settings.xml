@@ -1,0 +1,9 @@
+<resources>
+    <string name="code_settings_two_stage">Двухэтапная разблокировка</string>
+    <string name="code_settings_two_stage_description">Перед дыханием получите код сессии в разделе «Коды» Wattim и введите его на экране вмешательства.</string>
+    <string name="code_settings_length">Длина кода: %1$d цифр</string>
+    <string name="code_settings_shorter">−1 цифра</string>
+    <string name="code_settings_longer">+1 цифра</string>
+    <string name="code_settings_emergency">Код для экстренного доступа</string>
+    <string name="code_settings_emergency_description">Для запроса экстренного доступа вручную введите отдельный 10-значный код с экрана вмешательства.</string>
+</resources>

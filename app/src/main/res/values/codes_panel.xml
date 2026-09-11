@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_codes">CODES</string>
+    <string name="codes_screen_title">UNLOCK CODES</string>
+    <string name="codes_empty_message">No active unlock code</string>
+    <string name="codes_active_label">ACTIVE CODE FOR %1$s</string>
+</resources>
