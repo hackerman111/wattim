@@ -5,7 +5,16 @@ import io.ronesec.domain.model.SessionId
 
 sealed interface ProtectionEvent {
     data class GenerateUnlockCode(val sessionId: SessionId, val cycle: Int) : ProtectionEvent
-    data class CodeTripFailed(val sessionId: SessionId, val cycle: Int) : ProtectionEvent
+    data class CodeTripFailed(
+        val sessionId: SessionId,
+        val cycle: Int,
+        val requestRevision: Long
+    ) : ProtectionEvent
+    data class CodePanelShown(
+        val sessionId: SessionId,
+        val cycle: Int,
+        val requestRevision: Long
+    ) : ProtectionEvent
     data class SubmitUnlockCode(val sessionId: SessionId, val cycle: Int, val code: String) : ProtectionEvent {
         override fun toString(): String = "SubmitUnlockCode(sessionId=$sessionId, cycle=$cycle, redacted)"
     }

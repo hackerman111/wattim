@@ -217,8 +217,8 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
             storeWriter = app.protectionStoreWriter,
             scheduler = scheduler,
             subscriptionController = subscriptionController,
-            codesNavigationPort = io.ronesec.android.protection.AndroidCodesNavigationPort(this) { sessionId, cycle ->
-                ingress.sendControlEvent(ProtectionEvent.CodeTripFailed(sessionId, cycle))
+            codesNavigationPort = io.ronesec.android.protection.AndroidCodesNavigationPort(this) { sessionId, cycle, requestRevision ->
+                ingress.sendControlEvent(ProtectionEvent.CodeTripFailed(sessionId, cycle, requestRevision))
             }
         )
 

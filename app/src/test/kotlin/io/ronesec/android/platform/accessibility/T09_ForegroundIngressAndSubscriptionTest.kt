@@ -167,6 +167,15 @@ class T09_ForegroundIngressAndSubscriptionTest {
         assertNotNull(targetResult)
         assertEquals("com.example.target", (targetResult as ProtectionEvent.ForegroundCandidate).packageName)
 
+        val launcherResult = tracker.normalizeEvent(
+            RawAccessibilityPayload(
+                eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+                packageName = "com.android.launcher3",
+                uptimeMs = 1008L
+            )
+        ) as ProtectionEvent.ForegroundCandidate
+        assertTrue(launcherResult.isLauncher)
+
         // 8. Stale timestamp rejected
         val staleEvent = RawAccessibilityPayload(
             eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,

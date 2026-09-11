@@ -97,6 +97,8 @@ An interactive calculation table is embedded directly in the settings for the fi
 ### Emergency Access & Global Pause
 - **One-time Pass**: Quick confirmation to skip the pause in urgent situations.
 - **Temporary Suspension**: Pause protection for an individual app or globally across the entire device for **15 min**, **30 min**, **1 hour**, or **until manually resumed**.
+- **Optional Two-stage Unlock**: Generate a per-session code, view it manually in the **Codes** tab, and enter it on the intervention screen before breathing starts. Code length is configurable per app.
+- **Optional Emergency Code**: Timed emergency access can require the separate 10-digit code displayed on the intervention screen.
 - **Status Widget**: Home screen card with a live countdown timer and instant resumption button.
 
 ### 6 Terminal Themes

@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // Restore saved route if available, otherwise determine based on permissions
-        val restoredRoute = AppRoute.fromBundle(savedInstanceState) ?: intent.codesRouteOrNull()
+        val restoredRoute = intent.codesRouteOrNull() ?: AppRoute.fromBundle(savedInstanceState)
         activeRoute = restoredRoute
 
         setContent {
@@ -105,6 +105,9 @@ class MainActivity : ComponentActivity() {
                                 wallClock = wallClock,
                                 audioDiagnostics = app.audioDiagnostics,
                                 codesPanelState = codesPanelState,
+                                onCodeVisible = { sessionId, cycle, requestRevision ->
+                                    coordinator?.onCodePanelShown(sessionId, cycle, requestRevision)
+                                },
                                 routeRequests = routeRequestFlow,
                                 onRouteChange = { activeRoute = it },
                                 onStartFgs = { FocusForegroundService.start(this) }

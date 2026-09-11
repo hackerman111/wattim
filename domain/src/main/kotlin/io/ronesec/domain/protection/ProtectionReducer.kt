@@ -51,7 +51,8 @@ object ProtectionReducer {
         context: ReducerContext
     ): ReducerResult {
         return when (event) {
-            is ProtectionEvent.GenerateUnlockCode, is ProtectionEvent.SubmitUnlockCode, is ProtectionEvent.CodeTripFailed ->
+            is ProtectionEvent.GenerateUnlockCode, is ProtectionEvent.SubmitUnlockCode,
+            is ProtectionEvent.CodeTripFailed, is ProtectionEvent.CodePanelShown ->
                 ReducerResult(currentState, emptyList(), context.runtimeState)
             is ProtectionEvent.ServiceDisconnected -> {
                 val effects = mutableListOf<ProtectionEffect>()

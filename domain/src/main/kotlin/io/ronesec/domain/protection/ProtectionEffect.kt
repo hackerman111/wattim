@@ -14,7 +14,11 @@ sealed interface ProtectionEffect {
         val snapshot: CodeChallengeUi
     ) : ProtectionEffect
 
-    data class OpenWattim(val sessionId: SessionId, val cycle: Int) : ProtectionEffect
+    data class OpenWattim(
+        val sessionId: SessionId,
+        val cycle: Int,
+        val requestRevision: Long
+    ) : ProtectionEffect
     data class ShowIntervention(
         val sessionId: SessionId,
         val cycle: Int,

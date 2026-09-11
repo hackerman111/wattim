@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -19,15 +20,23 @@ import androidx.compose.ui.text.style.TextAlign
 import io.ronesec.android.R
 import io.ronesec.android.ui.designsystem.TerminalCard
 import io.ronesec.android.ui.designsystem.WattimTheme
+import io.ronesec.domain.model.SessionId
 
 @Composable
 fun CodesScreen(
     state: CodesPanelState,
+    onCodeVisible: (SessionId, Int, Long) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val colors = WattimTheme.colors
     val dimensions = WattimTheme.dimensions
     val typography = WattimTheme.typography
+
+    LaunchedEffect(state) {
+        if (state is CodesPanelState.Active) {
+            onCodeVisible(state.sessionId, state.cycle, state.requestRevision)
+        }
+    }
 
     Column(
         modifier = modifier

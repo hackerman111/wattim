@@ -84,7 +84,7 @@ fun InterventionContent(
     var hasRequestedFocus by remember { mutableStateOf(false) }
 
     // Autofocus Continue button once upon completion
-    LaunchedEffect(progress.isComplete) {
+    LaunchedEffect(progress.isComplete, isAutofocusEnabled) {
         if (progress.isComplete && !hasRequestedFocus && isAutofocusEnabled) {
             hasRequestedFocus = true
             try {

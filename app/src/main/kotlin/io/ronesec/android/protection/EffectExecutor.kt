@@ -26,7 +26,7 @@ interface HomePort {
 }
 
 fun interface CodesNavigationPort {
-    fun openWattim(sessionId: SessionId, cycle: Int)
+    fun openWattim(sessionId: SessionId, cycle: Int, requestRevision: Long)
 }
 
 interface ForegroundResyncPort {
@@ -52,13 +52,17 @@ class EffectExecutor(
     private val storeWriter: ProtectionStoreWriter,
     private val scheduler: TemporalBoundaryScheduler,
     private val subscriptionController: SubscriptionController,
-    private val codesNavigationPort: CodesNavigationPort = CodesNavigationPort { _, _ -> }
+    private val codesNavigationPort: CodesNavigationPort = CodesNavigationPort { _, _, _ -> }
 ) {
     fun execute(effects: List<ProtectionEffect>) {
         for (effect in effects) {
             when (effect) {
                 is ProtectionEffect.UpdateCodeChallenge -> overlayPort.updateCodeChallenge(effect.sessionId, effect.cycle, effect.snapshot)
-                is ProtectionEffect.OpenWattim -> codesNavigationPort.openWattim(effect.sessionId, effect.cycle)
+                is ProtectionEffect.OpenWattim -> codesNavigationPort.openWattim(
+                    effect.sessionId,
+                    effect.cycle,
+                    effect.requestRevision
+                )
                 is ProtectionEffect.ShowIntervention -> {
                     overlayPort.showIntervention(effect.sessionId, effect.cycle, effect.config)
                 }

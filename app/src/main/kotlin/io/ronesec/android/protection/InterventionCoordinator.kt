@@ -7,6 +7,8 @@ import io.ronesec.domain.model.RuntimePolicySnapshot
 import io.ronesec.domain.model.RuntimeState
 import io.ronesec.domain.model.SessionId
 import io.ronesec.domain.model.WallClock
+import io.ronesec.domain.codes.SecureSessionCodePort
+import io.ronesec.domain.codes.SessionCodePort
 import io.ronesec.domain.protection.ProtectionEvent
 import io.ronesec.domain.protection.ProtectionReducer
 import io.ronesec.domain.protection.ProtectionState
@@ -37,7 +39,8 @@ class InterventionCoordinator(
     private val monotonicClock: MonotonicClock,
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val processNonce: Long = System.currentTimeMillis()
+    private val processNonce: Long = System.currentTimeMillis(),
+    private val sessionCodePort: SessionCodePort = SecureSessionCodePort
 ) {
     private val _protectionState = MutableStateFlow<ProtectionState>(ProtectionState.Loading())
     val protectionState: StateFlow<ProtectionState> = _protectionState.asStateFlow()
@@ -109,7 +112,8 @@ class InterventionCoordinator(
             zoneId = wallClock.zoneId(),
             runtimeState = currentRuntime,
             nextSessionId = { SessionId(processNonce, serviceGeneration, entryCounter++) },
-            nextAttemptId = { UUID.randomUUID().toString() }
+            nextAttemptId = { UUID.randomUUID().toString() },
+            codePort = sessionCodePort
         )
 
         val result = ProtectionReducer.reduce(currentState, event, context)
@@ -188,6 +192,10 @@ class InterventionCoordinator(
 
     fun onActionContinue(sessionId: SessionId, cycle: Int) {
         eventIngress.sendControlEvent(ProtectionEvent.ActionContinue(sessionId, cycle))
+    }
+
+    fun onCodePanelShown(sessionId: SessionId, cycle: Int, requestRevision: Long) {
+        eventIngress.sendControlEvent(ProtectionEvent.CodePanelShown(sessionId, cycle, requestRevision))
     }
 
     fun onActionExit(sessionId: SessionId?) {

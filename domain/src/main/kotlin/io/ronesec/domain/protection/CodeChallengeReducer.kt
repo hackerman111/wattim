@@ -25,19 +25,29 @@ internal object CodeChallengeReducer {
                     active.codes.unlockCode != null || active.codes.travel != CodeTravel.NONE) return unchanged()
                 val length = active.session.effectiveConfig?.unlockCodeLength ?: 4
                 val deadline = context.nowElapsedMs + CODE_LIFETIME_MS
+                val requestRevision = active.codes.unlockRequestRevision + 1L
                 val next = active.copy(codes = active.codes.copy(
                     unlockCode = context.codePort.generate(length), unlockExpiresElapsedMs = deadline,
-                    travel = CodeTravel.TO_WATTIM, error = false
+                    unlockRequestRevision = requestRevision, travel = CodeTravel.TO_WATTIM, error = false
                 ))
                 return update(next, context, listOf(
-                    ProtectionEffect.DismissOverlay(active.session.sessionId),
-                    ProtectionEffect.ReleaseAudioLease(active.session.sessionId),
                     ProtectionEffect.ScheduleTemporalBoundary(CODE_LIFETIME_MS, deadline),
-                    ProtectionEffect.OpenWattim(active.session.sessionId, active.session.cycle)
+                    ProtectionEffect.OpenWattim(active.session.sessionId, active.session.cycle, requestRevision)
+                ))
+            }
+            is ProtectionEvent.CodePanelShown -> {
+                if (!matches(event.sessionId, event.cycle) || active.codes.travel != CodeTravel.TO_WATTIM ||
+                    active.codes.unlockCode == null ||
+                    active.codes.unlockRequestRevision != event.requestRevision) return unchanged()
+                val next = active.copy(codes = active.codes.copy(travel = CodeTravel.IN_WATTIM))
+                return update(next, context, listOf(
+                    ProtectionEffect.DismissOverlay(active.session.sessionId),
+                    ProtectionEffect.ReleaseAudioLease(active.session.sessionId)
                 ))
             }
             is ProtectionEvent.CodeTripFailed -> {
-                if (!matches(event.sessionId, event.cycle) || active.codes.travel == CodeTravel.NONE) return unchanged()
+                if (!matches(event.sessionId, event.cycle) || active.codes.travel == CodeTravel.NONE ||
+                    active.codes.unlockRequestRevision != event.requestRevision) return unchanged()
                 val next = active.copy(codes = active.codes.copy(unlockCode = null, unlockExpiresElapsedMs = null, travel = CodeTravel.NONE))
                 return update(next, context, remount(next))
             }
@@ -60,13 +70,19 @@ internal object CodeChallengeReducer {
             is ProtectionEvent.ForegroundCandidate -> {
                 if (active.codes.travel != CodeTravel.NONE) {
                     if (event.packageName == active.session.packageName) {
-                        // The pre-launch foreground event must not close the authorized trip.
-                        if (active.codes.travel == CodeTravel.TO_WATTIM) return unchanged()
+                        if (active.codes.travel == CodeTravel.TO_WATTIM) {
+                            val next = active.copy(codes = active.codes.copy(
+                                unlockCode = null,
+                                unlockExpiresElapsedMs = null,
+                                travel = CodeTravel.NONE
+                            ))
+                            return update(next, context, restart(next))
+                        }
                         val next = active.copy(codes = active.codes.copy(travel = CodeTravel.NONE))
                         return update(next, context, remount(next))
                     }
                     if (event.packageName == context.wattimPackageName) {
-                        return update(active.copy(codes = active.codes.copy(travel = CodeTravel.IN_WATTIM)), context)
+                        return unchanged()
                     }
                     if (event.isLauncher) {
                         val travel = if (active.codes.travel == CodeTravel.TO_WATTIM) CodeTravel.TO_WATTIM else CodeTravel.RETURNING
@@ -74,9 +90,7 @@ internal object CodeChallengeReducer {
                     }
                 }
             }
-            is ProtectionEvent.ActionEmergencyOnce -> return checkEmergency(active, event.sessionId, event.cycle, event.code, context)
             is ProtectionEvent.ActionEmergencyTimed -> return checkEmergency(active, event.sessionId, event.cycle, event.code, context)
-            is ProtectionEvent.ActionEmergencyForever -> return checkEmergency(active, event.sessionId, event.cycle, event.code, context)
             is ProtectionEvent.ActionExit -> if (event.sessionId != null && event.sessionId != active.session.sessionId) return unchanged()
             is ProtectionEvent.ActionCancel -> if (event.sessionId != null && event.sessionId != active.session.sessionId) return unchanged()
             else -> Unit
@@ -131,6 +145,11 @@ internal object CodeChallengeReducer {
         ProtectionEffect.ShowIntervention(active.session.sessionId, active.session.cycle, requireNotNull(active.session.effectiveConfig)),
         ProtectionEffect.AcquireAudioLease(active.session.sessionId, active.session.packageName)
     )
+
+    private fun restart(active: ProtectionState.Intervening): List<ProtectionEffect> = listOf(
+        ProtectionEffect.DismissOverlay(active.session.sessionId),
+        ProtectionEffect.ReleaseAudioLease(active.session.sessionId)
+    ) + remount(active)
 
     private fun challenge(active: ProtectionState.Intervening) = ProtectionEffect.UpdateCodeChallenge(
         active.session.sessionId, active.session.cycle, active.codeChallengeUi()

@@ -24,6 +24,7 @@ import io.ronesec.android.ui.config.ConfigScreen
 import io.ronesec.android.ui.config.ConfigViewModel
 import io.ronesec.android.ui.codes.CodesPanelState
 import io.ronesec.android.ui.codes.CodesScreen
+import io.ronesec.domain.model.SessionId
 
 @Composable
 fun MainShell(
@@ -36,6 +37,7 @@ fun MainShell(
     statsViewModel: StatsViewModel? = null,
     configViewModel: ConfigViewModel? = null,
     codesPanelState: CodesPanelState = CodesPanelState.Empty,
+    onCodeVisible: (SessionId, Int, Long) -> Unit = { _, _, _ -> },
     onOpenScheduleEditor: ((Long?) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -88,7 +90,7 @@ fun MainShell(
                         )
                     }
                 }
-                TerminalTab.CODES -> CodesScreen(state = codesPanelState)
+                TerminalTab.CODES -> CodesScreen(state = codesPanelState, onCodeVisible = onCodeVisible)
                 TerminalTab.BLOCK -> {
                     if (blocksViewModel != null) {
                         val blocksUiState by blocksViewModel.uiState.collectAsState()

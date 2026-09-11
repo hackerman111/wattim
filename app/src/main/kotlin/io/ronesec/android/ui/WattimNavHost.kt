@@ -27,6 +27,7 @@ import io.ronesec.android.ui.stats.StatsViewModel
 import io.ronesec.android.ui.target.TargetSettingsScreen
 import io.ronesec.android.ui.target.TargetSettingsViewModel
 import io.ronesec.domain.model.WallClock
+import io.ronesec.domain.model.SessionId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.emptyFlow
@@ -43,6 +44,7 @@ fun WattimNavHost(
     wallClock: WallClock? = null,
     audioDiagnostics: AudioDiagnostics? = null,
     codesPanelState: CodesPanelState = CodesPanelState.Empty,
+    onCodeVisible: (SessionId, Int, Long) -> Unit = { _, _, _ -> },
     routeRequests: Flow<AppRoute> = emptyFlow(),
     modifier: Modifier = Modifier,
     onRouteChange: (AppRoute) -> Unit = {}
@@ -152,6 +154,7 @@ fun WattimNavHost(
                 statsViewModel = statsViewModel,
                 configViewModel = configViewModel,
                 codesPanelState = codesPanelState,
+                onCodeVisible = onCodeVisible,
                 onOpenScheduleEditor = { scheduleId ->
                     currentRoute = AppRoute.ScheduleEditor(scheduleId)
                 },

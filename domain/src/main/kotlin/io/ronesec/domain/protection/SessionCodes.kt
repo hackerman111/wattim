@@ -5,6 +5,7 @@ enum class CodeTravel { NONE, TO_WATTIM, IN_WATTIM, RETURNING }
 data class SessionCodes(
     val unlockCode: String? = null,
     val unlockExpiresElapsedMs: Long? = null,
+    val unlockRequestRevision: Long = 0L,
     val emergencyCode: String? = null,
     val travel: CodeTravel = CodeTravel.NONE,
     val error: Boolean = false,
@@ -16,6 +17,7 @@ data class SessionCodes(
 data class CodeChallengeUi(
     val gate: Boolean,
     val generated: Boolean,
+    val unlockRequestRevision: Long,
     val codeLength: Int,
     val emergencyCode: String?,
     val error: Boolean,
@@ -29,6 +31,7 @@ fun ProtectionState.Intervening.codeChallengeUi() = CodeChallengeUi(
     gate = substate is InterveningSubstate.CodeGate ||
         (substate is InterveningSubstate.AwaitingAttachment && session.effectiveConfig?.twoStageUnlock == true),
     generated = codes.unlockCode != null,
+    unlockRequestRevision = codes.unlockRequestRevision,
     codeLength = session.effectiveConfig?.unlockCodeLength ?: 4,
     emergencyCode = codes.emergencyCode,
     error = codes.error,

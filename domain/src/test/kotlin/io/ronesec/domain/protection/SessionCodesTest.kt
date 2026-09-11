@@ -42,6 +42,12 @@ class SessionCodesTest {
     }
     private fun returnFromWattim() {
         step(ProtectionEvent.ForegroundCandidate(context.wattimPackageName, 2, 2))
+        val session = active().session
+        step(ProtectionEvent.CodePanelShown(
+            session.sessionId,
+            session.cycle,
+            active().codes.unlockRequestRevision
+        ))
         step(ProtectionEvent.ForegroundCandidate("launcher", 3, 3, isLauncher = true))
         step(ProtectionEvent.ForegroundCandidate(target, 4, 4))
     }
@@ -89,6 +95,14 @@ class SessionCodesTest {
         assertTrue(step(ProtectionEvent.ActionEmergencyTimed(session.sessionId, session.cycle, 60000, "9876543210")).effects.isEmpty())
     }
 
+    @Test fun emergencyCodeProtectsTimedAccessOnly() {
+        enter()
+        val session = active().session
+        val once = step(ProtectionEvent.ActionEmergencyOnce(session.sessionId, session.cycle))
+        assertTrue(state is ProtectionState.Granted)
+        assertTrue(once.effects.none { it is ProtectionEffect.CommitAccessGrant })
+    }
+
     @Test fun lifecycleAndDepartureDiscardBothCodes() {
         listOf(ProtectionEvent.ScreenOff, ProtectionEvent.ServiceDisconnected, ProtectionEvent.ServiceConnected(2),
             ProtectionEvent.ForegroundCandidate("unrelated", 8, 8)).forEach { event ->
@@ -110,6 +124,7 @@ class SessionCodesTest {
         step(ProtectionEvent.SubmitUnlockCode(old.sessionId, old.cycle, "0123"))
         step(ProtectionEvent.ActionEmergencyOnce(old.sessionId, old.cycle, "9876543210"))
         step(ProtectionEvent.ActionCancel(old.sessionId))
+        step(ProtectionEvent.CodePanelShown(old.sessionId, old.cycle, active().codes.unlockRequestRevision))
         step(ProtectionEvent.GenerateUnlockCode(current.session.sessionId, current.session.cycle + 1))
         assertEquals(current, state)
     }
@@ -131,10 +146,59 @@ class SessionCodesTest {
     @Test fun failedTripRestoresGateAndInvalidatesGeneratedCode() {
         enter(); generate()
         val session = active().session
-        val failed = step(ProtectionEvent.CodeTripFailed(session.sessionId, session.cycle))
+        val failed = step(ProtectionEvent.CodeTripFailed(
+            session.sessionId,
+            session.cycle,
+            active().codes.unlockRequestRevision
+        ))
         assertNull(active().codes.unlockCode)
         assertEquals(CodeTravel.NONE, active().codes.travel)
         assertTrue(failed.effects.any { it is ProtectionEffect.ShowIntervention })
+    }
+
+    @Test fun targetReturnWithoutPanelAcknowledgementFailsClosed() {
+        enter(); generate()
+        val result = step(ProtectionEvent.ForegroundCandidate(target, 2, 2))
+        assertEquals(InterveningSubstate.CodeGate, active().substate)
+        assertNull(active().codes.unlockCode)
+        assertEquals(CodeTravel.NONE, active().codes.travel)
+        assertTrue(result.effects.any { it is ProtectionEffect.ShowIntervention })
+    }
+
+    @Test fun overlayIsReleasedOnlyAfterCodesPanelAcknowledgesVisibility() {
+        enter()
+        val session = active().session
+        val generated = step(ProtectionEvent.GenerateUnlockCode(session.sessionId, session.cycle))
+        assertTrue(generated.effects.none { it is ProtectionEffect.DismissOverlay })
+        val shown = step(ProtectionEvent.CodePanelShown(
+            session.sessionId,
+            session.cycle,
+            active().codes.unlockRequestRevision
+        ))
+        assertTrue(shown.effects.any { it is ProtectionEffect.DismissOverlay })
+        assertEquals(CodeTravel.IN_WATTIM, active().codes.travel)
+    }
+
+    @Test fun stalePanelAcknowledgementCannotAcceptRegeneratedCode() {
+        enter(); generate()
+        val session = active().session
+        val oldRevision = active().codes.unlockRequestRevision
+        step(ProtectionEvent.ForegroundCandidate(target, 2, 2))
+        generate()
+        val newRevision = active().codes.unlockRequestRevision
+
+        assertTrue(newRevision > oldRevision)
+        val stale = step(ProtectionEvent.CodePanelShown(session.sessionId, session.cycle, oldRevision))
+
+        assertTrue(stale.effects.isEmpty())
+        assertEquals(CodeTravel.TO_WATTIM, active().codes.travel)
+        assertNotNull(active().codes.unlockCode)
+        assertEquals(newRevision, active().codes.unlockRequestRevision)
+
+        val staleFailure = step(ProtectionEvent.CodeTripFailed(session.sessionId, session.cycle, oldRevision))
+        assertTrue(staleFailure.effects.isEmpty())
+        assertEquals(CodeTravel.TO_WATTIM, active().codes.travel)
+        assertNotNull(active().codes.unlockCode)
     }
 
     @Test fun modesCanBeEnabledSeparately() {

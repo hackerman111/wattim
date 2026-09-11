@@ -7,16 +7,16 @@ import io.ronesec.domain.model.SessionId
 
 class AndroidCodesNavigationPort(
     private val context: Context,
-    private val onFailure: (SessionId, Int) -> Unit
+    private val onFailure: (SessionId, Int, Long) -> Unit
 ) : CodesNavigationPort {
-    override fun openWattim(sessionId: SessionId, cycle: Int) {
+    override fun openWattim(sessionId: SessionId, cycle: Int, requestRevision: Long) {
         try {
             context.startActivity(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 putExtra(MainActivity.EXTRA_OPEN_CODES, true)
             })
         } catch (_: RuntimeException) {
-            onFailure(sessionId, cycle)
+            onFailure(sessionId, cycle, requestRevision)
         }
     }
 }
