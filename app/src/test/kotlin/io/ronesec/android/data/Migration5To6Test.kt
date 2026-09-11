@@ -16,21 +16,21 @@ import org.robolectric.RobolectricTestRunner
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
-class Migration3To4Test {
+class Migration5To6Test {
 
     @Test
-    fun migrationPreservesExistingTargetAndUsesRandomDefaults() = runTest {
+    fun migrationPreservesExistingTargetAndUsesRandomAttentionCheckDefaults() = runTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val name = "random-duration-migration.db"
+        val name = "random-attention-check-migration.db"
         context.deleteDatabase(name)
         val schemaFile = listOf(
-            File("schemas/io.ronesec.android.data.WattimDatabase/3.json"),
-            File("app/schemas/io.ronesec.android.data.WattimDatabase/3.json")
+            File("schemas/io.ronesec.android.data.WattimDatabase/5.json"),
+            File("app/schemas/io.ronesec.android.data.WattimDatabase/5.json")
         ).first { it.exists() }
         val schema = JSONObject(schemaFile.readText()).getJSONObject("database")
         val helper = FrameworkSQLiteOpenHelperFactory().create(
             SupportSQLiteOpenHelper.Configuration.builder(context).name(name)
-                .callback(object : SupportSQLiteOpenHelper.Callback(3) {
+                .callback(object : SupportSQLiteOpenHelper.Callback(5) {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         val entities = schema.getJSONArray("entities")
                         for (index in 0 until entities.length()) {
@@ -45,13 +45,14 @@ class Migration3To4Test {
                     override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
                 }).build()
         )
+        // Schema 5 columns: 21 columns
         helper.writableDatabase.execSQL(
-            "INSERT INTO target_apps VALUES ('sample.app', 'Sample', 1, 'Breathe', 'FILL', 8000, 300000, 0, 0, 20, 3600000, 7, 1, 6, 1)"
+            "INSERT INTO target_apps VALUES ('sample.app', 'Sample', 1, 'Breathe', 'FILL', 8000, 300000, 0, 0, 20, 3600000, 7, 1, 6, 1, 1, 12000, 1, 3, 5, 6000)"
         )
         helper.close()
 
         val database = Room.databaseBuilder(context, WattimDatabase::class.java, name)
-            .addMigrations(WattimDatabase.MIGRATION_3_4, WattimDatabase.MIGRATION_4_5, WattimDatabase.MIGRATION_5_6).allowMainThreadQueries().build()
+            .addMigrations(WattimDatabase.MIGRATION_5_6).allowMainThreadQueries().build()
         try {
             val target = database.targetAppDao().getTarget("sample.app")!!
             assertEquals("Sample", target.displayName)
@@ -60,8 +61,15 @@ class Migration3To4Test {
             assertEquals(true, target.twoStageUnlock)
             assertEquals(6, target.unlockCodeLength)
             assertEquals(true, target.requireEmergencyCode)
-            assertFalse(target.randomDurationEnabled)
-            assertEquals(8000L, target.randomMaxDurationMs)
+            assertEquals(true, target.randomDurationEnabled)
+            assertEquals(12000L, target.randomMaxDurationMs)
+            assertEquals(true, target.attentionChecksEnabled)
+            assertEquals(3, target.attentionCheckCount)
+            assertEquals(5, target.attentionCheckCodeLength)
+            assertEquals(6000L, target.attentionCheckTimeoutMs)
+            assertFalse(target.attentionCheckRandomCountEnabled)
+            assertEquals(1, target.attentionCheckMinCount)
+            assertEquals(1, target.attentionCheckMaxCount)
         } finally {
             database.close()
             context.deleteDatabase(name)

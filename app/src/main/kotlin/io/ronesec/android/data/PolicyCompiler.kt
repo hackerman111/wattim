@@ -52,6 +52,9 @@ object PolicyCompiler {
             randomMaxDurationMs = entity.randomMaxDurationMs,
             attentionChecksEnabled = entity.attentionChecksEnabled,
             attentionCheckCount = entity.attentionCheckCount,
+            attentionCheckRandomCountEnabled = entity.attentionCheckRandomCountEnabled,
+            attentionCheckMinCount = entity.attentionCheckMinCount,
+            attentionCheckMaxCount = entity.attentionCheckMaxCount,
             attentionCheckCodeLength = entity.attentionCheckCodeLength,
             attentionCheckTimeoutMs = entity.attentionCheckTimeoutMs
         )
@@ -78,6 +81,9 @@ object PolicyCompiler {
             randomMaxDurationMs = config.randomMaxDurationMs,
             attentionChecksEnabled = config.attentionChecksEnabled,
             attentionCheckCount = config.attentionCheckCount,
+            attentionCheckRandomCountEnabled = config.attentionCheckRandomCountEnabled,
+            attentionCheckMinCount = config.attentionCheckMinCount,
+            attentionCheckMaxCount = config.attentionCheckMaxCount,
             attentionCheckCodeLength = config.attentionCheckCodeLength,
             attentionCheckTimeoutMs = config.attentionCheckTimeoutMs
         )
