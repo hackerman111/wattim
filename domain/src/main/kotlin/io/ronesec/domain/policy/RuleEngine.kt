@@ -57,7 +57,14 @@ object RuleEngine {
         zoneId: ZoneId,
         runtimeState: RuntimeState,
         permitSessionId: SessionId? = null,
-        priorEntryCountOverride: Int? = null
+        priorEntryCountOverride: Int? = null,
+        randomDurationProvider: (minMs: Long, maxMs: Long) -> Long = { min, max ->
+            if (max > min) {
+                val minSec = (min / 1000L).toInt()
+                val maxSec = (max / 1000L).toInt()
+                (minSec..maxSec).random().toLong() * 1000L
+            } else min
+        }
     ): Decision {
         val snapshot = runtimeState.snapshot
 
@@ -142,7 +149,14 @@ object RuleEngine {
 
             // Scheduled intervention override
             val override = activeInterventionSchedule.overrides[packageName]
-            val baseDurationMs = override?.durationMs ?: target.durationMs
+            val configuredBaseMs = override?.durationMs ?: target.durationMs
+            val baseDurationMs = if (target.randomDurationEnabled) {
+                val minMs = configuredBaseMs
+                val maxMs = maxOf(minMs, target.randomMaxDurationMs)
+                randomDurationProvider(minMs, maxMs).coerceIn(minMs, maxMs)
+            } else {
+                configuredBaseMs
+            }
             val reinterventionMs = override?.reinterventionMs ?: target.reinterventionMs
 
             val effectiveDurationMs = Backoff.resolveEffectiveDurationMs(
@@ -183,8 +197,16 @@ object RuleEngine {
         }
 
         // 8. Remaining enabled target -> base config + backoff
+        val baseDurationMs = if (target.randomDurationEnabled) {
+            val minMs = target.durationMs
+            val maxMs = maxOf(minMs, target.randomMaxDurationMs)
+            randomDurationProvider(minMs, maxMs).coerceIn(minMs, maxMs)
+        } else {
+            target.durationMs
+        }
+
         val effectiveDurationMs = Backoff.resolveEffectiveDurationMs(
-            baseDurationMs = target.durationMs,
+            baseDurationMs = baseDurationMs,
             config = target.growthConfig,
             priorEntriesCount = priorEntryCount
         )
@@ -198,7 +220,7 @@ object RuleEngine {
                 durationMs = effectiveDurationMs,
                 reinterventionMs = target.reinterventionMs,
                 quickReturnGraceMs = target.quickReturnGraceMs,
-                baseDurationMs = target.durationMs,
+                baseDurationMs = baseDurationMs,
                 backoffExponent = priorEntryCount,
                 twoStageUnlock = target.twoStageUnlock,
                 unlockCodeLength = target.unlockCodeLength,

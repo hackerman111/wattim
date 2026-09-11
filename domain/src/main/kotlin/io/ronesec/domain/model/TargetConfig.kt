@@ -34,13 +34,23 @@ data class TargetConfig(
     val rowVersion: Long = 1L,
     val twoStageUnlock: Boolean = false,
     val unlockCodeLength: Int = 4,
-    val requireEmergencyCode: Boolean = false
+    val requireEmergencyCode: Boolean = false,
+    val randomDurationEnabled: Boolean = false,
+    val randomMaxDurationMs: Long = DEFAULT_DURATION_MS
 ) {
     init {
         require(packageName.isNotBlank()) { "Package name cannot be blank" }
         require(unlockCodeLength in 1..10) { "Unlock code length must be between 1 and 10" }
         require(durationMs in MIN_DURATION_MS..MAX_DURATION_MS) {
             "Duration must be between $MIN_DURATION_MS and $MAX_DURATION_MS ms, was $durationMs"
+        }
+        require(randomMaxDurationMs in MIN_DURATION_MS..MAX_DURATION_MS) {
+            "Random max duration must be between $MIN_DURATION_MS and $MAX_DURATION_MS ms, was $randomMaxDurationMs"
+        }
+        if (randomDurationEnabled) {
+            require(randomMaxDurationMs >= durationMs) {
+                "Random max duration ($randomMaxDurationMs ms) cannot be less than base duration ($durationMs ms)"
+            }
         }
         require(reinterventionMs >= 0) {
             "Reintervention must be non-negative (0 means OFF), was $reinterventionMs"
