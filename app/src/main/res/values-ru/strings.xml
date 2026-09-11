@@ -149,6 +149,10 @@
     <string name="target_attention_check_title">ПРОВЕРКА ВНИМАНИЯ</string>
     <string name="target_attention_check_desc">Запрос ввода проверочного пароля с мини-таймером во время ожидания</string>
     <string name="target_attention_check_count_label">Проверок: %1$d</string>
+    <string name="target_attention_check_random_title">СЛУЧАЙНОЕ ЧИСЛО ПРОВЕРОК</string>
+    <string name="target_attention_check_random_desc">Случайное число проверок в заданном диапазоне при каждом запуске</string>
+    <string name="target_attention_check_min_count_label">Минимум проверок: %1$d</string>
+    <string name="target_attention_check_max_count_label">Максимум проверок: %1$d</string>
     <string name="target_attention_check_length_label">Длина пароля: %1$d цифр</string>
     <string name="target_attention_check_timeout_label">Время на ввод: %1$d с</string>
     <string name="attention_check_prompt_header">ПРОВЕРКА ВНИМАНИЯ</string>

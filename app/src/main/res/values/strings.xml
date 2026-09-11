@@ -149,6 +149,10 @@
     <string name="target_attention_check_title">ATTENTION CHECK</string>
     <string name="target_attention_check_desc">Requires entering a random password on a timer during wait</string>
     <string name="target_attention_check_count_label">Checks: %1$d</string>
+    <string name="target_attention_check_random_title">RANDOM CHECK COUNT</string>
+    <string name="target_attention_check_random_desc">Random number of checks within range on each launch</string>
+    <string name="target_attention_check_min_count_label">Min checks: %1$d</string>
+    <string name="target_attention_check_max_count_label">Max checks: %1$d</string>
     <string name="target_attention_check_length_label">Code length: %1$d digits</string>
     <string name="target_attention_check_timeout_label">Time to enter: %1$d s</string>
     <string name="attention_check_prompt_header">ATTENTION CHECK</string>
