@@ -89,7 +89,9 @@ internal object CodeChallengeReducer {
                     }
                 }
             }
+            is ProtectionEvent.ActionEmergencyOnce -> return checkEmergency(active, event.sessionId, event.cycle, event.code, context)
             is ProtectionEvent.ActionEmergencyTimed -> return checkEmergency(active, event.sessionId, event.cycle, event.code, context)
+            is ProtectionEvent.ActionEmergencyForever -> return checkEmergency(active, event.sessionId, event.cycle, event.code, context)
             is ProtectionEvent.ActionExit -> if (event.sessionId != null && event.sessionId != active.session.sessionId) return unchanged()
             is ProtectionEvent.ActionCancel -> if (event.sessionId != null && event.sessionId != active.session.sessionId) return unchanged()
             else -> Unit

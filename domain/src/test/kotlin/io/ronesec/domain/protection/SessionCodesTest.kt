@@ -95,12 +95,31 @@ class SessionCodesTest {
         assertTrue(step(ProtectionEvent.ActionEmergencyTimed(session.sessionId, session.cycle, 60000, "9876543210")).effects.isEmpty())
     }
 
-    @Test fun emergencyCodeProtectsTimedAccessOnly() {
+    @Test fun emergencyCodeProtectsAllEmergencyAccessActions() {
+        // 1. ActionEmergencyOnce fails without code or with wrong code
         enter()
-        val session = active().session
-        val once = step(ProtectionEvent.ActionEmergencyOnce(session.sessionId, session.cycle))
+        var session = active().session
+        val failedOnce = step(ProtectionEvent.ActionEmergencyOnce(session.sessionId, session.cycle, "wrong"))
+        assertTrue(state is ProtectionState.Intervening)
+        assertTrue(active().codes.emergencyError)
+        assertTrue(failedOnce.effects.none { it is ProtectionEffect.DismissOverlay })
+
+        val successOnce = step(ProtectionEvent.ActionEmergencyOnce(session.sessionId, session.cycle, "9876543210"))
         assertTrue(state is ProtectionState.Granted)
-        assertTrue(once.effects.none { it is ProtectionEffect.CommitAccessGrant })
+        assertEquals(1, successOnce.effects.filterIsInstance<ProtectionEffect.DismissOverlay>().size)
+
+        // 2. ActionEmergencyForever fails without code or with wrong code
+        state = ProtectionState.Idle
+        context = context.copy(runtimeState = context.runtimeState.copy(sessionPermits = emptyMap()))
+        enter()
+        session = active().session
+        val failedForever = step(ProtectionEvent.ActionEmergencyForever(session.sessionId, session.cycle, "wrong"))
+        assertTrue(state is ProtectionState.Intervening)
+        assertTrue(active().codes.emergencyError)
+
+        val successForever = step(ProtectionEvent.ActionEmergencyForever(session.sessionId, session.cycle, "9876543210"))
+        assertTrue(state is ProtectionState.Idle)
+        assertEquals(1, successForever.effects.filterIsInstance<ProtectionEffect.DisableTarget>().size)
     }
 
     @Test fun lifecycleAndDepartureDiscardBothCodes() {
