@@ -17,6 +17,7 @@ import io.ronesec.domain.model.AnimationMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,6 +52,40 @@ class T18_AllThemeVisualStateMatrixTest {
 
         assertNotEquals(start, halfway)
         assertEquals(start, nextCycle, 0.0001f)
+    }
+
+    @Test
+    fun `fill_2 height stays within bounds during breathing and varies over time`() {
+        val heights = (0L..10_000L step 400L).map { elapsed ->
+            BreathingGeometry.fill2HeightFraction(elapsedMs = elapsed, progress = 0.5f, reducedMotion = false)
+        }
+        for (h in heights) {
+            assertTrue("Height $h should be >= 0.15f", h >= 0.15f - 0.0001f)
+            assertTrue("Height $h should be <= 0.85f", h <= 0.85f + 0.0001f)
+        }
+        val distinctValues = heights.distinct()
+        assertTrue("Height should vary over time, got ${distinctValues.size} distinct values", distinctValues.size > 1)
+
+        var hasIncreased = false
+        var hasDecreased = false
+        for (i in 0 until heights.size - 1) {
+            if (heights[i + 1] > heights[i] + 0.001f) hasIncreased = true
+            if (heights[i + 1] < heights[i] - 0.001f) hasDecreased = true
+        }
+        assertTrue("Fill 2 should increase at some points", hasIncreased)
+        assertTrue("Fill 2 should decrease at some points", hasDecreased)
+    }
+
+    @Test
+    fun `fill_2 height reaches 1_0 on completion`() {
+        val completed = BreathingGeometry.fill2HeightFraction(elapsedMs = 4000L, progress = 1.0f, reducedMotion = false)
+        assertEquals(1.0f, completed, 0.0001f)
+    }
+
+    @Test
+    fun `fill_2 height is fixed at 0_5 on reduced motion`() {
+        val reduced = BreathingGeometry.fill2HeightFraction(elapsedMs = 4000L, progress = 0.5f, reducedMotion = true)
+        assertEquals(0.5f, reduced, 0.0001f)
     }
 
     @Test

@@ -30,10 +30,37 @@ object BreathingGeometry {
     const val CORE_GROWTH_RATIO = 0.68f
     const val WAVE_CYCLE_MS = 6_000L
     const val WAVE_AMPLITUDE_FRACTION = 0.08f
+    const val FILL_2_SEGMENT_MS = 1_600L
+    const val FILL_2_MIN_HEIGHT = 0.15f
+    const val FILL_2_MAX_HEIGHT = 0.85f
 
     fun wavePhaseRadians(elapsedMs: Long): Float {
         val cyclePositionMs = elapsedMs.coerceAtLeast(0L) % WAVE_CYCLE_MS
         return (cyclePositionMs.toDouble() / WAVE_CYCLE_MS.toDouble() * 2.0 * PI).toFloat()
+    }
+
+    fun fill2TargetHeight(segmentIndex: Long): Float {
+        var x = segmentIndex.toULong() * 0x9E3779B97F4A7C15UL
+        x = (x xor (x shr 30)) * 0xBF58476D1CE4E5B9UL
+        x = (x xor (x shr 27)) * 0x94D049BB133111EBUL
+        x = x xor (x shr 31)
+        val norm = (x and 0xFFFFFFFUL).toFloat() / 0xFFFFFFFUL.toFloat()
+        return FILL_2_MIN_HEIGHT + norm * (FILL_2_MAX_HEIGHT - FILL_2_MIN_HEIGHT)
+    }
+
+    fun fill2HeightFraction(elapsedMs: Long, progress: Float, reducedMotion: Boolean): Float {
+        if (reducedMotion) return 0.5f
+        if (progress >= 1.0f) return 1.0f
+
+        val safeElapsed = elapsedMs.coerceAtLeast(0L)
+        val currentSegment = safeElapsed / FILL_2_SEGMENT_MS
+        val t = (safeElapsed % FILL_2_SEGMENT_MS).toFloat() / FILL_2_SEGMENT_MS.toFloat()
+        val smoothT = t * t * (3f - 2f * t)
+
+        val hStart = fill2TargetHeight(currentSegment)
+        val hEnd = fill2TargetHeight(currentSegment + 1L)
+
+        return hStart + (hEnd - hStart) * smoothT
     }
 }
 
@@ -61,8 +88,20 @@ fun BreathingCanvas(
             AnimationMode.PULSE -> drawPulse(effectiveProgress, colors)
             AnimationMode.CIRCLE -> drawCircleOrbit(effectiveProgress, effectiveElapsed, colors)
             AnimationMode.WAVE -> drawCyclicWave(effectiveElapsed, colors)
+            AnimationMode.FILL_2 -> {
+                val fraction = BreathingGeometry.fill2HeightFraction(
+                    elapsedMs = effectiveElapsed,
+                    progress = progress,
+                    reducedMotion = reducedMotion
+                )
+                drawRandomFill(fraction, colors)
+            }
         }
     }
+}
+
+fun DrawScope.drawRandomFill(fraction: Float, colors: WattimColors) {
+    drawFill(fraction, colors)
 }
 
 fun DrawScope.drawCyclicWave(elapsedMs: Long, colors: WattimColors) {

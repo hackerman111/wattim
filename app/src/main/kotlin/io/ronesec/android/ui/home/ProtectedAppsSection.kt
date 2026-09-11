@@ -115,6 +115,7 @@ fun ProtectedAppRow(
         AnimationMode.PULSE -> stringResource(R.string.anim_pulse)
         AnimationMode.CIRCLE -> stringResource(R.string.anim_circle)
         AnimationMode.WAVE -> stringResource(R.string.anim_wave)
+        AnimationMode.FILL_2 -> stringResource(R.string.anim_fill_2)
     }
     val secUnit = stringResource(R.string.unit_sec)
     val summaryText = "${item.durationSeconds} $secUnit · $animName"
