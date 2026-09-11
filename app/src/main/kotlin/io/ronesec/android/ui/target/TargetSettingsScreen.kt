@@ -311,7 +311,8 @@ private fun AnimationSelectorCard(
                     AnimationMode.FILL to stringResource(R.string.anim_fill),
                     AnimationMode.PULSE to stringResource(R.string.anim_pulse),
                     AnimationMode.CIRCLE to stringResource(R.string.anim_circle),
-                    AnimationMode.WAVE to stringResource(R.string.anim_wave)
+                    AnimationMode.WAVE to stringResource(R.string.anim_wave),
+                    AnimationMode.FILL_2 to stringResource(R.string.anim_fill_2)
                 ).forEach { (mode, label) ->
                     TerminalButton(
                         text = label,

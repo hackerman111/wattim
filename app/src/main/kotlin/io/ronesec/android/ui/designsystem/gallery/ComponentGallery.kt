@@ -168,6 +168,9 @@ internal fun ComponentGallery(
                     Box(modifier = Modifier.weight(1f).height(120.dp).background(colors.surface)) {
                         BreathingCanvas(style = AnimationMode.WAVE, progress = 0.7f, elapsedMs = 3000L)
                     }
+                    Box(modifier = Modifier.weight(1f).height(120.dp).background(colors.surface)) {
+                        BreathingCanvas(style = AnimationMode.FILL_2, progress = 0.7f, elapsedMs = 3000L)
+                    }
                 }
             }
 
