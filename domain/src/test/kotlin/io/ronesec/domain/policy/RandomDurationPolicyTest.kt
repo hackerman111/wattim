@@ -20,29 +20,29 @@ class RandomDurationPolicyTest {
     private val targetPackage = "com.test.random"
 
     @Test
-    fun targetConfigValidation_rejectsMaxLessThanMinWhenEnabled() {
+    fun targetConfigValidation_rejectsNegativeMaxDuration() {
         assertThrows(IllegalArgumentException::class.java) {
             TargetConfig(
                 packageName = targetPackage,
                 displayName = "Random Target",
                 durationMs = 10_000L,
                 randomDurationEnabled = true,
-                randomMaxDurationMs = 5_000L
+                randomMaxDurationMs = -1_000L
             )
         }
     }
 
     @Test
-    fun targetConfigValidation_allowsValidRandomRange() {
+    fun targetConfigValidation_allowsRandomAdditionLessThanBaseDuration() {
         val config = TargetConfig(
             packageName = targetPackage,
             displayName = "Random Target",
-            durationMs = 5_000L,
+            durationMs = 10_000L,
             randomDurationEnabled = true,
-            randomMaxDurationMs = 15_000L
+            randomMaxDurationMs = 5_000L
         )
         assertTrue(config.randomDurationEnabled)
-        assertEquals(15_000L, config.randomMaxDurationMs)
+        assertEquals(5_000L, config.randomMaxDurationMs)
     }
 
     @Test
@@ -76,13 +76,13 @@ class RandomDurationPolicyTest {
     }
 
     @Test
-    fun ruleEngine_enabledRandom_samplesWithinRange() {
+    fun ruleEngine_enabledRandom_samplesAdditionFromZeroToMax() {
         val target = TargetConfig(
             packageName = targetPackage,
             displayName = "Target",
             durationMs = 5_000L,
             randomDurationEnabled = true,
-            randomMaxDurationMs = 15_000L
+            randomMaxDurationMs = 10_000L
         )
         val snapshot = RuntimePolicySnapshot(
             revision = 1L,
@@ -93,7 +93,7 @@ class RandomDurationPolicyTest {
             globalPause = GlobalPause.None
         )
 
-        // Test with provider returning min
+        // Test with provider returning 0 addition
         val minDecision = RuleEngine.evaluate(
             packageName = targetPackage,
             nowWall = nowWall,
@@ -104,7 +104,7 @@ class RandomDurationPolicyTest {
         ) as Decision.Intervention
         assertEquals(5_000L, minDecision.config.durationMs)
 
-        // Test with provider returning max
+        // Test with provider returning max addition (10_000)
         val maxDecision = RuleEngine.evaluate(
             packageName = targetPackage,
             nowWall = nowWall,
@@ -115,26 +115,26 @@ class RandomDurationPolicyTest {
         ) as Decision.Intervention
         assertEquals(15_000L, maxDecision.config.durationMs)
 
-        // Test with provider returning intermediate value
+        // Test with provider returning intermediate addition (4_000)
         val midDecision = RuleEngine.evaluate(
             packageName = targetPackage,
             nowWall = nowWall,
             nowElapsedMs = nowElapsedMs,
             zoneId = zoneId,
             runtimeState = RuntimeState(snapshot),
-            randomDurationProvider = { min, max -> (min + max) / 2 }
+            randomDurationProvider = { _, _ -> 4_000L }
         ) as Decision.Intervention
-        assertEquals(10_000L, midDecision.config.durationMs)
+        assertEquals(9_000L, midDecision.config.durationMs)
     }
 
     @Test
-    fun ruleEngine_enabledRandom_appliesBackoffOnSampledBase() {
+    fun ruleEngine_enabledRandom_appliesBackoffToBaseAndAddsRandom() {
         val target = TargetConfig(
             packageName = targetPackage,
             displayName = "Target",
             durationMs = 10_000L,
             randomDurationEnabled = true,
-            randomMaxDurationMs = 20_000L,
+            randomMaxDurationMs = 5_000L,
             growthConfig = BackoffConfig(enabled = true, percent = 50, windowMs = 3600_000L)
         )
         val snapshot = RuntimePolicySnapshot(
@@ -146,7 +146,8 @@ class RandomDurationPolicyTest {
             globalPause = GlobalPause.None
         )
 
-        // With provider returning 10_000L and 1 prior entry (+50%): 10_000 * 1.5 = 15_000L
+        // With 1 prior entry (+50%): base 10_000 * 1.5 = 15_000L.
+        // Random addition is 3_000L -> Total = 18_000L
         val decision = RuleEngine.evaluate(
             packageName = targetPackage,
             nowWall = nowWall,
@@ -154,9 +155,10 @@ class RandomDurationPolicyTest {
             zoneId = zoneId,
             runtimeState = RuntimeState(snapshot),
             priorEntryCountOverride = 1,
-            randomDurationProvider = { min, _ -> min }
+            randomDurationProvider = { _, _ -> 3_000L }
         ) as Decision.Intervention
 
-        assertEquals(15_000L, decision.config.durationMs)
+        assertEquals(18_000L, decision.config.durationMs)
+        assertEquals(10_000L, decision.config.baseDurationMs)
     }
 }

@@ -44,13 +44,8 @@ data class TargetConfig(
         require(durationMs in MIN_DURATION_MS..MAX_DURATION_MS) {
             "Duration must be between $MIN_DURATION_MS and $MAX_DURATION_MS ms, was $durationMs"
         }
-        require(randomMaxDurationMs in MIN_DURATION_MS..MAX_DURATION_MS) {
-            "Random max duration must be between $MIN_DURATION_MS and $MAX_DURATION_MS ms, was $randomMaxDurationMs"
-        }
-        if (randomDurationEnabled) {
-            require(randomMaxDurationMs >= durationMs) {
-                "Random max duration ($randomMaxDurationMs ms) cannot be less than base duration ($durationMs ms)"
-            }
+        require(randomMaxDurationMs in 0L..MAX_DURATION_MS) {
+            "Random max duration must be between 0 and $MAX_DURATION_MS ms, was $randomMaxDurationMs"
         }
         require(reinterventionMs >= 0) {
             "Reintervention must be non-negative (0 means OFF), was $reinterventionMs"

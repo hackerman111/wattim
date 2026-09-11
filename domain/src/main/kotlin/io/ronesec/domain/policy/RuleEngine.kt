@@ -150,19 +150,21 @@ object RuleEngine {
             // Scheduled intervention override
             val override = activeInterventionSchedule.overrides[packageName]
             val configuredBaseMs = override?.durationMs ?: target.durationMs
-            val baseDurationMs = if (target.randomDurationEnabled) {
-                val minMs = configuredBaseMs
-                val maxMs = maxOf(minMs, target.randomMaxDurationMs)
-                randomDurationProvider(minMs, maxMs).coerceIn(minMs, maxMs)
+            val randomAdditionMs = if (target.randomDurationEnabled && target.randomMaxDurationMs > 0L) {
+                randomDurationProvider(0L, target.randomMaxDurationMs).coerceIn(0L, target.randomMaxDurationMs)
             } else {
-                configuredBaseMs
+                0L
             }
             val reinterventionMs = override?.reinterventionMs ?: target.reinterventionMs
 
-            val effectiveDurationMs = Backoff.resolveEffectiveDurationMs(
-                baseDurationMs = baseDurationMs,
+            val backoffDurationMs = Backoff.resolveEffectiveDurationMs(
+                baseDurationMs = configuredBaseMs,
                 config = target.growthConfig,
                 priorEntriesCount = priorEntryCount
+            )
+            val effectiveDurationMs = (backoffDurationMs + randomAdditionMs).coerceIn(
+                Backoff.MIN_DELAY_MS,
+                Backoff.MAX_DELAY_MS
             )
 
             return Decision.Intervention(
@@ -174,7 +176,7 @@ object RuleEngine {
                     durationMs = effectiveDurationMs,
                     reinterventionMs = reinterventionMs,
                     quickReturnGraceMs = target.quickReturnGraceMs,
-                    baseDurationMs = baseDurationMs,
+                    baseDurationMs = configuredBaseMs,
                     backoffExponent = priorEntryCount,
                     twoStageUnlock = target.twoStageUnlock,
                     unlockCodeLength = target.unlockCodeLength,
@@ -197,18 +199,21 @@ object RuleEngine {
         }
 
         // 8. Remaining enabled target -> base config + backoff
-        val baseDurationMs = if (target.randomDurationEnabled) {
-            val minMs = target.durationMs
-            val maxMs = maxOf(minMs, target.randomMaxDurationMs)
-            randomDurationProvider(minMs, maxMs).coerceIn(minMs, maxMs)
+        val configuredBaseMs = target.durationMs
+        val randomAdditionMs = if (target.randomDurationEnabled && target.randomMaxDurationMs > 0L) {
+            randomDurationProvider(0L, target.randomMaxDurationMs).coerceIn(0L, target.randomMaxDurationMs)
         } else {
-            target.durationMs
+            0L
         }
 
-        val effectiveDurationMs = Backoff.resolveEffectiveDurationMs(
-            baseDurationMs = baseDurationMs,
+        val backoffDurationMs = Backoff.resolveEffectiveDurationMs(
+            baseDurationMs = configuredBaseMs,
             config = target.growthConfig,
             priorEntriesCount = priorEntryCount
+        )
+        val effectiveDurationMs = (backoffDurationMs + randomAdditionMs).coerceIn(
+            Backoff.MIN_DELAY_MS,
+            Backoff.MAX_DELAY_MS
         )
 
         return Decision.Intervention(
@@ -220,7 +225,7 @@ object RuleEngine {
                 durationMs = effectiveDurationMs,
                 reinterventionMs = target.reinterventionMs,
                 quickReturnGraceMs = target.quickReturnGraceMs,
-                baseDurationMs = baseDurationMs,
+                baseDurationMs = configuredBaseMs,
                 backoffExponent = priorEntryCount,
                 twoStageUnlock = target.twoStageUnlock,
                 unlockCodeLength = target.unlockCodeLength,
