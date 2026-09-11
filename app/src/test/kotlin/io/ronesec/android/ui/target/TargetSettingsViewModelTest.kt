@@ -338,4 +338,53 @@ class TargetSettingsViewModelTest {
         assertEquals(6, saved.attentionCheckCodeLength)
         assertEquals(10_000L, saved.attentionCheckTimeoutMs)
     }
+
+    @Test
+    fun editingRandomAttentionCheckSettingsUpdatesDraftAndPersistsOnSave() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
+        store.awaitReady()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.draft.attentionCheckRandomCountEnabled)
+        assertEquals(1, viewModel.uiState.value.draft.attentionCheckMinCount)
+        assertEquals(1, viewModel.uiState.value.draft.attentionCheckMaxCount)
+
+        viewModel.onToggleAttentionChecks()
+        viewModel.onToggleAttentionCheckRandomCount()
+        viewModel.onAttentionCheckMaxCountChange(4)
+        viewModel.onAttentionCheckMinCountChange(2)
+        advanceUntilIdle()
+
+        val updatedDraft = viewModel.uiState.value.draft
+        assertTrue(updatedDraft.attentionChecksEnabled)
+        assertTrue(updatedDraft.attentionCheckRandomCountEnabled)
+        assertEquals(2, updatedDraft.attentionCheckMinCount)
+        assertEquals(4, updatedDraft.attentionCheckMaxCount)
+
+        // Clamping tests
+        viewModel.onAttentionCheckMinCountChange(5)
+        assertEquals(4, viewModel.uiState.value.draft.attentionCheckMinCount)
+
+        viewModel.onAttentionCheckMaxCountChange(1)
+        assertEquals(4, viewModel.uiState.value.draft.attentionCheckMaxCount)
+
+        // Reset to distinct min and max
+        viewModel.onAttentionCheckMinCountChange(2)
+        assertEquals(2, viewModel.uiState.value.draft.attentionCheckMinCount)
+        assertEquals(4, viewModel.uiState.value.draft.attentionCheckMaxCount)
+
+        viewModel.onSave()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.first { it.isSaved }
+        assertTrue(state.isSaved)
+
+        val saved = store.currentSnapshot.targets[targetPackage]
+        assertNotNull(saved)
+        assertTrue(saved!!.attentionChecksEnabled)
+        assertTrue(saved.attentionCheckRandomCountEnabled)
+        assertEquals(2, saved.attentionCheckMinCount)
+        assertEquals(4, saved.attentionCheckMaxCount)
+    }
 }

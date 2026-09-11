@@ -72,6 +72,9 @@ fun TargetSettingsScreen(
     onRandomMaxDurationChange: (Int) -> Unit = {},
     onToggleAttentionChecks: () -> Unit = {},
     onAttentionCheckCountChange: (Int) -> Unit = {},
+    onToggleAttentionCheckRandomCount: () -> Unit = {},
+    onAttentionCheckMinCountChange: (Int) -> Unit = {},
+    onAttentionCheckMaxCountChange: (Int) -> Unit = {},
     onAttentionCheckCodeLengthChange: (Int) -> Unit = {},
     onAttentionCheckTimeoutSecondsChange: (Int) -> Unit = {}
 ) {
@@ -222,10 +225,16 @@ fun TargetSettingsScreen(
         AttentionCheckCard(
             enabled = draft.attentionChecksEnabled,
             count = draft.attentionCheckCount,
+            randomCountEnabled = draft.attentionCheckRandomCountEnabled,
+            minCount = draft.attentionCheckMinCount,
+            maxCount = draft.attentionCheckMaxCount,
             codeLength = draft.attentionCheckCodeLength,
             timeoutSeconds = draft.attentionCheckTimeoutSeconds,
             onToggleEnabled = onToggleAttentionChecks,
             onCountChange = onAttentionCheckCountChange,
+            onToggleRandomCount = onToggleAttentionCheckRandomCount,
+            onMinCountChange = onAttentionCheckMinCountChange,
+            onMaxCountChange = onAttentionCheckMaxCountChange,
             onCodeLengthChange = onAttentionCheckCodeLengthChange,
             onTimeoutChange = onAttentionCheckTimeoutSecondsChange,
             isInteractive = !state.isLoading

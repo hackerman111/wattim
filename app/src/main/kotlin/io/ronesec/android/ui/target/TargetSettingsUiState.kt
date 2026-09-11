@@ -27,6 +27,9 @@ data class TargetSettingsDraft(
     val randomMaxDurationSeconds: Int = 8,
     val attentionChecksEnabled: Boolean = false,
     val attentionCheckCount: Int = 1,
+    val attentionCheckRandomCountEnabled: Boolean = false,
+    val attentionCheckMinCount: Int = 1,
+    val attentionCheckMaxCount: Int = 1,
     val attentionCheckCodeLength: Int = 4,
     val attentionCheckTimeoutSeconds: Int = 5
 )

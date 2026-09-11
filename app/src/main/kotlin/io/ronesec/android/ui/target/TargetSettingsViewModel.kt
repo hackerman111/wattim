@@ -59,6 +59,9 @@ class TargetSettingsViewModel(
         val randomMaxDurSec = existing?.let { (it.randomMaxDurationMs / 1000L).toInt() } ?: 8
         val attentionEnabled = existing?.attentionChecksEnabled ?: false
         val attentionCount = existing?.attentionCheckCount ?: 1
+        val attentionRandomEnabled = existing?.attentionCheckRandomCountEnabled ?: false
+        val attentionMinCount = existing?.attentionCheckMinCount ?: 1
+        val attentionMaxCount = existing?.attentionCheckMaxCount ?: 1
         val attentionCodeLen = existing?.attentionCheckCodeLength ?: 4
         val attentionTimeoutSec = existing?.let { (it.attentionCheckTimeoutMs / 1000L).toInt() } ?: 5
 
@@ -84,6 +87,9 @@ class TargetSettingsViewModel(
             randomMaxDurationSeconds = randomMaxDurSec.coerceIn(0, 120),
             attentionChecksEnabled = attentionEnabled,
             attentionCheckCount = attentionCount,
+            attentionCheckRandomCountEnabled = attentionRandomEnabled,
+            attentionCheckMinCount = attentionMinCount,
+            attentionCheckMaxCount = attentionMaxCount,
             attentionCheckCodeLength = attentionCodeLen,
             attentionCheckTimeoutSeconds = attentionTimeoutSec
         )
@@ -133,6 +139,33 @@ class TargetSettingsViewModel(
 
     fun onAttentionCheckCountChange(count: Int) {
         updateDraft { it.copy(attentionCheckCount = count.coerceIn(1, 5)) }
+    }
+
+    fun onToggleAttentionCheckRandomCount() {
+        updateDraft { draft ->
+            val nextEnabled = !draft.attentionCheckRandomCountEnabled
+            val min = draft.attentionCheckMinCount
+            val max = maxOf(min, draft.attentionCheckMaxCount)
+            draft.copy(
+                attentionCheckRandomCountEnabled = nextEnabled,
+                attentionCheckMinCount = min,
+                attentionCheckMaxCount = max
+            )
+        }
+    }
+
+    fun onAttentionCheckMinCountChange(minCount: Int) {
+        updateDraft { draft ->
+            val clamped = minCount.coerceIn(1, draft.attentionCheckMaxCount)
+            draft.copy(attentionCheckMinCount = clamped)
+        }
+    }
+
+    fun onAttentionCheckMaxCountChange(maxCount: Int) {
+        updateDraft { draft ->
+            val clamped = maxCount.coerceIn(draft.attentionCheckMinCount, 5)
+            draft.copy(attentionCheckMaxCount = clamped)
+        }
     }
 
     fun onAttentionCheckCodeLengthChange(length: Int) {
@@ -250,6 +283,9 @@ class TargetSettingsViewModel(
             randomMaxDurationMs = maxOf(draft.durationSeconds, draft.randomMaxDurationSeconds) * 1000L,
             attentionChecksEnabled = draft.attentionChecksEnabled,
             attentionCheckCount = draft.attentionCheckCount,
+            attentionCheckRandomCountEnabled = draft.attentionCheckRandomCountEnabled,
+            attentionCheckMinCount = draft.attentionCheckMinCount,
+            attentionCheckMaxCount = maxOf(draft.attentionCheckMinCount, draft.attentionCheckMaxCount),
             attentionCheckCodeLength = draft.attentionCheckCodeLength,
             attentionCheckTimeoutMs = draft.attentionCheckTimeoutSeconds * 1000L
         )
