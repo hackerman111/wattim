@@ -57,10 +57,10 @@ class CodeSettingsPersistenceTest {
                         val entities = schema.getJSONArray("entities")
                         for (index in 0 until entities.length()) {
                             val entity = entities.getJSONObject(index)
-                            db.execSQL(entity.getString("createSql").replace("${TABLE_NAME}", entity.getString("tableName")))
+                            db.execSQL(entity.getString("createSql").replace("\${TABLE_NAME}", entity.getString("tableName")))
                             val indices = entity.getJSONArray("indices")
                             for (i in 0 until indices.length()) {
-                                db.execSQL(indices.getJSONObject(i).getString("createSql").replace("${TABLE_NAME}", entity.getString("tableName")))
+                                db.execSQL(indices.getJSONObject(i).getString("createSql").replace("\${TABLE_NAME}", entity.getString("tableName")))
                             }
                         }
                     }
