@@ -51,7 +51,7 @@ class Migration3To4Test {
         helper.close()
 
         val database = Room.databaseBuilder(context, WattimDatabase::class.java, name)
-            .addMigrations(WattimDatabase.MIGRATION_3_4).allowMainThreadQueries().build()
+            .addMigrations(WattimDatabase.MIGRATION_3_4, WattimDatabase.MIGRATION_4_5).allowMainThreadQueries().build()
         try {
             val target = database.targetAppDao().getTarget("sample.app")!!
             assertEquals("Sample", target.displayName)
