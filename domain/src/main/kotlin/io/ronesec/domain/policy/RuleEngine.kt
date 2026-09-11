@@ -28,7 +28,11 @@ data class EffectiveInterventionConfig(
     val backoffExponent: Int,
     val twoStageUnlock: Boolean = false,
     val unlockCodeLength: Int = 4,
-    val requireEmergencyCode: Boolean = false
+    val requireEmergencyCode: Boolean = false,
+    val attentionChecksEnabled: Boolean = false,
+    val attentionCheckCount: Int = 1,
+    val attentionCheckCodeLength: Int = 4,
+    val attentionCheckTimeoutMs: Long = 5_000L
 )
 
 sealed interface Decision {
@@ -180,7 +184,11 @@ object RuleEngine {
                     backoffExponent = priorEntryCount,
                     twoStageUnlock = target.twoStageUnlock,
                     unlockCodeLength = target.unlockCodeLength,
-                    requireEmergencyCode = target.requireEmergencyCode
+                    requireEmergencyCode = target.requireEmergencyCode,
+                    attentionChecksEnabled = target.attentionChecksEnabled,
+                    attentionCheckCount = target.attentionCheckCount,
+                    attentionCheckCodeLength = target.attentionCheckCodeLength,
+                    attentionCheckTimeoutMs = target.attentionCheckTimeoutMs
                 )
             )
         }
@@ -229,7 +237,11 @@ object RuleEngine {
                 backoffExponent = priorEntryCount,
                 twoStageUnlock = target.twoStageUnlock,
                 unlockCodeLength = target.unlockCodeLength,
-                requireEmergencyCode = target.requireEmergencyCode
+                requireEmergencyCode = target.requireEmergencyCode,
+                attentionChecksEnabled = target.attentionChecksEnabled,
+                attentionCheckCount = target.attentionCheckCount,
+                attentionCheckCodeLength = target.attentionCheckCodeLength,
+                attentionCheckTimeoutMs = target.attentionCheckTimeoutMs
             )
         )
     }

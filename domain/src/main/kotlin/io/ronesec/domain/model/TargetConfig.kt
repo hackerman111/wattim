@@ -36,7 +36,11 @@ data class TargetConfig(
     val unlockCodeLength: Int = 4,
     val requireEmergencyCode: Boolean = false,
     val randomDurationEnabled: Boolean = false,
-    val randomMaxDurationMs: Long = DEFAULT_DURATION_MS
+    val randomMaxDurationMs: Long = DEFAULT_DURATION_MS,
+    val attentionChecksEnabled: Boolean = false,
+    val attentionCheckCount: Int = 1,
+    val attentionCheckCodeLength: Int = 4,
+    val attentionCheckTimeoutMs: Long = DEFAULT_ATTENTION_CHECK_TIMEOUT_MS
 ) {
     init {
         require(packageName.isNotBlank()) { "Package name cannot be blank" }
@@ -53,6 +57,15 @@ data class TargetConfig(
         require(quickReturnGraceMs >= 0) {
             "Quick Return grace must be non-negative, was $quickReturnGraceMs"
         }
+        require(attentionCheckCount in MIN_ATTENTION_CHECK_COUNT..MAX_ATTENTION_CHECK_COUNT) {
+            "Attention check count must be between $MIN_ATTENTION_CHECK_COUNT and $MAX_ATTENTION_CHECK_COUNT, was $attentionCheckCount"
+        }
+        require(attentionCheckCodeLength in MIN_ATTENTION_CHECK_CODE_LENGTH..MAX_ATTENTION_CHECK_CODE_LENGTH) {
+            "Attention check code length must be between $MIN_ATTENTION_CHECK_CODE_LENGTH and $MAX_ATTENTION_CHECK_CODE_LENGTH, was $attentionCheckCodeLength"
+        }
+        require(attentionCheckTimeoutMs in MIN_ATTENTION_CHECK_TIMEOUT_MS..MAX_ATTENTION_CHECK_TIMEOUT_MS) {
+            "Attention check timeout must be between $MIN_ATTENTION_CHECK_TIMEOUT_MS and $MAX_ATTENTION_CHECK_TIMEOUT_MS ms, was $attentionCheckTimeoutMs"
+        }
     }
 
     companion object {
@@ -62,5 +75,13 @@ data class TargetConfig(
         const val MAX_DURATION_MS = 120_000L   // 120 seconds base max
         const val DEFAULT_REINTERVENTION_MS = 5 * 60 * 1000L // 5 minutes
         const val DEFAULT_GRACE_MS = 0L
+
+        const val MIN_ATTENTION_CHECK_COUNT = 1
+        const val MAX_ATTENTION_CHECK_COUNT = 5
+        const val MIN_ATTENTION_CHECK_CODE_LENGTH = 3
+        const val MAX_ATTENTION_CHECK_CODE_LENGTH = 8
+        const val MIN_ATTENTION_CHECK_TIMEOUT_MS = 3_000L
+        const val MAX_ATTENTION_CHECK_TIMEOUT_MS = 30_000L
+        const val DEFAULT_ATTENTION_CHECK_TIMEOUT_MS = 5_000L
     }
 }
