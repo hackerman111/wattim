@@ -21,7 +21,8 @@ data class AttentionCheckUi(
     val timeoutMs: Long = 0L,
     val pausedElapsedProgressMs: Long = 0L,
     val totalDurationMs: Long = 0L,
-    val hasError: Boolean = false
+    val hasError: Boolean = false,
+    val isExpired: Boolean = false
 ) {
     override fun toString(): String = "AttentionCheckUi(active=$active, redacted)"
 }
@@ -35,7 +36,9 @@ data class CodeChallengeUi(
     val error: Boolean,
     val breathingStartElapsedMs: Long?,
     val emergencyError: Boolean = false,
-    val attentionCheck: AttentionCheckUi? = null
+    val attentionCheck: AttentionCheckUi? = null,
+    val isEmergency: Boolean = false,
+    val pausedProgressMs: Long? = null
 ) {
     override fun toString(): String = "CodeChallengeUi(gate=$gate, generated=$generated, redacted)"
 }
@@ -62,7 +65,13 @@ fun ProtectionState.Intervening.codeChallengeUi() = CodeChallengeUi(
             timeoutMs = substate.timeoutMs,
             pausedElapsedProgressMs = substate.pausedElapsedProgressMs,
             totalDurationMs = substate.durationMs,
-            hasError = substate.hasError
+            hasError = substate.hasError,
+            isExpired = substate.isExpired
         )
-    } else null
+    } else null,
+    isEmergency = substate is InterveningSubstate.Emergency,
+    pausedProgressMs = when (substate) {
+        is InterveningSubstate.Emergency -> substate.pausedElapsedProgressMs
+        else -> null
+    }
 )

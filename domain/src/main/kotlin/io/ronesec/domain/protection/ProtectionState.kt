@@ -38,7 +38,8 @@ sealed interface InterveningSubstate {
         val deadlineElapsedMs: Long,
         val timeoutMs: Long,
         val remainingCheckOffsetsMs: List<Long> = emptyList(),
-        val hasError: Boolean = false
+        val hasError: Boolean = false,
+        val isExpired: Boolean = false
     ) : InterveningSubstate
     data class Complete(
         val startElapsedMs: Long,
@@ -46,6 +47,11 @@ sealed interface InterveningSubstate {
     ) : InterveningSubstate
     data class CommittingAccess(
         val substate: InterveningSubstate
+    ) : InterveningSubstate
+    data class Emergency(
+        val pausedSubstate: InterveningSubstate,
+        val pausedElapsedProgressMs: Long,
+        val remainingTimeoutMs: Long? = null
     ) : InterveningSubstate
 }
 

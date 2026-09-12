@@ -91,6 +91,7 @@ internal object CodeChallengeReducer {
             }
             is ProtectionEvent.SubmitAttentionCheckCode -> {
                 if (!matches(event.sessionId, event.cycle) || active.substate !is InterveningSubstate.AttentionCheck) return unchanged()
+                if (active.substate.isExpired) return unchanged()
                 val expected = active.substate.code
                 if (!context.codePort.matches(expected, event.code)) {
                     return update(active.copy(substate = active.substate.copy(hasError = true)), context)
@@ -125,9 +126,69 @@ internal object CodeChallengeReducer {
                         listOf(ProtectionEffect.ScheduleTemporalBoundary(delay, endBoundary)))
                 }
             }
+            is ProtectionEvent.ActionOpenEmergency -> {
+                if (!matches(event.sessionId, event.cycle) || active.substate is InterveningSubstate.Emergency) return unchanged()
+                val emergencySubstate = when (val current = active.substate) {
+                    is InterveningSubstate.Breathing -> {
+                        val paused = (context.nowElapsedMs - current.startElapsedMs).coerceIn(0L, current.durationMs)
+                        InterveningSubstate.Emergency(current, paused)
+                    }
+                    is InterveningSubstate.AttentionCheck -> {
+                        val remainingTimeout = (current.deadlineElapsedMs - context.nowElapsedMs).coerceAtLeast(0L)
+                        InterveningSubstate.Emergency(current, current.pausedElapsedProgressMs, remainingTimeout)
+                    }
+                    else -> InterveningSubstate.Emergency(current, 0L)
+                }
+                return update(active.copy(substate = emergencySubstate), context, listOf(ProtectionEffect.CancelTemporalBoundary))
+            }
+            is ProtectionEvent.ActionDismissEmergency -> {
+                if (!matches(event.sessionId, event.cycle) || active.substate !is InterveningSubstate.Emergency) return unchanged()
+                return when (val paused = active.substate.pausedSubstate) {
+                    is InterveningSubstate.Breathing -> {
+                        val pausedProgress = active.substate.pausedElapsedProgressMs
+                        val newStartElapsedMs = context.nowElapsedMs - pausedProgress
+                        val currentDeadlineOffset = paused.deadlineElapsedMs - paused.startElapsedMs
+                        val nextBoundary = newStartElapsedMs + currentDeadlineOffset
+                        val delay = (nextBoundary - context.nowElapsedMs).coerceAtLeast(0L)
+                        val nextSubstate = InterveningSubstate.Breathing(
+                            startElapsedMs = newStartElapsedMs,
+                            durationMs = paused.durationMs,
+                            deadlineElapsedMs = nextBoundary,
+                            remainingCheckOffsetsMs = paused.remainingCheckOffsetsMs
+                        )
+                        update(active.copy(substate = nextSubstate), context,
+                            listOf(ProtectionEffect.ScheduleTemporalBoundary(delay, nextBoundary)))
+                    }
+                    is InterveningSubstate.AttentionCheck -> {
+                        val timeoutMs = active.substate.remainingTimeoutMs ?: paused.timeoutMs
+                        val newDeadline = context.nowElapsedMs + timeoutMs
+                        val resumedCheck = paused.copy(
+                            deadlineElapsedMs = newDeadline,
+                            timeoutMs = timeoutMs
+                        )
+                        update(active.copy(substate = resumedCheck), context,
+                            listOf(ProtectionEffect.ScheduleTemporalBoundary(timeoutMs, newDeadline)))
+                    }
+                    else -> update(active.copy(substate = paused), context)
+                }
+            }
             is ProtectionEvent.TemporalBoundaryReached -> {
+                if (active.substate is InterveningSubstate.Emergency) {
+                    return unchanged()
+                }
                 if (active.substate is InterveningSubstate.AttentionCheck) {
-                    if (context.nowElapsedMs >= active.substate.deadlineElapsedMs) {
+                    if (!active.substate.isExpired && context.nowElapsedMs >= active.substate.deadlineElapsedMs) {
+                        val holdUntil = context.nowElapsedMs + 1_000L
+                        val expiredSubstate = active.substate.copy(
+                            isExpired = true,
+                            deadlineElapsedMs = holdUntil
+                        )
+                        return update(
+                            active.copy(substate = expiredSubstate),
+                            context,
+                            listOf(ProtectionEffect.ScheduleTemporalBoundary(1_000L, holdUntil))
+                        )
+                    } else if (active.substate.isExpired && context.nowElapsedMs >= active.substate.deadlineElapsedMs) {
                         return startBreathing(active, context)
                     }
                 }
@@ -178,7 +239,9 @@ internal object CodeChallengeReducer {
                 attentionChecksEnabled = originalConfig.attentionChecksEnabled,
                 attentionCheckCount = originalConfig.attentionCheckCount,
                 attentionCheckCodeLength = originalConfig.attentionCheckCodeLength,
-                attentionCheckTimeoutMs = originalConfig.attentionCheckTimeoutMs
+                attentionCheckTimeoutMs = originalConfig.attentionCheckTimeoutMs,
+                annoyingUnlockEnabled = originalConfig.annoyingUnlockEnabled,
+                annoyingUnlockChancePercent = originalConfig.annoyingUnlockChancePercent
             )))
         }
         var codes = if (sameSession) old!!.codes else active.codes
