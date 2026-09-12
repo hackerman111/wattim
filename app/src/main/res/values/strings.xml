@@ -199,6 +199,12 @@
     <string name="fgs_channel_desc">Ongoing notification showing protection service status</string>
     <string name="fgs_status_active">Protection active</string>
     <string name="fgs_status_degraded">Protection paused: permissions required</string>
+    <string name="fgs_status_degraded_accessibility">Protection paused: accessibility permission required</string>
+    <string name="fgs_status_degraded_accessibility_disconnected">Protection paused: accessibility service disconnected</string>
+    <string name="fgs_status_degraded_overlay">Protection paused: overlay permission required</string>
+    <string name="fgs_status_degraded_battery">Protection paused: battery optimization exemption required</string>
+    <string name="fgs_status_degraded_multiple">Protection paused: permissions required (%1$d)</string>
+    <string name="fgs_missing_permissions_header">Required permissions:</string>
     <string name="fgs_status_starting">Protection starting…</string>
     <string name="fgs_status_start_failed">Protection service start failed</string>
 

@@ -199,6 +199,12 @@
     <string name="fgs_channel_desc">Уведомление о текущем статусе службы защиты</string>
     <string name="fgs_status_active">Защита активна</string>
     <string name="fgs_status_degraded">Защита приостановлена: требуются разрешения</string>
+    <string name="fgs_status_degraded_accessibility">Защита приостановлена: требуется «Специальные возможности»</string>
+    <string name="fgs_status_degraded_accessibility_disconnected">Защита приостановлена: служба специальных возможностей отключена</string>
+    <string name="fgs_status_degraded_overlay">Защита приостановлена: требуется «Поверх других приложений»</string>
+    <string name="fgs_status_degraded_battery">Защита приостановлена: требуется «Оптимизация батареи»</string>
+    <string name="fgs_status_degraded_multiple">Защита приостановлена: требуются разрешения (%1$d)</string>
+    <string name="fgs_missing_permissions_header">Требуются разрешения:</string>
     <string name="fgs_status_starting">Запуск защиты…</string>
     <string name="fgs_status_start_failed">Сбой запуска службы защиты</string>
 
