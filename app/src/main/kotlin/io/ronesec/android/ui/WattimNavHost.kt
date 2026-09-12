@@ -52,7 +52,9 @@ fun WattimNavHost(
     val permissionSnapshot by permissionMonitor.statusFlow.collectAsState()
 
     var currentRoute by remember {
-        val startingRoute = if (!permissionSnapshot.areRequiredPermissionsGranted) {
+        val startingRoute = if (initialRoute == AppRoute.Main(TerminalTab.CONFIG)) {
+            AppRoute.Main(TerminalTab.CONFIG)
+        } else if (!permissionSnapshot.areRequiredPermissionsGranted) {
             AppRoute.Onboarding
         } else {
             initialRoute ?: AppRoute.Main(TerminalTab.APPS)
@@ -66,7 +68,10 @@ fun WattimNavHost(
 
     LaunchedEffect(routeRequests) {
         routeRequests.collect { requestedRoute ->
-            if (permissionSnapshot.areRequiredPermissionsGranted || requestedRoute is AppRoute.Onboarding) {
+            if (permissionSnapshot.areRequiredPermissionsGranted ||
+                requestedRoute is AppRoute.Onboarding ||
+                requestedRoute == AppRoute.Main(TerminalTab.CONFIG)
+            ) {
                 currentRoute = requestedRoute
             }
         }
@@ -74,7 +79,10 @@ fun WattimNavHost(
 
     // Auto-return to onboarding if required permissions are revoked while in Main or Detail (F21)
     LaunchedEffect(permissionSnapshot.areRequiredPermissionsGranted) {
-        if (!permissionSnapshot.areRequiredPermissionsGranted && currentRoute !is AppRoute.Onboarding) {
+        if (!permissionSnapshot.areRequiredPermissionsGranted &&
+            currentRoute !is AppRoute.Onboarding &&
+            currentRoute != AppRoute.Main(TerminalTab.CONFIG)
+        ) {
             currentRoute = AppRoute.Onboarding
         }
     }
@@ -142,7 +150,13 @@ fun WattimNavHost(
         is AppRoute.Main -> {
             MainShell(
                 currentTab = route.tab,
-                onTabSelected = { newTab -> currentRoute = AppRoute.Main(newTab) },
+                onTabSelected = { newTab ->
+                    if (!permissionSnapshot.areRequiredPermissionsGranted && newTab != TerminalTab.CONFIG) {
+                        currentRoute = AppRoute.Onboarding
+                    } else {
+                        currentRoute = AppRoute.Main(newTab)
+                    }
+                },
                 onOpenDetail = { pkg ->
                     currentRoute = AppRoute.Detail(
                         packageName = pkg,

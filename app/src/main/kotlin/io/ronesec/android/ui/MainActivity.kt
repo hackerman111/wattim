@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_OPEN_CODES = "io.ronesec.android.extra.OPEN_CODES"
+        const val EXTRA_OPEN_PERMISSIONS = "io.ronesec.android.extra.OPEN_PERMISSIONS"
     }
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -51,6 +52,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Restore saved route if available, otherwise determine based on permissions
+        val restoredRoute = intent.permissionsRouteOrNull()
+            ?: intent.codesRouteOrNull()
+            ?: AppRoute.fromBundle(savedInstanceState)
+        activeRoute = restoredRoute
 
         // If launched as an empty host by createAndroidComposeRule, skip setContent so test rule can set it
         val isComposeTestRule = Thread.currentThread().stackTrace.any { element ->
@@ -78,10 +85,6 @@ class MainActivity : ComponentActivity() {
             hasRequestedNotificationPermission = true
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
-
-        // Restore saved route if available, otherwise determine based on permissions
-        val restoredRoute = intent.codesRouteOrNull() ?: AppRoute.fromBundle(savedInstanceState)
-        activeRoute = restoredRoute
 
         setContent {
             val fallbackSettingsFlow = remember { MutableStateFlow(PresentationSettings()) }
@@ -134,7 +137,9 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        intent.codesRouteOrNull()?.let(routeRequests::trySend)
+        (applicationContext as? WattimApplication)?.permissionMonitor?.refresh()
+        intent.permissionsRouteOrNull()?.let(routeRequests::trySend)
+            ?: intent.codesRouteOrNull()?.let(routeRequests::trySend)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -144,6 +149,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun Intent.permissionsRouteOrNull(): AppRoute? =
+        if (getBooleanExtra(EXTRA_OPEN_PERMISSIONS, false)) {
+            AppRoute.Main(TerminalTab.CONFIG)
+        } else {
+            null
+        }
 
     private fun Intent.codesRouteOrNull(): AppRoute? =
         if (getBooleanExtra(EXTRA_OPEN_CODES, false)) {

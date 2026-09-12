@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import io.ronesec.android.platform.system.FakePlatformPermissionChecker
 import io.ronesec.android.platform.system.OnboardingStep
@@ -25,6 +26,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -90,6 +92,79 @@ class T16_NavigationAndOnboardingReachabilityTest {
         composeTestRule.waitForIdle()
 
         // Must still remain on Onboarding
+        composeTestRule.onNodeWithText("OPEN ACCESSIBILITY").assertIsDisplayed()
+    }
+
+    @Test
+    fun wattimNavHostPermitsConfigRouteEvenWhenRequiredPermissionsMissing() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val settingsAdapter = SettingsIntentAdapter(context)
+
+        composeTestRule.setContent {
+            WattimTheme {
+                WattimNavHost(
+                    permissionMonitor = permissionMonitor,
+                    settingsAdapter = settingsAdapter,
+                    initialRoute = AppRoute.Main(TerminalTab.CONFIG),
+                    onStartFgs = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("CHECK STATUS").assertExists()
+    }
+
+    @Test
+    fun wattimNavHostAllowsConfigRequestViaRouteRequestsWhenRequiredPermissionsMissing() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val settingsAdapter = SettingsIntentAdapter(context)
+        val routeChannel = kotlinx.coroutines.channels.Channel<AppRoute>(capacity = kotlinx.coroutines.channels.Channel.CONFLATED)
+
+        composeTestRule.setContent {
+            WattimTheme {
+                WattimNavHost(
+                    permissionMonitor = permissionMonitor,
+                    settingsAdapter = settingsAdapter,
+                    initialRoute = AppRoute.Onboarding,
+                    onStartFgs = {},
+                    routeRequests = routeChannel.receiveAsFlow()
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("OPEN ACCESSIBILITY").assertIsDisplayed()
+
+        // Request CONFIG route
+        routeChannel.trySend(AppRoute.Main(TerminalTab.CONFIG))
+        composeTestRule.waitForIdle()
+
+        // Must navigate to Settings
+        composeTestRule.onNodeWithText("CHECK STATUS").assertExists()
+    }
+
+    @Test
+    fun switchingAwayFromConfigWithoutPermissionsRedirectsToOnboarding() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val settingsAdapter = SettingsIntentAdapter(context)
+
+        composeTestRule.setContent {
+            WattimTheme {
+                WattimNavHost(
+                    permissionMonitor = permissionMonitor,
+                    settingsAdapter = settingsAdapter,
+                    initialRoute = AppRoute.Main(TerminalTab.CONFIG),
+                    onStartFgs = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("CHECK STATUS").assertExists()
+
+        // Tap on APPS tab in bottom navigation
+        composeTestRule.onNodeWithText("FOCUS").performClick()
+        composeTestRule.waitForIdle()
+
+        // Must redirect to Onboarding
         composeTestRule.onNodeWithText("OPEN ACCESSIBILITY").assertIsDisplayed()
     }
 
@@ -199,5 +274,24 @@ class T16_NavigationAndOnboardingReachabilityTest {
         val bundle = AppRoute.toBundle(AppRoute.Onboarding)
         val restored = AppRoute.fromBundle(bundle)
         assertEquals(AppRoute.Onboarding, restored)
+    }
+
+    @Test
+    fun mainActivityWithOpenPermissionsExtraLaunchesConfigTab() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val intent = android.content.Intent(context, MainActivity::class.java).apply {
+            putExtra(MainActivity.EXTRA_OPEN_PERMISSIONS, true)
+        }
+        val activityController = Robolectric.buildActivity(MainActivity::class.java, intent)
+        val activity = activityController.create().start().resume().get()
+
+        val activeRouteField = MainActivity::class.java.getDeclaredField("activeRoute").apply {
+            isAccessible = true
+        }
+        val currentActiveRoute = activeRouteField.get(activity) as? AppRoute.Main
+        assertNotNull("Active route must be resolved", currentActiveRoute)
+        assertEquals(TerminalTab.CONFIG, currentActiveRoute?.tab)
+
+        activityController.destroy()
     }
 }
