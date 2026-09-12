@@ -43,7 +43,9 @@ data class TargetConfig(
     val attentionCheckMinCount: Int = 1,
     val attentionCheckMaxCount: Int = 1,
     val attentionCheckCodeLength: Int = 4,
-    val attentionCheckTimeoutMs: Long = DEFAULT_ATTENTION_CHECK_TIMEOUT_MS
+    val attentionCheckTimeoutMs: Long = DEFAULT_ATTENTION_CHECK_TIMEOUT_MS,
+    val annoyingUnlockEnabled: Boolean = false,
+    val annoyingUnlockChancePercent: Int = DEFAULT_ANNOYING_UNLOCK_CHANCE_PERCENT
 ) {
     init {
         require(packageName.isNotBlank()) { "Package name cannot be blank" }
@@ -80,6 +82,9 @@ data class TargetConfig(
         require(attentionCheckTimeoutMs in MIN_ATTENTION_CHECK_TIMEOUT_MS..MAX_ATTENTION_CHECK_TIMEOUT_MS) {
             "Attention check timeout must be between $MIN_ATTENTION_CHECK_TIMEOUT_MS and $MAX_ATTENTION_CHECK_TIMEOUT_MS ms, was $attentionCheckTimeoutMs"
         }
+        require(annoyingUnlockChancePercent in MIN_ANNOYING_UNLOCK_CHANCE_PERCENT..MAX_ANNOYING_UNLOCK_CHANCE_PERCENT) {
+            "Annoying unlock chance must be between $MIN_ANNOYING_UNLOCK_CHANCE_PERCENT and $MAX_ANNOYING_UNLOCK_CHANCE_PERCENT, was $annoyingUnlockChancePercent"
+        }
     }
 
     companion object {
@@ -97,5 +102,9 @@ data class TargetConfig(
         const val MIN_ATTENTION_CHECK_TIMEOUT_MS = 3_000L
         const val MAX_ATTENTION_CHECK_TIMEOUT_MS = 30_000L
         const val DEFAULT_ATTENTION_CHECK_TIMEOUT_MS = 5_000L
+
+        const val MIN_ANNOYING_UNLOCK_CHANCE_PERCENT = 1
+        const val MAX_ANNOYING_UNLOCK_CHANCE_PERCENT = 100
+        const val DEFAULT_ANNOYING_UNLOCK_CHANCE_PERCENT = 20
     }
 }

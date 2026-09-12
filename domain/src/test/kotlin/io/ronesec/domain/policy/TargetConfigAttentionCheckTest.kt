@@ -183,4 +183,72 @@ class TargetConfigAttentionCheckTest {
         assertEquals(5, decision.config.attentionCheckCodeLength)
         assertEquals(7_000L, decision.config.attentionCheckTimeoutMs)
     }
+
+    @Test
+    fun targetConfig_defaultAnnoyingUnlockValues() {
+        val config = TargetConfig(
+            packageName = targetPackage,
+            displayName = "Attention Target"
+        )
+        assertFalse(config.annoyingUnlockEnabled)
+        assertEquals(20, config.annoyingUnlockChancePercent)
+    }
+
+    @Test
+    fun targetConfig_validAnnoyingUnlockValues() {
+        val config = TargetConfig(
+            packageName = targetPackage,
+            displayName = "Attention Target",
+            annoyingUnlockEnabled = true,
+            annoyingUnlockChancePercent = 75
+        )
+        assertTrue(config.annoyingUnlockEnabled)
+        assertEquals(75, config.annoyingUnlockChancePercent)
+    }
+
+    @Test
+    fun targetConfig_rejectsInvalidAnnoyingUnlockChance() {
+        assertThrows(IllegalArgumentException::class.java) {
+            TargetConfig(
+                packageName = targetPackage,
+                displayName = "Target",
+                annoyingUnlockChancePercent = 0
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            TargetConfig(
+                packageName = targetPackage,
+                displayName = "Target",
+                annoyingUnlockChancePercent = 101
+            )
+        }
+    }
+
+    @Test
+    fun ruleEngine_propagatesAnnoyingUnlockToEffectiveConfig() {
+        val target = TargetConfig(
+            packageName = targetPackage,
+            displayName = "Target",
+            annoyingUnlockEnabled = true,
+            annoyingUnlockChancePercent = 42
+        )
+        val snapshot = RuntimePolicySnapshot(
+            revision = 1L,
+            targets = mapOf(targetPackage to target),
+            activeGrants = emptyMap(),
+            activeBlockSessions = emptyList(),
+            activeSchedules = emptyList(),
+            globalPause = GlobalPause.None
+        )
+        val decision = RuleEngine.evaluate(
+            packageName = targetPackage,
+            nowWall = nowWall,
+            nowElapsedMs = nowElapsedMs,
+            zoneId = zoneId,
+            runtimeState = RuntimeState(snapshot)
+        ) as Decision.Intervention
+
+        assertTrue(decision.config.annoyingUnlockEnabled)
+        assertEquals(42, decision.config.annoyingUnlockChancePercent)
+    }
 }
