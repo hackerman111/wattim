@@ -56,7 +56,9 @@ object PolicyCompiler {
             attentionCheckMinCount = entity.attentionCheckMinCount,
             attentionCheckMaxCount = entity.attentionCheckMaxCount,
             attentionCheckCodeLength = entity.attentionCheckCodeLength,
-            attentionCheckTimeoutMs = entity.attentionCheckTimeoutMs
+            attentionCheckTimeoutMs = entity.attentionCheckTimeoutMs,
+            annoyingUnlockEnabled = entity.annoyingUnlockEnabled,
+            annoyingUnlockChancePercent = entity.annoyingUnlockChancePercent
         )
     }
 
@@ -85,7 +87,9 @@ object PolicyCompiler {
             attentionCheckMinCount = config.attentionCheckMinCount,
             attentionCheckMaxCount = config.attentionCheckMaxCount,
             attentionCheckCodeLength = config.attentionCheckCodeLength,
-            attentionCheckTimeoutMs = config.attentionCheckTimeoutMs
+            attentionCheckTimeoutMs = config.attentionCheckTimeoutMs,
+            annoyingUnlockEnabled = config.annoyingUnlockEnabled,
+            annoyingUnlockChancePercent = config.annoyingUnlockChancePercent
         )
     }
 
