@@ -300,6 +300,76 @@ class T16_StatsAndConfigIntegrationTest {
         composeTestRule.onNodeWithText("SAFE ACCESSIBILITY").performScrollTo().assertIsDisplayed()
     }
 
+    @Test
+    fun configTabCheckStatusButtonRefreshesPermissions() {
+        permissionChecker.accessibilityEnabled = true
+        permissionChecker.overlayAllowed = true
+        permissionChecker.batteryOptimizationIgnored = true
+        permissionChecker.mediaControlEnabled = false
+        permissionMonitor.refresh()
+
+        composeTestRule.setContent {
+            WattimTheme {
+                WattimNavHost(
+                    permissionMonitor = permissionMonitor,
+                    settingsAdapter = settingsAdapter,
+                    initialRoute = AppRoute.Main(TerminalTab.CONFIG),
+                    onStartFgs = {},
+                    policyStore = policyStore,
+                    statisticsStore = statisticsStore,
+                    packageCatalog = packageCatalog,
+                    wallClock = wallClock
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("PERMISSIONS & STATUS").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("CHECK STATUS").performScrollTo().assertIsDisplayed()
+
+        // Enable media control in fake checker, then click CHECK STATUS
+        permissionChecker.mediaControlEnabled = true
+        composeTestRule.onNodeWithText("CHECK STATUS").performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(io.ronesec.android.platform.system.PermissionState.Granted, permissionMonitor.statusFlow.value.mediaControl)
+    }
+
+    @Test
+    fun configTabCheckStatusRedirectsToOnboardingWhenRequiredPermissionRevoked() {
+        permissionChecker.accessibilityEnabled = true
+        permissionChecker.overlayAllowed = true
+        permissionChecker.batteryOptimizationIgnored = true
+        permissionMonitor.refresh()
+
+        composeTestRule.setContent {
+            WattimTheme {
+                WattimNavHost(
+                    permissionMonitor = permissionMonitor,
+                    settingsAdapter = settingsAdapter,
+                    initialRoute = AppRoute.Main(TerminalTab.CONFIG),
+                    onStartFgs = {},
+                    policyStore = policyStore,
+                    statisticsStore = statisticsStore,
+                    packageCatalog = packageCatalog,
+                    wallClock = wallClock
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("PERMISSIONS & STATUS").performScrollTo().assertIsDisplayed()
+
+        // Revoke overlay, click CHECK STATUS
+        permissionChecker.overlayAllowed = false
+        composeTestRule.onNodeWithText("CHECK STATUS").performClick()
+        composeTestRule.waitForIdle()
+
+        // Must redirect to Onboarding step 2 (ALLOW OVERLAY)
+        composeTestRule.onNodeWithText("ALLOW OVERLAY").assertIsDisplayed()
+    }
+
     private class FakePackageCatalog : PackageCatalog {
         override suspend fun getLaunchableApps(excludedPackages: Set<String>): List<PackageAppEntry> = emptyList()
     }

@@ -34,21 +34,34 @@ fun PermissionStatusCard(
     onEnableMediaControl: () -> Unit,
     onEnableOverlay: () -> Unit,
     onEnableBattery: () -> Unit,
+    onRefreshPermissions: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = WattimTheme.colors
     val typography = WattimTheme.typography
 
     TerminalCard(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.config_permissions_title),
-            fontFamily = typography.bodyMedium.fontFamily,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 12.sp,
-            letterSpacing = 0.1.sp,
-            color = colors.textSecondary,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.config_permissions_title),
+                fontFamily = typography.bodyMedium.fontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 12.sp,
+                letterSpacing = 0.1.sp,
+                color = colors.textSecondary
+            )
+            TerminalButton(
+                text = stringResource(R.string.action_check_status),
+                onClick = onRefreshPermissions,
+                variant = TerminalButtonVariant.SECONDARY
+            )
+        }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             PermissionItem(

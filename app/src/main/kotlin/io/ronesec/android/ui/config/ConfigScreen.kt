@@ -39,6 +39,7 @@ fun ConfigScreen(
     onOpenAppInfo: () -> Unit,
     onDismissError: () -> Unit,
     onSetCustomEmergencyMinutes: (Int?) -> Unit = {},
+    onRefreshPermissions: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = WattimTheme.colors
@@ -122,7 +123,8 @@ fun ConfigScreen(
             onEnableAccessibility = onEnableAccessibility,
             onEnableMediaControl = onEnableMediaControl,
             onEnableOverlay = onEnableOverlay,
-            onEnableBattery = onEnableBattery
+            onEnableBattery = onEnableBattery,
+            onRefreshPermissions = onRefreshPermissions
         )
 
         AudioDiagnosticsCard(state = uiState.audioDiagnostic)

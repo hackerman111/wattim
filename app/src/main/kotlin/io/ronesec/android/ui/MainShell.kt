@@ -140,7 +140,8 @@ fun MainShell(
                             onEnableBattery = { configViewModel.onEnableBattery() },
                             onOpenAppInfo = { configViewModel.onOpenAppInfo() },
                             onDismissError = { configViewModel.onDismissError() },
-                            onSetCustomEmergencyMinutes = { configViewModel.onSetCustomEmergencyMinutes(it) }
+                            onSetCustomEmergencyMinutes = { configViewModel.onSetCustomEmergencyMinutes(it) },
+                            onRefreshPermissions = { configViewModel.onRefreshPermissions() }
                         )
                     } else {
                         ConfigTabShell(permissionSnapshot = permissionSnapshot)
