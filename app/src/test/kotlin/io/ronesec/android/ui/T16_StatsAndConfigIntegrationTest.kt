@@ -1,6 +1,7 @@
 package io.ronesec.android.ui
 
 import android.content.Context
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -366,8 +367,8 @@ class T16_StatsAndConfigIntegrationTest {
         composeTestRule.onNodeWithText("CHECK STATUS").performClick()
         composeTestRule.waitForIdle()
 
-        // Must redirect to Onboarding step 2 (ALLOW OVERLAY)
-        composeTestRule.onNodeWithText("ALLOW OVERLAY").assertIsDisplayed()
+        // In CONFIG, permission card updates in-place to show ENABLE action
+        composeTestRule.onAllNodes(hasText("ENABLE")).assertCountEquals(2)
     }
 
     private class FakePackageCatalog : PackageCatalog {

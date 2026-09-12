@@ -22,9 +22,17 @@ import io.ronesec.android.ui.designsystem.TerminalCard
 import io.ronesec.android.ui.designsystem.ThemeId
 import io.ronesec.android.ui.designsystem.WattimTheme
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import io.ronesec.android.platform.system.PermissionState
+
 /**
  * Complete Configuration / Settings Screen (F72-F78).
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ConfigScreen(
     uiState: ConfigUiState,
@@ -40,11 +48,20 @@ fun ConfigScreen(
     onDismissError: () -> Unit,
     onSetCustomEmergencyMinutes: (Int?) -> Unit = {},
     onRefreshPermissions: () -> Unit = {},
+    shouldFocusPermissions: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val colors = WattimTheme.colors
     val dimensions = WattimTheme.dimensions
     val typography = WattimTheme.typography
+
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+
+    LaunchedEffect(shouldFocusPermissions) {
+        if (shouldFocusPermissions) {
+            bringIntoViewRequester.bringIntoView()
+        }
+    }
 
     Column(
         modifier = modifier
@@ -115,6 +132,11 @@ fun ConfigScreen(
         )
 
         // F76 System permissions & status
+        val hasMissingRequired = uiState.accessibilityState != PermissionState.Granted ||
+                uiState.overlayState != PermissionState.Granted ||
+                uiState.batteryState != PermissionState.Granted
+        val isHighlighted = shouldFocusPermissions || hasMissingRequired
+
         PermissionStatusCard(
             accessibilityState = uiState.accessibilityState,
             mediaControlState = uiState.mediaControlState,
@@ -124,7 +146,9 @@ fun ConfigScreen(
             onEnableMediaControl = onEnableMediaControl,
             onEnableOverlay = onEnableOverlay,
             onEnableBattery = onEnableBattery,
-            onRefreshPermissions = onRefreshPermissions
+            onRefreshPermissions = onRefreshPermissions,
+            isHighlighted = isHighlighted,
+            modifier = Modifier.bringIntoViewRequester(bringIntoViewRequester)
         )
 
         AudioDiagnosticsCard(state = uiState.audioDiagnostic)

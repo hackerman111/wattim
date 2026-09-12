@@ -35,12 +35,17 @@ fun PermissionStatusCard(
     onEnableOverlay: () -> Unit,
     onEnableBattery: () -> Unit,
     onRefreshPermissions: () -> Unit = {},
+    isHighlighted: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val colors = WattimTheme.colors
     val typography = WattimTheme.typography
+    val effectiveBorder = if (isHighlighted) androidx.compose.foundation.BorderStroke(1.5.dp, colors.accent) else null
 
-    TerminalCard(modifier = modifier.fillMaxWidth()) {
+    TerminalCard(
+        border = effectiveBorder,
+        modifier = modifier.fillMaxWidth()
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

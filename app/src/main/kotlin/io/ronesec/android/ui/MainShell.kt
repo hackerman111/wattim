@@ -141,7 +141,8 @@ fun MainShell(
                             onOpenAppInfo = { configViewModel.onOpenAppInfo() },
                             onDismissError = { configViewModel.onDismissError() },
                             onSetCustomEmergencyMinutes = { configViewModel.onSetCustomEmergencyMinutes(it) },
-                            onRefreshPermissions = { configViewModel.onRefreshPermissions() }
+                            onRefreshPermissions = { configViewModel.onRefreshPermissions() },
+                            shouldFocusPermissions = !permissionSnapshot.areRequiredPermissionsGranted
                         )
                     } else {
                         ConfigTabShell(permissionSnapshot = permissionSnapshot)
