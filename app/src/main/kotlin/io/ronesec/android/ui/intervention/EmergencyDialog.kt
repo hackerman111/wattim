@@ -158,7 +158,7 @@ fun EmergencyDialog(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                     }
-                    DigitCodeInput(code, 10, { code = it }, stringResource(R.string.code_emergency_enter))
+                    DigitCodeInput(code, 10, { code = it }, stringResource(R.string.code_emergency_enter), autofocus = true)
                     if (codeError) Text(stringResource(R.string.code_invalid), color = colors.error)
                     Spacer(modifier = Modifier.height(16.dp))
                 }

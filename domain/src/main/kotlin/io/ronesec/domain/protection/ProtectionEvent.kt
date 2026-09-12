@@ -90,6 +90,16 @@ sealed interface ProtectionEvent {
         override fun toString(): String = "ActionEmergencyForever(sessionId=$sessionId, cycle=$cycle, redacted)"
     }
 
+    data class ActionOpenEmergency(
+        val sessionId: SessionId,
+        val cycle: Int
+    ) : ProtectionEvent
+
+    data class ActionDismissEmergency(
+        val sessionId: SessionId,
+        val cycle: Int
+    ) : ProtectionEvent
+
     data object ScreenOff : ProtectionEvent
     data object ScreenOnLocked : ProtectionEvent
     data class ScreenUnlocked(

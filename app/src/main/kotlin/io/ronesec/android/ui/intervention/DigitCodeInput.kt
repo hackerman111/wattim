@@ -16,12 +16,35 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import io.ronesec.android.ui.designsystem.WattimTheme
 
 @Composable
-fun DigitCodeInput(value: String, length: Int, onValueChange: (String) -> Unit, label: String) {
+fun DigitCodeInput(
+    value: String,
+    length: Int,
+    onValueChange: (String) -> Unit,
+    label: String,
+    autofocus: Boolean = false
+) {
     val colors = WattimTheme.colors
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(autofocus) {
+        if (autofocus) {
+            try {
+                focusRequester.requestFocus()
+                keyboardController?.show()
+            } catch (_: Exception) {}
+        }
+    }
+
     Column {
         Text(label, style = WattimTheme.typography.bodyMedium, color = colors.textSecondary)
         BasicTextField(
@@ -31,7 +54,11 @@ fun DigitCodeInput(value: String, length: Int, onValueChange: (String) -> Unit, 
             singleLine = true,
             textStyle = WattimTheme.typography.titleMedium.copy(color = Color.Transparent),
             cursorBrush = SolidColor(Color.Transparent),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics { contentDescription = label },
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .focusRequester(focusRequester)
+                .semantics { contentDescription = label },
             decorationBox = { innerTextField ->
                 Box {
                     innerTextField()

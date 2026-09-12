@@ -180,10 +180,18 @@ class OverlayPresenter(
 
     fun openEmergencyDialog() {
         _uiState.update { it.copy(isEmergencyDialogOpen = true) }
+        val current = _uiState.value.mode
+        if (current is OverlayMode.Intervention) {
+            actionDispatcher.onCodeEvent(ProtectionEvent.ActionOpenEmergency(current.sessionId, current.cycle))
+        }
     }
 
     fun dismissEmergencyDialog() {
         _uiState.update { it.copy(isEmergencyDialogOpen = false) }
+        val current = _uiState.value.mode
+        if (current is OverlayMode.Intervention) {
+            actionDispatcher.onCodeEvent(ProtectionEvent.ActionDismissEmergency(current.sessionId, current.cycle))
+        }
     }
 
     fun onContinueClick() {

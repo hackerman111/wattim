@@ -28,6 +28,7 @@ internal fun SessionInterventionContent(
     val isCodeGate = challenge?.gate ?: mode.config.twoStageUnlock
     val attentionCheck = challenge?.attentionCheck
     val isAttentionCheck = attentionCheck?.active == true
+    val isEmergency = uiState.isEmergencyDialogOpen || challenge?.isEmergency == true
     val breathingStart = challenge?.breathingStartElapsedMs
     var progress by remember(mode.sessionId, mode.cycle, breathingStart) {
         val start = breathingStart ?: 0L
@@ -37,8 +38,8 @@ internal fun SessionInterventionContent(
         mutableStateOf(monotonicClock.elapsedRealtimeMs())
     }
 
-    LaunchedEffect(mode.sessionId, mode.cycle, breathingStart, isCodeGate, isAttentionCheck, mode.config.durationMs) {
-        if (!isCodeGate && !mode.isComplete) {
+    LaunchedEffect(mode.sessionId, mode.cycle, breathingStart, isCodeGate, isAttentionCheck, isEmergency, mode.config.durationMs) {
+        if (!isCodeGate && !mode.isComplete && !isEmergency) {
             while (isActive) {
                 withFrameNanos {
                     val now = monotonicClock.elapsedRealtimeMs()
@@ -69,7 +70,7 @@ internal fun SessionInterventionContent(
                 onExit = { send(ProtectionEvent.ActionExit(mode.sessionId)) },
                 onEmergency = presenter::openEmergencyDialog
             )
-        } else if (attentionCheck?.active == true) {
+        } else if (attentionCheck?.active == true && !isEmergency) {
             val pausedProgress = BreathingTimeline.calculate(
                 0L,
                 attentionCheck.pausedElapsedProgressMs,
@@ -85,10 +86,11 @@ internal fun SessionInterventionContent(
                 nowElapsedMs = nowElapsedMs
             )
         } else {
-            val displayedProgress = if (mode.isComplete) {
-                BreathingTimeline.calculate(0L, mode.config.durationMs, mode.config.durationMs)
-            } else {
-                progress
+            val pausedMs = challenge?.pausedProgressMs
+            val displayedProgress = when {
+                mode.isComplete -> BreathingTimeline.calculate(0L, mode.config.durationMs, mode.config.durationMs)
+                pausedMs != null -> BreathingTimeline.calculate(0L, pausedMs, mode.config.durationMs)
+                else -> progress
             }
             InterventionContent(
                 config = mode.config,

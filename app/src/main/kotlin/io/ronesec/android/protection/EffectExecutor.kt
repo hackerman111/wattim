@@ -104,6 +104,10 @@ class EffectExecutor(
                     scheduler.schedule(effect.delayMs, effect.boundaryToken)
                 }
 
+                is ProtectionEffect.CancelTemporalBoundary -> {
+                    scheduler.cancel()
+                }
+
                 is ProtectionEffect.UpdateServiceSubscription -> {
                     subscriptionController.applyConfiguration(effect.targetPackages, effect.trackAll)
                 }

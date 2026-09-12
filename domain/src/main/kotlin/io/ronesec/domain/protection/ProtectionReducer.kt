@@ -53,6 +53,7 @@ object ProtectionReducer {
         return when (event) {
             is ProtectionEvent.GenerateUnlockCode, is ProtectionEvent.SubmitUnlockCode,
             is ProtectionEvent.SubmitAttentionCheckCode,
+            is ProtectionEvent.ActionOpenEmergency, is ProtectionEvent.ActionDismissEmergency,
             is ProtectionEvent.CodeTripFailed, is ProtectionEvent.CodePanelShown ->
                 ReducerResult(currentState, emptyList(), context.runtimeState)
             is ProtectionEvent.ServiceDisconnected -> {

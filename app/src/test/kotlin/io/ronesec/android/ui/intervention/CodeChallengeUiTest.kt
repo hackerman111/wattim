@@ -109,4 +109,87 @@ class CodeChallengeUiTest {
         composeRule.onNodeWithText("ENTER ONCE").performClick()
         assertEquals("1234567890", onceCode)
     }
+
+    @Test
+    fun `SessionInterventionContent freezes progress and suppresses attention check during emergency`() {
+        val session = io.ronesec.domain.model.SessionId(1, 1, 1)
+        val config = io.ronesec.domain.policy.EffectiveInterventionConfig(
+            packageName = "com.example.target",
+            displayName = "Target App",
+            phrase = "Pause",
+            animation = io.ronesec.domain.model.AnimationMode.FILL,
+            durationMs = 10000L,
+            reinterventionMs = 0L,
+            quickReturnGraceMs = 0L,
+            baseDurationMs = 10000L,
+            backoffExponent = 0,
+            requireEmergencyCode = true
+        )
+        val challenge = io.ronesec.domain.protection.CodeChallengeUi(
+            gate = false,
+            generated = false,
+            unlockRequestRevision = 0L,
+            codeLength = 4,
+            emergencyCode = "9876543210",
+            error = false,
+            breathingStartElapsedMs = null,
+            isEmergency = true,
+            pausedProgressMs = 3000L,
+            attentionCheck = io.ronesec.domain.protection.AttentionCheckUi(
+                active = true,
+                code = "1111",
+                deadlineElapsedMs = 5000L,
+                timeoutMs = 5000L,
+                pausedElapsedProgressMs = 3000L,
+                totalDurationMs = 10000L
+            )
+        )
+        val mode = io.ronesec.android.platform.overlay.OverlayMode.Intervention(
+            sessionId = session,
+            cycle = 1,
+            config = config,
+            isComplete = false,
+            challenge = challenge
+        )
+        val uiState = io.ronesec.android.platform.overlay.OverlayUiState(
+            mode = mode,
+            isEmergencyDialogOpen = true
+        )
+        val clock = object : io.ronesec.domain.model.MonotonicClock {
+            override fun elapsedRealtimeMs(): Long = 25000L
+        }
+        val presenter = io.ronesec.android.platform.overlay.OverlayPresenter(
+            actionDispatcher = object : io.ronesec.android.platform.overlay.OverlayActionDispatcher {
+                override fun onContinue(sessionId: io.ronesec.domain.model.SessionId, cycle: Int) {}
+                override fun onExit(sessionId: io.ronesec.domain.model.SessionId?) {}
+                override fun onCancel(sessionId: io.ronesec.domain.model.SessionId?) {}
+                override fun onBreathingDeadlineReached(sessionId: io.ronesec.domain.model.SessionId, cycle: Int) {}
+                override fun onEmergencyOnce(sessionId: io.ronesec.domain.model.SessionId, cycle: Int) {}
+                override fun onEmergencyTimed(sessionId: io.ronesec.domain.model.SessionId, cycle: Int, durationMs: Long) {}
+                override fun onEmergencyForever(sessionId: io.ronesec.domain.model.SessionId, cycle: Int) {}
+            },
+            policyStore = null,
+            statisticsStore = null,
+            scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
+        )
+
+        composeRule.setContent {
+            WattimTheme {
+                SessionInterventionContent(
+                    mode = mode,
+                    uiState = uiState,
+                    presenter = presenter,
+                    monotonicClock = clock
+                )
+            }
+        }
+
+        // Emergency Dialog is displayed
+        composeRule.onNodeWithText("ARE YOU SURE?").assertIsDisplayed()
+        composeRule.onNodeWithText("Emergency access code: 9876543210").assertIsDisplayed()
+
+        // Attention check is suppressed!
+        composeRule.onNodeWithText("ATTENTION CHECK").assertDoesNotExist()
+        composeRule.onNodeWithText("1 1 1 1").assertDoesNotExist()
+    }
 }

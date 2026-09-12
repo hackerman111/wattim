@@ -11,6 +11,7 @@ import androidx.test.core.app.ApplicationProvider
 import io.ronesec.domain.model.AnimationMode
 import io.ronesec.domain.model.SessionId
 import io.ronesec.domain.policy.EffectiveInterventionConfig
+import io.ronesec.domain.protection.ProtectionEvent
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -86,6 +87,12 @@ class T10_OverlayHostAndLifecycleTest {
 
         override fun onEmergencyForever(sessionId: SessionId, cycle: Int) {
             emergencyForeverCount++
+        }
+
+        val codeEvents = mutableListOf<ProtectionEvent>()
+
+        override fun onCodeEvent(event: ProtectionEvent) {
+            codeEvents.add(event)
         }
     }
 
@@ -375,9 +382,14 @@ class T10_OverlayHostAndLifecycleTest {
         assertFalse(presenter.uiState.value.isEmergencyDialogOpen)
         presenter.openEmergencyDialog()
         assertTrue(presenter.uiState.value.isEmergencyDialogOpen)
+        assertEquals(listOf(io.ronesec.domain.protection.ProtectionEvent.ActionOpenEmergency(session, 1)), fakeDispatcher.codeEvents)
 
         presenter.dismissEmergencyDialog()
         assertFalse(presenter.uiState.value.isEmergencyDialogOpen)
+        assertEquals(listOf(
+            io.ronesec.domain.protection.ProtectionEvent.ActionOpenEmergency(session, 1),
+            io.ronesec.domain.protection.ProtectionEvent.ActionDismissEmergency(session, 1)
+        ), fakeDispatcher.codeEvents)
 
         // Test emergency once
         presenter.openEmergencyDialog()

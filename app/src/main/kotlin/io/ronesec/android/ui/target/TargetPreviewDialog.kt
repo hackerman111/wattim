@@ -39,22 +39,29 @@ fun TargetPreviewDialog(
         )
     }
 
-    val startElapsedMs = remember { SystemClock.elapsedRealtime() }
+    var startElapsedMs by remember { mutableStateOf(SystemClock.elapsedRealtime()) }
     var nowElapsedMs by remember { mutableStateOf(startElapsedMs) }
     var isEmergencyOpen by remember { mutableStateOf(false) }
+    var pausedProgressMs by remember { mutableStateOf<Long?>(null) }
 
-    LaunchedEffect(Unit) {
-        while (isActive) {
-            nowElapsedMs = SystemClock.elapsedRealtime()
-            delay(16L) // Smooth ~60fps timeline update
+    LaunchedEffect(isEmergencyOpen) {
+        if (!isEmergencyOpen) {
+            while (isActive) {
+                nowElapsedMs = SystemClock.elapsedRealtime()
+                delay(16L) // Smooth ~60fps timeline update
+            }
         }
     }
 
-    val progress = BreathingTimeline.calculate(
-        startElapsedMs = startElapsedMs,
-        nowElapsedMs = nowElapsedMs,
-        durationMs = durationMs
-    )
+    val progress = if (pausedProgressMs != null) {
+        BreathingTimeline.calculate(0L, pausedProgressMs!!, durationMs)
+    } else {
+        BreathingTimeline.calculate(
+            startElapsedMs = startElapsedMs,
+            nowElapsedMs = nowElapsedMs,
+            durationMs = durationMs
+        )
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -72,8 +79,17 @@ fun TargetPreviewDialog(
             onContinue = onDismiss,
             onExit = onDismiss,
             onCancel = onDismiss,
-            onEmergencyClick = { isEmergencyOpen = true },
-            onDismissEmergency = { isEmergencyOpen = false },
+            onEmergencyClick = {
+                val currentElapsed = (SystemClock.elapsedRealtime() - startElapsedMs).coerceIn(0L, durationMs)
+                pausedProgressMs = currentElapsed
+                isEmergencyOpen = true
+            },
+            onDismissEmergency = {
+                val paused = pausedProgressMs ?: 0L
+                startElapsedMs = SystemClock.elapsedRealtime() - paused
+                pausedProgressMs = null
+                isEmergencyOpen = false
+            },
             onEmergencyOnce = onDismiss,
             onEmergencyTimed = { onDismiss() },
             onEmergencyForever = onDismiss,

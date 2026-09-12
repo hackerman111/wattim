@@ -84,6 +84,8 @@ sealed interface ProtectionEffect {
         val boundaryToken: Long
     ) : ProtectionEffect
 
+    data object CancelTemporalBoundary : ProtectionEffect
+
     data class UpdateServiceSubscription(
         val targetPackages: Set<String>,
         val trackAll: Boolean
