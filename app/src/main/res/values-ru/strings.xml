@@ -155,6 +155,9 @@
     <string name="target_attention_check_max_count_label">Максимум проверок: %1$d</string>
     <string name="target_attention_check_length_label">Длина пароля: %1$d цифр</string>
     <string name="target_attention_check_timeout_label">Время на ввод: %1$d с</string>
+    <string name="target_attention_check_annoying_title">БЕСЯЧАЯ РАЗБЛОКИРОВКА</string>
+    <string name="target_attention_check_annoying_desc">С определенным шансом нажимаемая цифра не введется во время проверки внимания</string>
+    <string name="target_attention_check_annoying_chance_label">Шанс пропуска: %1$d%%</string>
     <string name="attention_check_prompt_header">ПРОВЕРКА ВНИМАНИЯ</string>
     <string name="attention_check_instruction">Введите код для продолжения:</string>
     <string name="attention_check_time_remaining">Осталось: %1$.1f с</string>

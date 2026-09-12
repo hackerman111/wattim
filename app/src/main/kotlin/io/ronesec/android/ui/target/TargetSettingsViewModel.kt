@@ -64,6 +64,8 @@ class TargetSettingsViewModel(
         val attentionMaxCount = existing?.attentionCheckMaxCount ?: 1
         val attentionCodeLen = existing?.attentionCheckCodeLength ?: 4
         val attentionTimeoutSec = existing?.let { (it.attentionCheckTimeoutMs / 1000L).toInt() } ?: 5
+        val annoyingEnabled = existing?.annoyingUnlockEnabled ?: false
+        val annoyingChance = existing?.annoyingUnlockChancePercent ?: 20
 
         val initialDraft = TargetSettingsDraft(
             packageName = packageName,
@@ -91,7 +93,9 @@ class TargetSettingsViewModel(
             attentionCheckMinCount = attentionMinCount,
             attentionCheckMaxCount = attentionMaxCount,
             attentionCheckCodeLength = attentionCodeLen,
-            attentionCheckTimeoutSeconds = attentionTimeoutSec
+            attentionCheckTimeoutSeconds = attentionTimeoutSec,
+            annoyingUnlockEnabled = annoyingEnabled,
+            annoyingUnlockChancePercent = annoyingChance
         )
 
         val delays = Backoff.calculateFirstTen(
@@ -174,6 +178,14 @@ class TargetSettingsViewModel(
 
     fun onAttentionCheckTimeoutSecondsChange(seconds: Int) {
         updateDraft { it.copy(attentionCheckTimeoutSeconds = seconds.coerceIn(3, 30)) }
+    }
+
+    fun onToggleAnnoyingUnlock() {
+        updateDraft { it.copy(annoyingUnlockEnabled = !it.annoyingUnlockEnabled) }
+    }
+
+    fun onAnnoyingUnlockChancePercentChange(percent: Int) {
+        updateDraft { it.copy(annoyingUnlockChancePercent = percent.coerceIn(1, 100)) }
     }
 
     fun onReinterventionChoice(choice: ReinterventionChoice) {
@@ -287,7 +299,9 @@ class TargetSettingsViewModel(
             attentionCheckMinCount = draft.attentionCheckMinCount,
             attentionCheckMaxCount = maxOf(draft.attentionCheckMinCount, draft.attentionCheckMaxCount),
             attentionCheckCodeLength = draft.attentionCheckCodeLength,
-            attentionCheckTimeoutMs = draft.attentionCheckTimeoutSeconds * 1000L
+            attentionCheckTimeoutMs = draft.attentionCheckTimeoutSeconds * 1000L,
+            annoyingUnlockEnabled = draft.annoyingUnlockEnabled,
+            annoyingUnlockChancePercent = draft.annoyingUnlockChancePercent
         )
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }

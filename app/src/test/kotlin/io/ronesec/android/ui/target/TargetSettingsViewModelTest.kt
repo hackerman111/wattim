@@ -387,4 +387,42 @@ class TargetSettingsViewModelTest {
         assertEquals(2, saved.attentionCheckMinCount)
         assertEquals(4, saved.attentionCheckMaxCount)
     }
+
+    @Test
+    fun editingAnnoyingUnlockSettingsUpdatesDraftAndPersistsOnSave() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
+        store.awaitReady()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.draft.annoyingUnlockEnabled)
+        assertEquals(20, viewModel.uiState.value.draft.annoyingUnlockChancePercent)
+
+        viewModel.onToggleAnnoyingUnlock()
+        viewModel.onAnnoyingUnlockChancePercentChange(35)
+        advanceUntilIdle()
+
+        val updatedDraft = viewModel.uiState.value.draft
+        assertTrue(updatedDraft.annoyingUnlockEnabled)
+        assertEquals(35, updatedDraft.annoyingUnlockChancePercent)
+
+        // Clamping checks: 1..100
+        viewModel.onAnnoyingUnlockChancePercentChange(0)
+        assertEquals(1, viewModel.uiState.value.draft.annoyingUnlockChancePercent)
+
+        viewModel.onAnnoyingUnlockChancePercentChange(150)
+        assertEquals(100, viewModel.uiState.value.draft.annoyingUnlockChancePercent)
+
+        viewModel.onAnnoyingUnlockChancePercentChange(50)
+        viewModel.onSave()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.first { it.isSaved }
+        assertTrue(state.isSaved)
+
+        val saved = store.currentSnapshot.targets[targetPackage]
+        assertNotNull(saved)
+        assertTrue(saved!!.annoyingUnlockEnabled)
+        assertEquals(50, saved.annoyingUnlockChancePercent)
+    }
 }

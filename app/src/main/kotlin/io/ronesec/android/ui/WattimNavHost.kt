@@ -197,6 +197,8 @@ fun WattimNavHost(
                     onAttentionCheckMaxCountChange = targetViewModel::onAttentionCheckMaxCountChange,
                     onAttentionCheckCodeLengthChange = targetViewModel::onAttentionCheckCodeLengthChange,
                     onAttentionCheckTimeoutSecondsChange = targetViewModel::onAttentionCheckTimeoutSecondsChange,
+                    onToggleAnnoyingUnlock = targetViewModel::onToggleAnnoyingUnlock,
+                    onAnnoyingUnlockChanceChange = targetViewModel::onAnnoyingUnlockChancePercentChange,
                     onToggleEnabled = { targetViewModel.onToggleEnabled() },
                     onOpenPreview = { targetViewModel.onOpenPreview() },
                     onDismissPreview = { targetViewModel.onDismissPreview() },

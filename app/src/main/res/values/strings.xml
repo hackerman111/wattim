@@ -155,6 +155,9 @@
     <string name="target_attention_check_max_count_label">Max checks: %1$d</string>
     <string name="target_attention_check_length_label">Code length: %1$d digits</string>
     <string name="target_attention_check_timeout_label">Time to enter: %1$d s</string>
+    <string name="target_attention_check_annoying_title">ANNOYING UNLOCK</string>
+    <string name="target_attention_check_annoying_desc">Typed digits may fail to enter with a configured probability during attention check</string>
+    <string name="target_attention_check_annoying_chance_label">Miss chance: %1$d%%</string>
     <string name="attention_check_prompt_header">ATTENTION CHECK</string>
     <string name="attention_check_instruction">Type the code to continue:</string>
     <string name="attention_check_time_remaining">Remaining: %1$.1fs</string>

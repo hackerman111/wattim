@@ -76,7 +76,9 @@ fun TargetSettingsScreen(
     onAttentionCheckMinCountChange: (Int) -> Unit = {},
     onAttentionCheckMaxCountChange: (Int) -> Unit = {},
     onAttentionCheckCodeLengthChange: (Int) -> Unit = {},
-    onAttentionCheckTimeoutSecondsChange: (Int) -> Unit = {}
+    onAttentionCheckTimeoutSecondsChange: (Int) -> Unit = {},
+    onToggleAnnoyingUnlock: () -> Unit = {},
+    onAnnoyingUnlockChanceChange: (Int) -> Unit = {}
 ) {
     val colors = WattimTheme.colors
     val dimensions = WattimTheme.dimensions
@@ -230,6 +232,8 @@ fun TargetSettingsScreen(
             maxCount = draft.attentionCheckMaxCount,
             codeLength = draft.attentionCheckCodeLength,
             timeoutSeconds = draft.attentionCheckTimeoutSeconds,
+            annoyingUnlockEnabled = draft.annoyingUnlockEnabled,
+            annoyingUnlockChancePercent = draft.annoyingUnlockChancePercent,
             onToggleEnabled = onToggleAttentionChecks,
             onCountChange = onAttentionCheckCountChange,
             onToggleRandomCount = onToggleAttentionCheckRandomCount,
@@ -237,6 +241,8 @@ fun TargetSettingsScreen(
             onMaxCountChange = onAttentionCheckMaxCountChange,
             onCodeLengthChange = onAttentionCheckCodeLengthChange,
             onTimeoutChange = onAttentionCheckTimeoutSecondsChange,
+            onToggleAnnoyingUnlock = onToggleAnnoyingUnlock,
+            onAnnoyingUnlockChanceChange = onAnnoyingUnlockChanceChange,
             isInteractive = !state.isLoading
         )
 

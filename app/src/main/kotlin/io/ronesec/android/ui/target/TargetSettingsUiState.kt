@@ -31,7 +31,9 @@ data class TargetSettingsDraft(
     val attentionCheckMinCount: Int = 1,
     val attentionCheckMaxCount: Int = 1,
     val attentionCheckCodeLength: Int = 4,
-    val attentionCheckTimeoutSeconds: Int = 5
+    val attentionCheckTimeoutSeconds: Int = 5,
+    val annoyingUnlockEnabled: Boolean = false,
+    val annoyingUnlockChancePercent: Int = 20
 )
 
 enum class ReinterventionChoice(val labelResName: String, val durationMs: Long?) {
