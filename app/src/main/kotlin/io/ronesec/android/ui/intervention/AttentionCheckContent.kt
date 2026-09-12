@@ -52,6 +52,7 @@ import io.ronesec.android.ui.designsystem.WattimTheme
 import io.ronesec.domain.breathing.BreathingProgress
 import io.ronesec.domain.policy.EffectiveInterventionConfig
 import io.ronesec.domain.protection.AttentionCheckUi
+import kotlinx.coroutines.delay
 import kotlin.math.max
 
 @Composable
@@ -68,17 +69,23 @@ fun AttentionCheckContent(
     val colors = WattimTheme.colors
     val typography = WattimTheme.typography
 
-    val remainingMs = max(0L, attentionCheck.deadlineElapsedMs - nowElapsedMs)
-    val remainingFraction = if (attentionCheck.timeoutMs > 0L) {
+    val remainingMs = if (attentionCheck.isExpired) 0L else max(0L, attentionCheck.deadlineElapsedMs - nowElapsedMs)
+    val remainingFraction = if (attentionCheck.timeoutMs > 0L && !attentionCheck.isExpired) {
         (remainingMs.toFloat() / attentionCheck.timeoutMs.toFloat()).coerceIn(0f, 1f)
     } else 0f
 
     var input by remember(attentionCheck.code) { mutableStateOf("") }
+    var isWrongCodeLocked by remember { mutableStateOf(false) }
     LaunchedEffect(attentionCheck.hasError) {
         if (attentionCheck.hasError) {
             input = ""
+            isWrongCodeLocked = true
+            delay(1000L)
+            isWrongCodeLocked = false
         }
     }
+
+    val hasVisualError = attentionCheck.hasError || isWrongCodeLocked || attentionCheck.isExpired
 
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -152,7 +159,7 @@ fun AttentionCheckContent(
                     .fillMaxWidth()
                     .widthIn(max = 420.dp)
                     .background(colors.surface, RoundedCornerShape(8.dp))
-                    .border(1.dp, if (attentionCheck.hasError) colors.error else colors.border, RoundedCornerShape(8.dp))
+                    .border(1.dp, if (hasVisualError) colors.error else colors.border, RoundedCornerShape(8.dp))
                     .padding(20.dp)
             ) {
                 Text(
@@ -187,7 +194,7 @@ fun AttentionCheckContent(
                                 .fillMaxWidth(remainingFraction)
                                 .fillMaxHeight()
                                 .background(
-                                    if (remainingMs < 2000L || attentionCheck.hasError) colors.error else colors.accent,
+                                    if (remainingMs < 2000L || hasVisualError) colors.error else colors.accent,
                                     RoundedCornerShape(3.dp)
                                 )
                         )
@@ -195,7 +202,7 @@ fun AttentionCheckContent(
                     Text(
                         text = stringResource(R.string.attention_check_time_remaining, remainingMs / 1000f),
                         style = typography.labelSmall,
-                        color = if (remainingMs < 2000L) colors.error else colors.textSecondary,
+                        color = if (remainingMs < 2000L || hasVisualError) colors.error else colors.textSecondary,
                         modifier = Modifier.align(Alignment.End)
                     )
                 }
@@ -206,12 +213,32 @@ fun AttentionCheckContent(
                 BasicTextField(
                     value = input,
                     onValueChange = { newVal ->
-                        val digits = newVal.filter { it in '0'..'9' }.take(expectedLength)
-                        input = digits
-                        if (digits.length == expectedLength) {
-                            onSubmit(digits)
+                        if (attentionCheck.isExpired) return@BasicTextField
+                        val rawDigits = newVal.filter { it in '0'..'9' }
+                        val newDigits = if (rawDigits.length > input.length) {
+                            if (config.annoyingUnlockEnabled) {
+                                val addedCount = rawDigits.length - input.length
+                                val addedChars = rawDigits.takeLast(addedCount)
+                                val prefix = rawDigits.dropLast(addedCount)
+                                val acceptedAdded = buildString {
+                                    for (ch in addedChars) {
+                                        val drop = kotlin.random.Random.nextInt(100) < config.annoyingUnlockChancePercent
+                                        if (!drop) append(ch)
+                                    }
+                                }
+                                (prefix + acceptedAdded).take(expectedLength)
+                            } else {
+                                rawDigits.take(expectedLength)
+                            }
+                        } else {
+                            rawDigits.take(expectedLength)
+                        }
+                        input = newDigits
+                        if (newDigits.length == expectedLength) {
+                            onSubmit(newDigits)
                         }
                     },
+                    enabled = !attentionCheck.isExpired,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     singleLine = true,
                     textStyle = typography.titleMedium.copy(color = Color.Transparent),
@@ -236,7 +263,7 @@ fun AttentionCheckContent(
                                     Text(
                                         text = char,
                                         style = typography.titleLarge,
-                                        color = if (attentionCheck.hasError) colors.error else colors.accent
+                                        color = if (hasVisualError) colors.error else colors.accent
                                     )
                                 }
                             }
@@ -244,7 +271,14 @@ fun AttentionCheckContent(
                     }
                 )
 
-                if (attentionCheck.hasError) {
+                if (attentionCheck.isExpired) {
+                    Text(
+                        text = stringResource(R.string.attention_check_timeout_message),
+                        style = typography.bodyMedium,
+                        color = colors.error,
+                        textAlign = TextAlign.Center
+                    )
+                } else if (hasVisualError) {
                     Text(
                         text = stringResource(R.string.attention_check_error),
                         style = typography.bodyMedium,

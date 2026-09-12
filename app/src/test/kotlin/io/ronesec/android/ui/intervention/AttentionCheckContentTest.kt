@@ -169,4 +169,73 @@ class AttentionCheckContentTest {
         composeTestRule.onNodeWithText("EMERGENCY", substring = true).performClick()
         assertTrue(emergencyCalled)
     }
+
+    @Test
+    fun displaysTimeoutMessageWhenAttentionCheckIsExpired() {
+        val attentionCheck = AttentionCheckUi(
+            active = true,
+            code = "9951",
+            deadlineElapsedMs = 10000L,
+            timeoutMs = 5000L,
+            pausedElapsedProgressMs = 3000L,
+            totalDurationMs = 10000L,
+            hasError = false,
+            isExpired = true
+        )
+        val pausedProgress = BreathingTimeline.calculate(0L, 3000L, 10000L)
+
+        composeTestRule.setContent {
+            WattimTheme {
+                AttentionCheckContent(
+                    config = sampleConfig,
+                    pausedProgress = pausedProgress,
+                    attentionCheck = attentionCheck,
+                    onSubmit = {},
+                    onExit = {},
+                    onEmergency = {},
+                    nowElapsedMs = 10500L
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Time expired! Restarting wait...").assertIsDisplayed()
+    }
+
+    @Test
+    fun annoyingUnlockDropsDigitsWhen100PercentChance() {
+        val annoyingConfig = sampleConfig.copy(
+            annoyingUnlockEnabled = true,
+            annoyingUnlockChancePercent = 100
+        )
+        val attentionCheck = AttentionCheckUi(
+            active = true,
+            code = "8134",
+            deadlineElapsedMs = 10000L,
+            timeoutMs = 5000L,
+            pausedElapsedProgressMs = 3000L,
+            totalDurationMs = 10000L,
+            hasError = false
+        )
+        val pausedProgress = BreathingTimeline.calculate(0L, 3000L, 10000L)
+        var submittedCode: String? = null
+
+        composeTestRule.setContent {
+            WattimTheme {
+                AttentionCheckContent(
+                    config = annoyingConfig,
+                    pausedProgress = pausedProgress,
+                    attentionCheck = attentionCheck,
+                    onSubmit = { submittedCode = it },
+                    onExit = {},
+                    onEmergency = {},
+                    nowElapsedMs = 5000L
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Type the code to continue:")
+            .performTextInput("8134")
+
+        assertEquals(null, submittedCode)
+    }
 }
