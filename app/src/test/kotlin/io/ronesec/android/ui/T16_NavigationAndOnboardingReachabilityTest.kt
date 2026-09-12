@@ -1,20 +1,28 @@
 package io.ronesec.android.ui
 
+import android.content.Context
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import io.ronesec.android.platform.system.FakePlatformPermissionChecker
 import io.ronesec.android.platform.system.OnboardingStep
 import io.ronesec.android.platform.system.PermissionMonitor
+import io.ronesec.android.platform.system.SettingsIntentAdapter
 import io.ronesec.android.ui.designsystem.TerminalTab
+import io.ronesec.android.ui.designsystem.WattimTheme
 import io.ronesec.android.ui.onboarding.OnboardingStepState
 import io.ronesec.android.ui.onboarding.OnboardingViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -22,6 +30,9 @@ import org.robolectric.RobolectricTestRunner
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class T16_NavigationAndOnboardingReachabilityTest {
+
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     private lateinit var fakeChecker: FakePlatformPermissionChecker
     private lateinit var permissionMonitor: PermissionMonitor
@@ -32,6 +43,54 @@ class T16_NavigationAndOnboardingReachabilityTest {
         fakeChecker = FakePlatformPermissionChecker()
         permissionMonitor = PermissionMonitor(fakeChecker)
         onboardingViewModel = OnboardingViewModel(permissionMonitor)
+    }
+
+    @Test
+    fun wattimNavHostForcesOnboardingWhenPermissionsMissingEvenWithInitialRoute() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val settingsAdapter = SettingsIntentAdapter(context)
+
+        composeTestRule.setContent {
+            WattimTheme {
+                WattimNavHost(
+                    permissionMonitor = permissionMonitor,
+                    settingsAdapter = settingsAdapter,
+                    initialRoute = AppRoute.Main(TerminalTab.APPS),
+                    onStartFgs = {}
+                )
+            }
+        }
+
+        // Must display onboarding step 1 action rather than Apps tab shell
+        composeTestRule.onNodeWithText("OPEN ACCESSIBILITY").assertIsDisplayed()
+    }
+
+    @Test
+    fun wattimNavHostIgnoresRouteRequestsWhenRequiredPermissionsMissing() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val settingsAdapter = SettingsIntentAdapter(context)
+        val routeChannel = kotlinx.coroutines.channels.Channel<AppRoute>(capacity = kotlinx.coroutines.channels.Channel.CONFLATED)
+
+        composeTestRule.setContent {
+            WattimTheme {
+                WattimNavHost(
+                    permissionMonitor = permissionMonitor,
+                    settingsAdapter = settingsAdapter,
+                    initialRoute = AppRoute.Onboarding,
+                    onStartFgs = {},
+                    routeRequests = routeChannel.receiveAsFlow()
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("OPEN ACCESSIBILITY").assertIsDisplayed()
+
+        // Attempt to bypass by requesting CODES tab route
+        routeChannel.trySend(AppRoute.Main(TerminalTab.CODES))
+        composeTestRule.waitForIdle()
+
+        // Must still remain on Onboarding
+        composeTestRule.onNodeWithText("OPEN ACCESSIBILITY").assertIsDisplayed()
     }
 
     @Test

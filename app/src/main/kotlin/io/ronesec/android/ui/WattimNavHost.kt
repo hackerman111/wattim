@@ -52,10 +52,10 @@ fun WattimNavHost(
     val permissionSnapshot by permissionMonitor.statusFlow.collectAsState()
 
     var currentRoute by remember {
-        val startingRoute = initialRoute ?: if (permissionSnapshot.areRequiredPermissionsGranted) {
-            AppRoute.Main(TerminalTab.APPS)
-        } else {
+        val startingRoute = if (!permissionSnapshot.areRequiredPermissionsGranted) {
             AppRoute.Onboarding
+        } else {
+            initialRoute ?: AppRoute.Main(TerminalTab.APPS)
         }
         mutableStateOf(startingRoute)
     }
@@ -66,7 +66,9 @@ fun WattimNavHost(
 
     LaunchedEffect(routeRequests) {
         routeRequests.collect { requestedRoute ->
-            currentRoute = requestedRoute
+            if (permissionSnapshot.areRequiredPermissionsGranted || requestedRoute is AppRoute.Onboarding) {
+                currentRoute = requestedRoute
+            }
         }
     }
 

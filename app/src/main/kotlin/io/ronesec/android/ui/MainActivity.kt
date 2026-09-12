@@ -63,6 +63,7 @@ class MainActivity : ComponentActivity() {
 
         val app = applicationContext as? WattimApplication
         val permissionMonitor = app?.permissionMonitor
+        permissionMonitor?.refresh()
         val policyStore = app?.policyStore
         val statisticsStore = app?.statisticsStore
         val packageCatalog = app?.packageCatalog
