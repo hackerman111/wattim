@@ -65,7 +65,9 @@ class FocusForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         try {
-            val notification = buildNotification(isDegraded = false)
+            val initialSnapshot = (application as? WattimApplication)?.permissionMonitor?.statusFlow?.value
+                ?: PermissionSnapshot()
+            val notification = buildNotification(initialSnapshot)
             promoteToForeground(notification)
             _status.value = FgsStatus.Running
             (application as? WattimApplication)?.permissionMonitor?.setFgsStatus(FgsStatus.Running)
@@ -99,42 +101,74 @@ class FocusForegroundService : Service() {
         val permissionMonitor = (application as? WattimApplication)?.permissionMonitor ?: return
         statusCollectorJob = serviceScope.launch {
             permissionMonitor.statusFlow.collect { snapshot ->
-                val isDegraded = !snapshot.areRequiredPermissionsGranted ||
-                        !snapshot.isAccessibilityConnected ||
-                        !snapshot.isProtectionOperational
-                val notification = buildNotification(isDegraded = isDegraded)
+                val notification = buildNotification(snapshot)
                 val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                 notificationManager?.notify(NOTIFICATION_ID, notification)
             }
         }
     }
 
-    private fun buildNotification(isDegraded: Boolean): Notification {
+    internal fun buildNotification(snapshot: PermissionSnapshot): Notification {
+        val isDegraded = !snapshot.areRequiredPermissionsGranted ||
+                !snapshot.isAccessibilityConnected ||
+                !snapshot.isProtectionOperational
+
         val title = getString(R.string.app_name)
-        val contentText = if (isDegraded) {
-            getString(R.string.fgs_status_degraded)
-        } else {
-            getString(R.string.fgs_status_active)
-        }
-
-        val activityIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            activityIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
             .setContentTitle(title)
-            .setContentText(contentText)
-            .setContentIntent(pendingIntent)
-            .build()
+
+        if (!isDegraded) {
+            builder.setContentText(getString(R.string.fgs_status_active))
+        } else {
+            val missingItems = mutableListOf<String>()
+            if (snapshot.accessibility != PermissionState.Granted) {
+                missingItems.add(getString(R.string.fgs_status_degraded_accessibility))
+            } else if (!snapshot.isAccessibilityConnected) {
+                missingItems.add(getString(R.string.fgs_status_degraded_accessibility_disconnected))
+            }
+            if (snapshot.overlay != PermissionState.Granted) {
+                missingItems.add(getString(R.string.fgs_status_degraded_overlay))
+            }
+            if (snapshot.batteryExemption != PermissionState.Granted) {
+                missingItems.add(getString(R.string.fgs_status_degraded_battery))
+            }
+            if (missingItems.isEmpty()) {
+                missingItems.add(getString(R.string.fgs_status_degraded))
+            }
+
+            if (missingItems.size == 1) {
+                builder.setContentText(missingItems.first())
+            } else {
+                builder.setContentText(getString(R.string.fgs_status_degraded_multiple, missingItems.size))
+                val bigText = buildString {
+                    append(getString(R.string.fgs_missing_permissions_header))
+                    missingItems.forEach { item ->
+                        append("\n• ")
+                        append(item)
+                    }
+                }
+                builder.setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+            }
+        }
+
+        val activityIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (isDegraded) {
+                putExtra(MainActivity.EXTRA_OPEN_PERMISSIONS, true)
+            }
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            if (isDegraded) 1 else 0,
+            activityIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        builder.setContentIntent(pendingIntent)
+
+        return builder.build()
     }
 
     private fun createNotificationChannel() {

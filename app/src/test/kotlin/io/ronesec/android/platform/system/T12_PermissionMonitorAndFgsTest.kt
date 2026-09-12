@@ -173,4 +173,108 @@ class T12_PermissionMonitorAndFgsTest {
         serviceController.destroy()
         assertEquals(FgsStatus.Stopped, FocusForegroundService.status.value)
     }
+
+    @Test
+    fun buildNotificationShowsSpecificMissingPermissionWhenAccessibilityDenied() {
+        val serviceController = Robolectric.buildService(FocusForegroundService::class.java)
+        val service = serviceController.create().get()
+
+        val snapshot = PermissionSnapshot(
+            accessibility = PermissionState.Denied,
+            overlay = PermissionState.Granted,
+            batteryExemption = PermissionState.Granted,
+            isAccessibilityConnected = false,
+            isProtectionOperational = true
+        )
+        val notification = service.buildNotification(snapshot)
+        val shadowNotification = shadowOf(notification)
+        assertEquals(
+            context.getString(io.ronesec.android.R.string.fgs_status_degraded_accessibility),
+            shadowNotification.contentText
+        )
+
+        serviceController.destroy()
+    }
+
+    @Test
+    fun buildNotificationShowsDisconnectedWhenAccessibilityGrantedButDisconnected() {
+        val serviceController = Robolectric.buildService(FocusForegroundService::class.java)
+        val service = serviceController.create().get()
+
+        val snapshot = PermissionSnapshot(
+            accessibility = PermissionState.Granted,
+            overlay = PermissionState.Granted,
+            batteryExemption = PermissionState.Granted,
+            isAccessibilityConnected = false,
+            isProtectionOperational = true
+        )
+        val notification = service.buildNotification(snapshot)
+        val shadowNotification = shadowOf(notification)
+        assertEquals(
+            context.getString(io.ronesec.android.R.string.fgs_status_degraded_accessibility_disconnected),
+            shadowNotification.contentText
+        )
+
+        serviceController.destroy()
+    }
+
+    @Test
+    fun buildNotificationShowsMultiplePermissionsWhenMultipleDenied() {
+        val serviceController = Robolectric.buildService(FocusForegroundService::class.java)
+        val service = serviceController.create().get()
+
+        val snapshot = PermissionSnapshot(
+            accessibility = PermissionState.Denied,
+            overlay = PermissionState.Denied,
+            batteryExemption = PermissionState.Granted,
+            isAccessibilityConnected = false,
+            isProtectionOperational = true
+        )
+        val notification = service.buildNotification(snapshot)
+        val shadowNotification = shadowOf(notification)
+        assertEquals(
+            context.getString(io.ronesec.android.R.string.fgs_status_degraded_multiple, 2),
+            shadowNotification.contentText
+        )
+
+        serviceController.destroy()
+    }
+
+    @Test
+    fun buildNotificationSetsOpenPermissionsExtraOnlyWhenDegraded() {
+        val serviceController = Robolectric.buildService(FocusForegroundService::class.java)
+        val service = serviceController.create().get()
+
+        val degradedSnapshot = PermissionSnapshot(
+            accessibility = PermissionState.Denied,
+            overlay = PermissionState.Granted,
+            batteryExemption = PermissionState.Granted
+        )
+        val degradedNotification = service.buildNotification(degradedSnapshot)
+        val shadowDegradedPi = shadowOf(degradedNotification.contentIntent)
+        assertTrue(
+            shadowDegradedPi.savedIntent.getBooleanExtra(
+                io.ronesec.android.ui.MainActivity.EXTRA_OPEN_PERMISSIONS,
+                false
+            )
+        )
+
+        val activeSnapshot = PermissionSnapshot(
+            accessibility = PermissionState.Granted,
+            overlay = PermissionState.Granted,
+            batteryExemption = PermissionState.Granted,
+            isAccessibilityConnected = true,
+            isProtectionOperational = true
+        )
+        val activeNotification = service.buildNotification(activeSnapshot)
+        val shadowActivePi = shadowOf(activeNotification.contentIntent)
+        assertFalse(
+            shadowActivePi.savedIntent.getBooleanExtra(
+                io.ronesec.android.ui.MainActivity.EXTRA_OPEN_PERMISSIONS,
+                false
+            )
+        )
+
+        serviceController.destroy()
+    }
 }
