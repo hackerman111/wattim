@@ -204,5 +204,17 @@ class StatsViewModelTest {
         val ruState = viewModel.uiState.first { it.allTimeSavedDuration.endsWith("мин") }
         assertEquals("50 мин", ruState.allTimeSavedDuration)
         assertEquals("40 мин", ruState.savedTodayDuration)
+
+        // Select WEEK period
+        viewModel.onPeriodSelected(io.ronesec.domain.model.StatsPeriod.WEEK)
+        advanceUntilIdle()
+
+        val weekState = viewModel.uiState.first { it.selectedPeriod == io.ronesec.domain.model.StatsPeriod.WEEK }
+        assertEquals(io.ronesec.domain.model.StatsPeriod.WEEK, weekState.selectedPeriod)
+        assertEquals(6, weekState.periodTotalAttempts) // 1 yesterday + 5 today
+        assertEquals(5, weekState.periodClosedCount) // 1 yesterday + 4 today
+        assertEquals(50L, weekState.periodSavedMinutes) // 5 * 10 = 50 min
+        assertEquals("50 мин", weekState.periodSavedDuration)
+        assertEquals(7, weekState.dailyActivity.size)
     }
 }

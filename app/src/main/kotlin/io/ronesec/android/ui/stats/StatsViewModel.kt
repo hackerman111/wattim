@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.ronesec.android.data.PolicyStore
 import io.ronesec.android.data.StatisticsStore
 import io.ronesec.android.ui.locale.WattimLocale
+import io.ronesec.domain.model.StatsPeriod
 import io.ronesec.domain.model.WallClock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +33,7 @@ class StatsViewModel(
     private val scope: CoroutineScope
         get() = coroutineScope ?: viewModelScope
 
+    private val _selectedPeriod = MutableStateFlow(StatsPeriod.TODAY)
     private val _uiState = MutableStateFlow(StatsUiState(isLoading = true))
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
@@ -48,6 +50,13 @@ class StatsViewModel(
             }
         }
         loadStats()
+    }
+
+    fun onPeriodSelected(period: StatsPeriod) {
+        if (_selectedPeriod.value != period) {
+            _selectedPeriod.value = period
+            loadStats()
+        }
     }
 
     fun onVisible() {
@@ -89,27 +98,38 @@ class StatsViewModel(
                 val presentation = policyStore?.presentationSettings?.value
                 val isRussian = WattimLocale.isRussian(presentation?.language ?: "AUTO")
 
+                val currentPeriod = _selectedPeriod.value
                 val allTime = statisticsStore.getAllTimeSavedLife()
-                val today = statisticsStore.getTodaySummary(now, zoneId)
-                val perApp = statisticsStore.getPerAppStatsToday(now, zoneId)
+                val periodSummary = statisticsStore.getPeriodSummary(currentPeriod, now, zoneId)
+                val perApp = statisticsStore.getPerAppStats(currentPeriod, now, zoneId)
+                val dailyActivity = statisticsStore.getDailyActivity(currentPeriod, now, zoneId)
 
                 val multiplier = allTime.multiplierMinutes
-                val savedTodayMinutes = today.closedCount.toLong() * multiplier.toLong()
+                val savedPeriodMinutes = periodSummary.savedMinutes
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        selectedPeriod = currentPeriod,
                         allTimeSavedDuration = DurationFormatter.format(allTime.totalSavedMinutes, isRussian),
                         allTimeSavedMinutes = allTime.totalSavedMinutes,
                         allTimeAvoidedCount = allTime.totalClosedCount,
-                        savedTodayDuration = DurationFormatter.format(savedTodayMinutes, isRussian),
-                        savedTodayMinutes = savedTodayMinutes,
+                        savedTodayDuration = DurationFormatter.format(savedPeriodMinutes, isRussian),
+                        savedTodayMinutes = savedPeriodMinutes,
                         multiplierMinutes = multiplier,
-                        todayTotalAttempts = today.totalAttempts,
-                        todayContinuedCount = today.continuedCount,
-                        todayClosedCount = today.closedCount,
-                        todayAvoidedPercent = today.avoidedPercent,
+                        todayTotalAttempts = periodSummary.totalAttempts,
+                        todayContinuedCount = periodSummary.continuedCount,
+                        todayClosedCount = periodSummary.closedCount,
+                        todayAvoidedPercent = periodSummary.avoidedPercent,
+                        periodSavedDuration = DurationFormatter.format(savedPeriodMinutes, isRussian),
+                        periodSavedMinutes = savedPeriodMinutes,
+                        periodTotalAttempts = periodSummary.totalAttempts,
+                        periodContinuedCount = periodSummary.continuedCount,
+                        periodClosedCount = periodSummary.closedCount,
+                        periodAvoidedPercent = periodSummary.avoidedPercent,
+                        appStats = perApp,
                         appStatsToday = perApp,
+                        dailyActivity = dailyActivity,
                         errorMessage = null
                     )
                 }
