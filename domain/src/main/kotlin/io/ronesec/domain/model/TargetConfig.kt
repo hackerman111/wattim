@@ -1,13 +1,33 @@
 package io.ronesec.domain.model
 
 enum class AnimationMode(
-    val revealsRemainingTime: Boolean = true
+    val revealsRemainingTime: Boolean = false
 ) {
     FILL,
     PULSE,
+    WAVE,
+    ORBIT,
+    RIPPLE,
+
+    @Deprecated("Use ORBIT instead", ReplaceWith("ORBIT"))
     CIRCLE,
-    WAVE(revealsRemainingTime = false),
-    FILL_2(revealsRemainingTime = false)
+
+    @Deprecated("Use FILL instead", ReplaceWith("FILL"))
+    FILL_2;
+
+    companion object {
+        fun fromString(value: String?): AnimationMode {
+            return when (value) {
+                "FILL_2" -> FILL
+                "CIRCLE" -> ORBIT
+                else -> try {
+                    if (value != null) valueOf(value) else FILL
+                } catch (_: Exception) {
+                    FILL
+                }
+            }
+        }
+    }
 }
 
 data class BackoffConfig(

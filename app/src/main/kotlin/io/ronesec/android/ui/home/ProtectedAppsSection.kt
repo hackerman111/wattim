@@ -114,7 +114,9 @@ fun ProtectedAppRow(
         AnimationMode.FILL -> stringResource(R.string.anim_fill)
         AnimationMode.PULSE -> stringResource(R.string.anim_pulse)
         AnimationMode.CIRCLE -> stringResource(R.string.anim_circle)
+        AnimationMode.ORBIT -> stringResource(R.string.anim_orbit)
         AnimationMode.WAVE -> stringResource(R.string.anim_wave)
+        AnimationMode.RIPPLE -> stringResource(R.string.anim_ripple)
         AnimationMode.FILL_2 -> stringResource(R.string.anim_fill_2)
     }
     val secUnit = stringResource(R.string.unit_sec)

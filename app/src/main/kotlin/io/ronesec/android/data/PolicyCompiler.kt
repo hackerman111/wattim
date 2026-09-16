@@ -25,11 +25,7 @@ import java.time.Instant
 object PolicyCompiler {
 
     fun toTargetConfig(entity: TargetAppEntity): TargetConfig {
-        val anim = try {
-            AnimationMode.valueOf(entity.animation)
-        } catch (_: Exception) {
-            AnimationMode.FILL
-        }
+        val anim = AnimationMode.fromString(entity.animation)
         return TargetConfig(
             packageName = entity.packageName,
             displayName = entity.displayName,

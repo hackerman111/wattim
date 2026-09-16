@@ -82,8 +82,9 @@ fun BreathingCanvas(
         when (style) {
             AnimationMode.FILL -> drawFill(effectiveProgress, colors)
             AnimationMode.PULSE -> drawPulse(effectiveProgress, colors)
-            AnimationMode.CIRCLE -> drawCircleOrbit(effectiveProgress, effectiveElapsed, colors)
+            AnimationMode.CIRCLE, AnimationMode.ORBIT -> drawCircleOrbit(effectiveProgress, effectiveElapsed, colors)
             AnimationMode.WAVE -> drawCyclicWave(effectiveElapsed, colors)
+            AnimationMode.RIPPLE -> drawPulse(effectiveProgress, colors)
             AnimationMode.FILL_2 -> {
                 val fraction = BreathingGeometry.fill2HeightFraction(
                     elapsedMs = effectiveElapsed,

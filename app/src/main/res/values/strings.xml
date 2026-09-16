@@ -81,8 +81,19 @@
     <string name="anim_fill">FILL</string>
     <string name="anim_pulse">PULSE</string>
     <string name="anim_circle">CIRCLE</string>
+    <string name="anim_orbit">ORBIT</string>
     <string name="anim_wave">WAVE</string>
+    <string name="anim_ripple">ZEN</string>
     <string name="anim_fill_2">FILL 2</string>
+
+    <!-- Stats periods -->
+    <string name="stats_period_today">TODAY</string>
+    <string name="stats_period_week">7 DAYS</string>
+    <string name="stats_period_month">30 DAYS</string>
+    <string name="stats_period_all_time">ALL TIME</string>
+    <string name="stats_daily_trend_title">DAILY ACTIVITY</string>
+    <string name="stats_trend_openings">Openings</string>
+    <string name="stats_trend_prevented">Prevented</string>
 
     <!-- Accessibility descriptions -->
     <string name="cd_step_decrease">Decrease value</string>
@@ -342,6 +353,9 @@
 
     <string name="config_overlay_stats_title">OVERLAY STATISTICS</string>
     <string name="config_overlay_stats_desc">Display saved time badge during breathing pause overlay.</string>
+
+    <string name="config_experimental_system_filtering_title">SYSTEM SERVICE FILTER (EXPERIMENTAL)</string>
+    <string name="config_experimental_system_filtering_desc">Automatically filter non-launchable background system services, tablet taskbars, and split-screen dividers to prevent accidental intervention triggers.</string>
 
     <string name="config_permissions_title">PERMISSIONS &amp; STATUS</string>
     <string name="permission_accessibility_desc">Detects foreground app openings</string>
