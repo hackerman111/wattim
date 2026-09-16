@@ -154,14 +154,14 @@ class TargetSettingsViewModelTest {
     }
 
     @Test
-    fun selectingFill2AnimationPersistsCorrectly() = runTest {
+    fun selectingNewAnimationPersistsCorrectly() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
         store.awaitReady()
         advanceUntilIdle()
 
-        viewModel.onAnimationChange(AnimationMode.FILL_2)
-        assertEquals(AnimationMode.FILL_2, viewModel.uiState.value.draft.animation)
+        viewModel.onAnimationChange(AnimationMode.ORBIT)
+        assertEquals(AnimationMode.ORBIT, viewModel.uiState.value.draft.animation)
 
         viewModel.onSave()
         advanceUntilIdle()
@@ -171,7 +171,7 @@ class TargetSettingsViewModelTest {
 
         val saved = store.currentSnapshot.targets[targetPackage]
         assertNotNull(saved)
-        assertEquals(AnimationMode.FILL_2, saved!!.animation)
+        assertEquals(AnimationMode.ORBIT, saved!!.animation)
     }
 
     @Test

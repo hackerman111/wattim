@@ -76,10 +76,9 @@ class T14_InterventionContentAndTimelineTest {
         composeTestRule.onNodeWithText("SOCIAL APP").assertIsDisplayed()
         // Phrase
         composeTestRule.onNodeWithText("Take a breath and pause").assertIsDisplayed()
-        // Phase
-        composeTestRule.onNodeWithText("INHALE").assertIsDisplayed()
-        // Countdown
-        composeTestRule.onNodeWithText(progress.formattedCountdown).assertIsDisplayed()
+        // Phase and Countdown are hidden for all untimed animations
+        composeTestRule.onNodeWithText("INHALE").assertDoesNotExist()
+        composeTestRule.onNodeWithText(progress.formattedCountdown).assertDoesNotExist()
 
         // Action buttons
         composeTestRule.onNodeWithText("EXIT").assertIsDisplayed()
@@ -293,6 +292,6 @@ class T14_InterventionContentAndTimelineTest {
         }
 
         composeTestRule.onAllNodes(androidx.compose.ui.test.hasText("SOCIAL APP"))[0].assertIsDisplayed()
-        composeTestRule.onAllNodes(androidx.compose.ui.test.hasText("EXHALE"))[0].assertIsDisplayed()
+        composeTestRule.onAllNodes(androidx.compose.ui.test.hasText("EXIT"))[0].assertIsDisplayed()
     }
 }

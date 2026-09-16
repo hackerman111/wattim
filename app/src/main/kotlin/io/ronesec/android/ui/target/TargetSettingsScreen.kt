@@ -13,6 +13,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import io.ronesec.android.ui.designsystem.BreathingCanvas
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -350,6 +366,17 @@ private fun AnimationSelectorCard(
     val dimensions = WattimTheme.dimensions
     val typography = WattimTheme.typography
 
+    val infiniteTransition = rememberInfiniteTransition(label = "animation_preview")
+    val elapsed by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 60_000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 60_000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "preview_elapsed"
+    )
+
     val content: @Composable () -> Unit = {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -361,22 +388,61 @@ private fun AnimationSelectorCard(
                 color = colors.textSecondary
             )
 
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(
-                    AnimationMode.FILL to stringResource(R.string.anim_fill),
-                    AnimationMode.PULSE to stringResource(R.string.anim_pulse),
-                    AnimationMode.CIRCLE to stringResource(R.string.anim_circle),
-                    AnimationMode.WAVE to stringResource(R.string.anim_wave),
-                    AnimationMode.FILL_2 to stringResource(R.string.anim_fill_2)
-                ).forEach { (mode, label) ->
-                    TerminalButton(
-                        text = label,
-                        onClick = { onModeSelect(mode) },
-                        variant = if (selectedMode == mode) {
-                            TerminalButtonVariant.PRIMARY
-                        } else {
-                            TerminalButtonVariant.SECONDARY
-                        },
+            // 2-column grid layout of animation preview cards
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AnimationCard(
+                        mode = AnimationMode.FILL,
+                        label = stringResource(R.string.anim_fill),
+                        isSelected = selectedMode == AnimationMode.FILL || selectedMode == AnimationMode.FILL_2,
+                        elapsedMs = elapsed.toLong(),
+                        onSelect = { onModeSelect(AnimationMode.FILL) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    AnimationCard(
+                        mode = AnimationMode.PULSE,
+                        label = stringResource(R.string.anim_pulse),
+                        isSelected = selectedMode == AnimationMode.PULSE,
+                        elapsedMs = elapsed.toLong(),
+                        onSelect = { onModeSelect(AnimationMode.PULSE) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AnimationCard(
+                        mode = AnimationMode.WAVE,
+                        label = stringResource(R.string.anim_wave),
+                        isSelected = selectedMode == AnimationMode.WAVE,
+                        elapsedMs = elapsed.toLong(),
+                        onSelect = { onModeSelect(AnimationMode.WAVE) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    AnimationCard(
+                        mode = AnimationMode.ORBIT,
+                        label = stringResource(R.string.anim_orbit),
+                        isSelected = selectedMode == AnimationMode.ORBIT || selectedMode == AnimationMode.CIRCLE,
+                        elapsedMs = elapsed.toLong(),
+                        onSelect = { onModeSelect(AnimationMode.ORBIT) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    AnimationCard(
+                        mode = AnimationMode.RIPPLE,
+                        label = stringResource(R.string.anim_ripple),
+                        isSelected = selectedMode == AnimationMode.RIPPLE,
+                        elapsedMs = elapsed.toLong(),
+                        onSelect = { onModeSelect(AnimationMode.RIPPLE) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -387,6 +453,71 @@ private fun AnimationSelectorCard(
         TerminalCard(modifier = modifier.fillMaxWidth()) { content() }
     } else {
         content()
+    }
+}
+
+@Composable
+private fun AnimationCard(
+    mode: AnimationMode,
+    label: String,
+    isSelected: Boolean,
+    elapsedMs: Long,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = WattimTheme.colors
+    val typography = WattimTheme.typography
+
+    Box(
+        modifier = modifier
+            .defaultMinSize(minHeight = 84.dp)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) colors.accent else colors.border,
+                shape = RoundedCornerShape(4.dp)
+            )
+            .background(
+                color = if (isSelected) colors.accent.copy(alpha = 0.10f) else colors.surface,
+                shape = RoundedCornerShape(4.dp)
+            )
+            .clickable(
+                role = Role.RadioButton,
+                onClick = onSelect
+            )
+            .semantics {
+                selected = isSelected
+                contentDescription = label
+            }
+            .padding(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .background(colors.background, shape = RoundedCornerShape(2.dp))
+                    .border(0.5.dp, colors.border.copy(alpha = 0.5f), RoundedCornerShape(2.dp))
+            ) {
+                BreathingCanvas(
+                    style = mode,
+                    progress = 0.5f,
+                    elapsedMs = elapsedMs,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            Text(
+                text = label,
+                style = typography.labelSmall,
+                color = if (isSelected) colors.accent else colors.textPrimary,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 

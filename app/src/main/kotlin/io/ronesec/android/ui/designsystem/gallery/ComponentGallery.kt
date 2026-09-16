@@ -163,13 +163,13 @@ internal fun ComponentGallery(
                         BreathingCanvas(style = AnimationMode.PULSE, progress = 0.7f, elapsedMs = 3000L)
                     }
                     Box(modifier = Modifier.weight(1f).height(120.dp).background(colors.surface)) {
-                        BreathingCanvas(style = AnimationMode.CIRCLE, progress = 0.7f, elapsedMs = 3000L)
-                    }
-                    Box(modifier = Modifier.weight(1f).height(120.dp).background(colors.surface)) {
                         BreathingCanvas(style = AnimationMode.WAVE, progress = 0.7f, elapsedMs = 3000L)
                     }
                     Box(modifier = Modifier.weight(1f).height(120.dp).background(colors.surface)) {
-                        BreathingCanvas(style = AnimationMode.FILL_2, progress = 0.7f, elapsedMs = 3000L)
+                        BreathingCanvas(style = AnimationMode.ORBIT, progress = 0.7f, elapsedMs = 3000L)
+                    }
+                    Box(modifier = Modifier.weight(1f).height(120.dp).background(colors.surface)) {
+                        BreathingCanvas(style = AnimationMode.RIPPLE, progress = 0.7f, elapsedMs = 3000L)
                     }
                 }
             }
