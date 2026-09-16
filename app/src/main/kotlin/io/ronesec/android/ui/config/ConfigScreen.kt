@@ -48,6 +48,7 @@ fun ConfigScreen(
     onDismissError: () -> Unit,
     onSetCustomEmergencyMinutes: (Int?) -> Unit = {},
     onRefreshPermissions: () -> Unit = {},
+    onToggleDynamicSystemAppFiltering: (Boolean) -> Unit = {},
     shouldFocusPermissions: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -123,6 +124,12 @@ fun ConfigScreen(
         OverlayStatsCard(
             showOverlayStats = uiState.showOverlayStats,
             onToggleShowOverlayStats = onToggleShowOverlayStats
+        )
+
+        // Experimental dynamic system app filtering toggle
+        ExperimentalProtectionCard(
+            enabled = uiState.dynamicSystemAppFiltering,
+            onToggle = onToggleDynamicSystemAppFiltering
         )
 
         // Custom emergency access duration

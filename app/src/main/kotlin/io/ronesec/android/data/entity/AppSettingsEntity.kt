@@ -14,6 +14,7 @@ data class AppSettingsEntity(
     val pauseKind: String = "NONE", // "NONE", "UNTIL", "INDEFINITE"
     val pauseUntil: Long? = null,
     val customEmergencyMinutes: Int? = null,
+    val dynamicSystemAppFiltering: Boolean = true,
     val rowVersion: Long = 1L
 )
 

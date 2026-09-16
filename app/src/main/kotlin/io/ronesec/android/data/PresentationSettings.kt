@@ -7,5 +7,6 @@ data class PresentationSettings(
     val language: String = "AUTO",
     val showOverlayStats: Boolean = true,
     val savedSessionMinutes: Int = 7,
-    val customEmergencyMinutes: Int? = null
+    val customEmergencyMinutes: Int? = null,
+    val dynamicSystemAppFiltering: Boolean = true
 )

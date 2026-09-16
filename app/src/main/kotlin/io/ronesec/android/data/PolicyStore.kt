@@ -107,7 +107,8 @@ class PolicyStore(
                 language = settings?.language ?: "AUTO",
                 showOverlayStats = settings?.showOverlayStats ?: true,
                 savedSessionMinutes = settings?.savedSessionMinutes ?: 7,
-                customEmergencyMinutes = settings?.customEmergencyMinutes
+                customEmergencyMinutes = settings?.customEmergencyMinutes,
+                dynamicSystemAppFiltering = settings?.dynamicSystemAppFiltering ?: true
             )
             _presentationSettings.value = presentation
 
@@ -341,5 +342,9 @@ class PolicyStore(
 
     suspend fun setCustomEmergencyMinutes(minutes: Int?): Result<Unit> = updateSettings {
         it.copy(customEmergencyMinutes = minutes)
+    }
+
+    suspend fun setDynamicSystemAppFiltering(enabled: Boolean): Result<Unit> = updateSettings {
+        it.copy(dynamicSystemAppFiltering = enabled)
     }
 }

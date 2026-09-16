@@ -28,4 +28,7 @@ interface AppSettingsDao {
 
     @Query("UPDATE app_settings SET showOverlayStats = :show, rowVersion = rowVersion + 1 WHERE id = 1")
     suspend fun updateShowOverlayStats(show: Boolean): Int
+
+    @Query("UPDATE app_settings SET dynamicSystemAppFiltering = :enabled, rowVersion = rowVersion + 1 WHERE id = 1")
+    suspend fun updateDynamicSystemAppFiltering(enabled: Boolean): Int
 }

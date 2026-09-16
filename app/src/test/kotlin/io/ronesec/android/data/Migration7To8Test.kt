@@ -9,28 +9,28 @@ import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
-class Migration4To5Test {
+class Migration7To8Test {
 
     @Test
-    fun migrationPreservesExistingTargetAndUsesAttentionCheckDefaults() = runTest {
+    fun migrationPreservesExistingSettingsAndAddsDynamicSystemFilteringDefault() = runTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val name = "attention-check-migration.db"
+        val name = "system-filtering-migration.db"
         context.deleteDatabase(name)
         val schemaFile = listOf(
-            File("schemas/io.ronesec.android.data.WattimDatabase/4.json"),
-            File("app/schemas/io.ronesec.android.data.WattimDatabase/4.json")
+            File("schemas/io.ronesec.android.data.WattimDatabase/7.json"),
+            File("app/schemas/io.ronesec.android.data.WattimDatabase/7.json")
         ).first { it.exists() }
         val schema = JSONObject(schemaFile.readText()).getJSONObject("database")
         val helper = FrameworkSQLiteOpenHelperFactory().create(
             SupportSQLiteOpenHelper.Configuration.builder(context).name(name)
-                .callback(object : SupportSQLiteOpenHelper.Callback(4) {
+                .callback(object : SupportSQLiteOpenHelper.Callback(7) {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         val entities = schema.getJSONArray("entities")
                         for (index in 0 until entities.length()) {
@@ -45,30 +45,23 @@ class Migration4To5Test {
                     override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
                 }).build()
         )
-        // Schema 4 columns: packageName, displayName, enabled, phrase, animation, durationMs, reinterventionMs,
-        // quickReturnGraceMs, growthEnabled, growthPercent, growthWindowMs, rowVersion, twoStageUnlock,
-        // unlockCodeLength, requireEmergencyCode, randomDurationEnabled, randomMaxDurationMs (17 columns)
+        // Schema 7 app_settings columns: 9 columns
         helper.writableDatabase.execSQL(
-            "INSERT INTO target_apps VALUES ('sample.app', 'Sample', 1, 'Breathe', 'FILL', 8000, 300000, 0, 0, 20, 3600000, 7, 1, 6, 1, 1, 12000)"
+            "INSERT INTO app_settings VALUES (1, 'NORD', 'ru', 10, 1, 'NONE', NULL, 15, 3)"
         )
         helper.close()
 
         val database = Room.databaseBuilder(context, WattimDatabase::class.java, name)
-            .addMigrations(WattimDatabase.MIGRATION_4_5, WattimDatabase.MIGRATION_5_6, WattimDatabase.MIGRATION_6_7, WattimDatabase.MIGRATION_7_8).allowMainThreadQueries().build()
+            .addMigrations(WattimDatabase.MIGRATION_7_8).allowMainThreadQueries().build()
         try {
-            val target = database.targetAppDao().getTarget("sample.app")!!
-            assertEquals("Sample", target.displayName)
-            assertEquals("Breathe", target.phrase)
-            assertEquals(7L, target.rowVersion)
-            assertEquals(true, target.twoStageUnlock)
-            assertEquals(6, target.unlockCodeLength)
-            assertEquals(true, target.requireEmergencyCode)
-            assertEquals(true, target.randomDurationEnabled)
-            assertEquals(12000L, target.randomMaxDurationMs)
-            assertFalse(target.attentionChecksEnabled)
-            assertEquals(1, target.attentionCheckCount)
-            assertEquals(4, target.attentionCheckCodeLength)
-            assertEquals(5000L, target.attentionCheckTimeoutMs)
+            val settings = database.appSettingsDao().getSettings()!!
+            assertEquals("NORD", settings.themeId)
+            assertEquals("ru", settings.language)
+            assertEquals(10, settings.savedSessionMinutes)
+            assertEquals(true, settings.showOverlayStats)
+            assertEquals(15, settings.customEmergencyMinutes)
+            assertEquals(3L, settings.rowVersion)
+            assertTrue("dynamicSystemAppFiltering must default to true", settings.dynamicSystemAppFiltering)
         } finally {
             database.close()
             context.deleteDatabase(name)

@@ -12,6 +12,7 @@ data class ConfigUiState(
     val selectedLanguage: String = "AUTO",
     val savedSessionMinutes: Int = 7,
     val showOverlayStats: Boolean = true,
+    val dynamicSystemAppFiltering: Boolean = true,
     val accessibilityState: PermissionState = PermissionState.Denied,
     val mediaControlState: PermissionState = PermissionState.Denied,
     val overlayState: PermissionState = PermissionState.Denied,

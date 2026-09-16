@@ -368,4 +368,121 @@ class T09_ForegroundIngressAndSubscriptionTest {
         val c3 = ingress.pollNextEvent() as ProtectionEvent.ForegroundCandidate
         assertEquals("com.app.1", c3.packageName)
     }
+
+    @Test
+    fun foregroundTracker_filtersHonorSystemPackagesAndDynamicSystemPackages() {
+        val dynamicSystemPackages = mutableSetOf("com.oem.custom.service")
+        val tracker = ForegroundTracker(
+            ownPackageName = "io.ronesec.android",
+            systemPackageProvider = { pkg -> dynamicSystemPackages.contains(pkg) }
+        )
+
+        // Honor OEM system services
+        val honorServices = listOf(
+            "com.hihonor.android.internal.app",
+            "com.hihonor.smartdock",
+            "com.hihonor.sidebar",
+            "com.hihonor.floating",
+            "com.hihonor.magicfloating",
+            "com.hihonor.magichand",
+            "com.hihonor.touchpanel",
+            "com.hihonor.iaware"
+        )
+        for ((index, pkg) in honorServices.withIndex()) {
+            val event = RawAccessibilityPayload(
+                eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+                packageName = pkg,
+                uptimeMs = 5000L + index
+            )
+            assertNull("Honor system service $pkg must be filtered", tracker.normalizeEvent(event))
+        }
+
+        // Dynamic system package via provider
+        val dynamicEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "com.oem.custom.service",
+            uptimeMs = 6000L
+        )
+        assertNull("Dynamic system service must be filtered", tracker.normalizeEvent(dynamicEvent))
+    }
+
+    @Test
+    fun foregroundTracker_filtersLauncherTaskbarNoiseOnTablets() {
+        val tracker = ForegroundTracker(ownPackageName = "io.ronesec.android")
+
+        // 1. TaskbarView from Honor launcher is filtered
+        val honorTaskbarEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "com.hihonor.android.launcher",
+            className = "com.android.launcher3.taskbar.TaskbarView",
+            uptimeMs = 7000L
+        )
+        assertNull("Honor TaskbarView must be filtered as noise", tracker.normalizeEvent(honorTaskbarEvent))
+
+        // 2. FrameLayout from launcher is filtered
+        val frameLayoutLauncher = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "com.hihonor.android.launcher",
+            className = "android.widget.FrameLayout",
+            uptimeMs = 7001L
+        )
+        assertNull("Launcher FrameLayout must be filtered as noise", tracker.normalizeEvent(frameLayoutLauncher))
+
+        // 3. ViewGroup from launcher is filtered
+        val viewGroupLauncher = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "com.android.launcher3",
+            className = "android.view.ViewGroup",
+            uptimeMs = 7002L
+        )
+        assertNull("Launcher ViewGroup must be filtered as noise", tracker.normalizeEvent(viewGroupLauncher))
+
+        // 4. Actual Honor home activity is NOT filtered and recognized as launcher departure
+        val honorHomeEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "com.hihonor.android.launcher",
+            className = "com.hihonor.android.launcher.unihome.UniHomeLauncher",
+            uptimeMs = 7003L
+        )
+        val honorHomeResult = tracker.normalizeEvent(honorHomeEvent) as? ProtectionEvent.ForegroundCandidate
+        assertNotNull("Actual Honor launcher Activity must not be filtered", honorHomeResult)
+        assertTrue(honorHomeResult!!.isLauncher)
+        assertEquals("com.hihonor.android.launcher", honorHomeResult.packageName)
+
+        // 5. Regular target app using FrameLayout is NOT filtered
+        val targetFrameLayout = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "org.telegram.messenger",
+            className = "android.widget.FrameLayout",
+            uptimeMs = 7004L
+        )
+        val targetResult = tracker.normalizeEvent(targetFrameLayout) as? ProtectionEvent.ForegroundCandidate
+        assertNotNull("Target app with FrameLayout must not be filtered", targetResult)
+        assertEquals("org.telegram.messenger", targetResult!!.packageName)
+        assertFalse(targetResult.isLauncher)
+    }
+
+    @Test
+    fun foregroundTracker_filtersTransientWindowsOnTablets() {
+        val tracker = ForegroundTracker(ownPackageName = "io.ronesec.android")
+
+        val transientClasses = listOf(
+            "com.android.launcher3.taskbar.TaskbarView",
+            "com.hihonor.smartdock.SmartDockView",
+            "android.widget.Tooltip",
+            "com.google.android.material.snackbar.Snackbar",
+            "android.widget.FloatingToolbar",
+            "android.widget.DropDownListView"
+        )
+
+        for ((index, cls) in transientClasses.withIndex()) {
+            val event = RawAccessibilityPayload(
+                eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+                packageName = "org.telegram.messenger",
+                className = cls,
+                uptimeMs = 8000L + index
+            )
+            assertNull("Transient class $cls must be filtered", tracker.normalizeEvent(event))
+        }
+    }
 }

@@ -692,8 +692,35 @@ object ProtectionReducer {
 
         return when (decision) {
             is Decision.Allow -> {
+                val resolvedSession: ActiveSession?
+                val updatedRuntime: RuntimeState
+                if (decision.reason == AllowReason.QUICK_RETURN) {
+                    val target = context.runtimeState.snapshot.targets[packageName]
+                    val reinterventionMs = target?.reinterventionMs ?: 0L
+                    val session = existingSession ?: ActiveSession(
+                        sessionId = context.nextSessionId(),
+                        packageName = packageName,
+                        cycle = 1,
+                        attemptId = context.nextAttemptId()
+                    )
+                    resolvedSession = session
+                    val newPermit: SessionPermit
+                    if (reinterventionMs > 0L) {
+                        val expiresElapsed = context.nowElapsedMs + reinterventionMs
+                        newPermit = SessionPermit(packageName, session.sessionId, expiresElapsed)
+                        effects += ProtectionEffect.ScheduleTemporalBoundary(reinterventionMs, expiresElapsed)
+                    } else {
+                        newPermit = SessionPermit(packageName, session.sessionId, expiresElapsedMs = null)
+                    }
+                    val updatedPermits = context.runtimeState.sessionPermits + (packageName to newPermit)
+                    updatedRuntime = context.runtimeState.copy(sessionPermits = updatedPermits)
+                } else {
+                    resolvedSession = existingSession
+                    updatedRuntime = context.runtimeState
+                }
+
                 val newState = ProtectionState.Granted(
-                    session = existingSession,
+                    session = resolvedSession,
                     packageName = packageName,
                     reason = decision.reason
                 )
@@ -702,7 +729,7 @@ object ProtectionReducer {
                     nowWall = context.nowWall,
                     nowElapsedMs = context.nowElapsedMs,
                     zoneId = context.zoneId,
-                    runtimeState = context.runtimeState
+                    runtimeState = updatedRuntime
                 )
                 if (boundaryDelay != null) {
                     effects += ProtectionEffect.ScheduleTemporalBoundary(
@@ -710,7 +737,7 @@ object ProtectionReducer {
                         boundaryToken = context.nowElapsedMs + boundaryDelay
                     )
                 }
-                ReducerResult(newState, effects, context.runtimeState)
+                ReducerResult(newState, effects, updatedRuntime)
             }
 
             is Decision.Block -> {

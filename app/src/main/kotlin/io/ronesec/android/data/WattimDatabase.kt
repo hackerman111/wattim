@@ -36,7 +36,7 @@ import io.ronesec.android.data.entity.TargetAppEntity
         AppSettingsEntity::class,
         PolicyRevisionEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class WattimDatabase : RoomDatabase() {
@@ -98,6 +98,12 @@ abstract class WattimDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE app_settings ADD COLUMN dynamicSystemAppFiltering INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
         @Volatile
         private var INSTANCE: WattimDatabase? = null
 
@@ -108,7 +114,7 @@ abstract class WattimDatabase : RoomDatabase() {
                     WattimDatabase::class.java,
                     DATABASE_NAME
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                 .build().also { INSTANCE = it }
             }
         }

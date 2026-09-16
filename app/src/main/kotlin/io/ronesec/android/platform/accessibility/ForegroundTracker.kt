@@ -28,6 +28,7 @@ class ForegroundTracker(
     val ownPackageName: String = "io.ronesec.android",
     val mainActivityClassName: String = "io.ronesec.android.ui.MainActivity",
     private val imePackageProvider: (() -> Set<String>)? = null,
+    private val systemPackageProvider: ((String) -> Boolean)? = null,
     private val knownLauncherPackages: MutableSet<String> = mutableSetOf(
         "com.google.android.apps.nexuslauncher",
         "com.android.launcher",
@@ -78,12 +79,30 @@ class ForegroundTracker(
     }
 
     fun isSystemUi(packageName: String?): Boolean {
-        return packageName != null && (
-            packageName == SYSTEM_UI_PACKAGE ||
+        if (packageName == null) return false
+        if (packageName == SYSTEM_UI_PACKAGE ||
             packageName == ANDROID_FRAMEWORK_PACKAGE ||
             packageName == "com.hihonor.systemui" ||
-            packageName == "com.huawei.systemui"
-        )
+            packageName == "com.huawei.systemui" ||
+            packageName == "com.hihonor.smartdock" ||
+            packageName == "com.hihonor.sidebar" ||
+            packageName == "com.hihonor.android.internal.app" ||
+            packageName == "com.hihonor.floating" ||
+            packageName == "com.hihonor.magicfloating" ||
+            packageName == "com.hihonor.magichand" ||
+            packageName == "com.hihonor.touchpanel" ||
+            packageName == "com.hihonor.iaware" ||
+            packageName == "com.hihonor.multiscreen" ||
+            packageName == "com.hihonor.screenrecorder" ||
+            packageName == "com.huawei.smartdock" ||
+            packageName == "com.huawei.sidebar" ||
+            packageName == "com.huawei.android.internal.app" ||
+            packageName.startsWith("com.hihonor.systemui.") ||
+            packageName.startsWith("com.huawei.systemui.")
+        ) {
+            return true
+        }
+        return systemPackageProvider?.invoke(packageName) == true
     }
 
     fun isTransientWindow(className: String?): Boolean {
@@ -98,6 +117,13 @@ class ForegroundTracker(
                 className.contains("PopupWindow") ||
                 className.contains("PopupDecorView") ||
                 className.contains("PopupViewContainer") ||
+                className.contains("Taskbar") ||
+                className.contains("SmartDock") ||
+                className.contains("Tooltip") ||
+                className.contains("Snackbar") ||
+                className.contains("FloatingToolbar") ||
+                className.contains("DropDown") ||
+                className.contains("Dropdown") ||
                 className.endsWith("Dialog") ||
                 className.endsWith("\$Dialog") ||
                 className.endsWith("BottomSheet") ||
@@ -111,6 +137,17 @@ class ForegroundTracker(
     }
 
     fun isPopupWindow(className: String?): Boolean = isTransientWindow(className)
+
+    fun isLauncherTaskbarNoise(className: String?): Boolean {
+        if (className.isNullOrBlank()) return false
+        if (className.endsWith("Activity") || className.endsWith("Launcher")) return false
+        return className.contains("Taskbar") ||
+                className.contains("SmartDock") ||
+                className == "android.widget.FrameLayout" ||
+                className == "android.view.ViewGroup" ||
+                className == "android.widget.LinearLayout" ||
+                className == "android.widget.RelativeLayout"
+    }
 
     fun normalizeEvent(payload: RawAccessibilityPayload): ProtectionEvent? {
         // Only TYPE_WINDOW_STATE_CHANGED is authoritative for package transitions
@@ -140,6 +177,11 @@ class ForegroundTracker(
 
         // Filter attached sub-windows, popups, and menus
         if (payload.isSubWindow || isTransientWindow(payload.className)) {
+            return null
+        }
+
+        // Filter launcher taskbar / dock noise on tablets
+        if (isLauncher(pkg) && isLauncherTaskbarNoise(payload.className)) {
             return null
         }
 

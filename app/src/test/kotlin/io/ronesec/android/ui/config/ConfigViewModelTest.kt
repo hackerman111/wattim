@@ -81,6 +81,7 @@ class ConfigViewModelTest {
         assertEquals("AUTO", state.selectedLanguage)
         assertEquals(7, state.savedSessionMinutes)
         assertTrue(state.showOverlayStats)
+        assertTrue(state.dynamicSystemAppFiltering)
         assertEquals(PermissionState.Denied, state.accessibilityState)
         assertEquals(PermissionState.Denied, state.mediaControlState)
         assertEquals(PermissionState.Denied, state.overlayState)
@@ -174,6 +175,31 @@ class ConfigViewModelTest {
 
         val state = viewModel.uiState.first { !it.showOverlayStats }
         assertFalse(state.showOverlayStats)
+    }
+
+    @Test
+    fun `onToggleDynamicSystemAppFiltering updates policyStore and uiState`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val policyStore = PolicyStore(database, wallClock, backgroundScope, dispatcher)
+        policyStore.awaitReady()
+        advanceUntilIdle()
+
+        val viewModel = ConfigViewModel(
+            policyStore = policyStore,
+            permissionMonitor = permissionMonitor,
+            settingsIntentAdapter = settingsAdapter,
+            coroutineScope = backgroundScope,
+            ioDispatcher = dispatcher
+        )
+
+        val initialState = viewModel.uiState.first { it.dynamicSystemAppFiltering }
+        assertTrue(initialState.dynamicSystemAppFiltering)
+
+        viewModel.onToggleDynamicSystemAppFiltering(false)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.first { !it.dynamicSystemAppFiltering }
+        assertFalse(state.dynamicSystemAppFiltering)
     }
 
     @Test

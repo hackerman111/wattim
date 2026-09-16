@@ -44,6 +44,7 @@ class ConfigViewModel(
                             selectedLanguage = settings.language,
                             savedSessionMinutes = settings.savedSessionMinutes,
                             showOverlayStats = settings.showOverlayStats,
+                            dynamicSystemAppFiltering = settings.dynamicSystemAppFiltering,
                             customEmergencyMinutes = settings.customEmergencyMinutes
                         )
                     }
@@ -109,6 +110,16 @@ class ConfigViewModel(
             val result = store.setShowOverlayStats(show)
             if (result.isFailure) {
                 _uiState.update { it.copy(errorMessage = "Failed to update overlay statistics toggle") }
+            }
+        }
+    }
+
+    fun onToggleDynamicSystemAppFiltering(enabled: Boolean) {
+        val store = policyStore ?: return
+        scope.launch(ioDispatcher) {
+            val result = store.setDynamicSystemAppFiltering(enabled)
+            if (result.isFailure) {
+                _uiState.update { it.copy(errorMessage = "Failed to update dynamic system app filtering toggle") }
             }
         }
     }

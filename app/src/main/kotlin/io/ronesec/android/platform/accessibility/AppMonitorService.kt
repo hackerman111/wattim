@@ -85,8 +85,38 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
         }
     }
 
+    private val systemPackageCache = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+
+    internal fun isPureSystemPackage(packageName: String): Boolean {
+        val app = application as? WattimApplication
+        val enabled = app?.policyStore?.presentationSettings?.value?.dynamicSystemAppFiltering ?: true
+        if (!enabled) return false
+
+        return systemPackageCache.computeIfAbsent(packageName) { pkg ->
+            try {
+                if (foregroundTracker.isLauncher(pkg)) return@computeIfAbsent false
+                val snapshot = app?.policyStore?.currentSnapshot
+                if (snapshot != null && snapshot.targets.containsKey(pkg)) {
+                    return@computeIfAbsent false
+                }
+
+                val appInfo = packageManager.getApplicationInfo(pkg, 0)
+                val isSystem = (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0 ||
+                        (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+
+                if (!isSystem) return@computeIfAbsent false
+
+                val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+                launchIntent == null
+            } catch (_: Exception) {
+                false
+            }
+        }
+    }
+
     private val foregroundTracker = ForegroundTracker(
-        imePackageProvider = { queryEnabledImePackages() }
+        imePackageProvider = { queryEnabledImePackages() },
+        systemPackageProvider = { isPureSystemPackage(it) }
     )
     private val subscriptionController = SubscriptionController(object : AccessibilityServiceConfigAdapter {
         override fun getServiceInfo(): AccessibilityServiceInfo? = this@AppMonitorService.serviceInfo
@@ -285,9 +315,7 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
             if (window != null) {
                 if (window.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD) {
                     isImeWindow = true
-                } else if (window.type == AccessibilityWindowInfo.TYPE_SYSTEM ||
-                    window.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY
-                ) {
+                } else if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) {
                     isSystemWindow = true
                 }
                 if (window.parent != null) {
@@ -390,5 +418,6 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
         serviceScope = null
         foregroundTracker.resetWatermark()
         subscriptionController.reset()
+        systemPackageCache.clear()
     }
 }
