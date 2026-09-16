@@ -1,0 +1,23 @@
+[package]
+name = "wattim"
+version = "0.1.0"
+edition = "2021"
+description = "Анти-думскроллинг демон для Hyprland: перемешивает окна, брошенные ради других приложений"
+
+[[bin]]
+name = "wattim"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+rand = "0.8"
+dirs = "5"
+inquire = "0.7"
+daemonize = "0.5"
+indexmap = "=2.2.6"
+
+[profile.release]
+opt-level = 2
