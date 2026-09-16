@@ -10,8 +10,25 @@ data class PerAppStatRow(
     val totalClosed: Int
 )
 
+data class AttemptEventRow(
+    val timestamp: Long,
+    val outcome: String
+)
+
 @Dao
 interface StatisticsDao {
+
+    @Query(
+        """
+        SELECT timestamp, outcome
+        FROM open_attempts
+        WHERE timestamp >= :startEpochMs
+          AND timestamp < :endEpochMs
+          AND outcome IN ('CONTINUED', 'ABANDONED', 'BLOCKED')
+        ORDER BY timestamp ASC
+        """
+    )
+    suspend fun getAttemptEvents(startEpochMs: Long, endEpochMs: Long): List<AttemptEventRow>
 
     @Query(
         """

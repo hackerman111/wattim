@@ -223,5 +223,41 @@ class T20_StatisticsStoreTest {
         assertEquals("com.app.b", perApp[1].packageName)
         assertEquals(2, perApp[1].totalOpenings)
         assertEquals(2, perApp[1].totalClosed)
+
+        // Verify Week Summary (includes yesterday + today)
+        // Yesterday: 1 closed (yest-1), 1 continued (yest-2) = 2 attempts
+        // Today: 6 non-interrupted attempts, 4 closed, 2 continued
+        // Week total: 2 + 6 = 8 attempts, 5 closed, 3 continued, avoided = 5/8 = 63%
+        val weekSummary = statsStore.getPeriodSummary(io.ronesec.domain.model.StatsPeriod.WEEK)
+        assertEquals(8, weekSummary.totalAttempts)
+        assertEquals(5, weekSummary.closedCount)
+        assertEquals(3, weekSummary.continuedCount)
+        assertEquals(63, weekSummary.avoidedPercent)
+
+        // Verify Daily Activity for Week: exactly 7 points
+        val dailyPoints = statsStore.getDailyActivity(io.ronesec.domain.model.StatsPeriod.WEEK)
+        assertEquals(7, dailyPoints.size)
+        // The last point is today (index 6)
+        val todayPoint = dailyPoints[6]
+        assertEquals(6, todayPoint.totalOpenings)
+        assertEquals(4, todayPoint.totalClosed)
+        // The point before is yesterday (index 5)
+        val yestPoint = dailyPoints[5]
+        assertEquals(2, yestPoint.totalOpenings)
+        assertEquals(1, yestPoint.totalClosed)
+    }
+
+    @Test
+    fun periodBoundsCalculationIsExact() {
+        val statsStore = StatisticsStore(database, wallClock, testDispatcher)
+        val (todayStart, todayEnd) = statsStore.getPeriodBounds(io.ronesec.domain.model.StatsPeriod.TODAY)
+        val (weekStart, weekEnd) = statsStore.getPeriodBounds(io.ronesec.domain.model.StatsPeriod.WEEK)
+        val (allStart, allEnd) = statsStore.getPeriodBounds(io.ronesec.domain.model.StatsPeriod.ALL_TIME)
+
+        assertEquals(0L, allStart)
+        assertEquals(Long.MAX_VALUE, allEnd)
+        assertEquals(todayEnd, weekEnd)
+        // Week spans 7 full days
+        assertEquals(7 * 24 * 3600 * 1000L, weekEnd - weekStart)
     }
 }
