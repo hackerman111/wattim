@@ -201,9 +201,32 @@ pub fn start_background() -> Result<()> {
 
     let daemonize = Daemonize::new().pid_file(&pid_path).stdout(stdout).stderr(stderr);
 
-    match daemonize.start() {
-        Ok(_) => run_foreground(),
-        Err(e) => Err(anyhow::anyhow!("не удалось запустить демон в фоне: {e}")),
+    match daemonize.execute() {
+        daemonize::Outcome::Parent(Ok(_)) => {
+            // Даем дочернему процессу долю секунды на запись pid-файла
+            for _ in 0..10 {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+                if let Ok(Some(pid)) = read_pid() {
+                    println!("[✓] Демон wattim успешно запущен в фоне (PID: {pid}).");
+                    return Ok(());
+                }
+            }
+            println!("[✓] Демон wattim успешно запущен в фоне.");
+            Ok(())
+        }
+        daemonize::Outcome::Parent(Err(e)) => {
+            Err(anyhow::anyhow!("не удалось запустить демон в фоне: {e}"))
+        }
+        daemonize::Outcome::Child(Ok(_)) => {
+            if let Err(e) = run_foreground() {
+                eprintln!("wattim: ошибка в фоновом процессе: {e:#}");
+            }
+            std::process::exit(0);
+        }
+        daemonize::Outcome::Child(Err(e)) => {
+            eprintln!("wattim: ошибка инициализации дочернего процесса: {e}");
+            std::process::exit(1);
+        }
     }
 }
 

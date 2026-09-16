@@ -233,18 +233,9 @@ pub fn run() -> Result<Config> {
     // Автоматический перезапуск фонового демона
     if !cfg.guarded_apps.is_empty() && !cfg.allowed_workspaces.is_empty() {
         println!("Перезапускаю фоновый демон...");
-        match daemon::restart() {
-            Ok(_) => {
-                if let Ok(Some(pid)) = daemon::read_pid() {
-                    println!("[✓] Демон wattim успешно запущен в фоне (PID: {pid}).");
-                } else {
-                    println!("[✓] Демон wattim запущен.");
-                }
-            }
-            Err(e) => {
-                eprintln!("⚠ Не удалось запустить демон в фоне: {e:#}");
-                eprintln!("Вы можете запустить его вручную командой `wattim run`.");
-            }
+        if let Err(e) = daemon::restart() {
+            eprintln!("⚠ Не удалось запустить демон в фоне: {e:#}");
+            eprintln!("Вы можете запустить его вручную командой `wattim run`.");
         }
     } else {
         println!("Демон остановлен, так как список приложений или столов пуст.");

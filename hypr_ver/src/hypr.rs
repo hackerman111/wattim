@@ -91,14 +91,31 @@ pub fn find_client_by_address<'a>(clients: &'a [Client], address: &str) -> Optio
 }
 
 /// Тихо перемещает окно на рабочий стол, не переключая на него фокус пользователя.
+/// Поддерживает современный Lua API Hyprland 0.56+ с фоллбэком на классический dispatch.
 pub fn move_window_silent(address: &str, workspace_id: i32) -> Result<()> {
     let addr = format!("0x{}", norm_address(address));
-    let cmd = format!("dispatch movetoworkspacesilent {workspace_id},address:{addr}");
-    let reply = send_command(&cmd)?;
-    if reply.trim() != "ok" {
-        return Err(anyhow!("Hyprland ответил на dispatch: {}", reply.trim()));
+
+    // 1. Пробуем современный Lua API Hyprland (0.50+)
+    let lua_cmd = format!(
+        r#"repl return hl.dispatch(hl.dsp.window.move({{ window = hl.get_window("{addr}"), workspace = {workspace_id}, silent = true }}))"#
+    );
+    if let Ok(reply) = send_command(&lua_cmd) {
+        if !reply.contains("error:") {
+            return Ok(());
+        }
     }
-    Ok(())
+
+    // 2. Фоллбэк на классический командный dispatch для более старых версий
+    let legacy_cmd = format!("dispatch movetoworkspacesilent {workspace_id},address:{addr}");
+    let legacy_reply = send_command(&legacy_cmd)?;
+    if legacy_reply.trim() == "ok" || !legacy_reply.contains("error:") {
+        return Ok(());
+    }
+
+    Err(anyhow!(
+        "Hyprland не смог переместить окно {addr} на стол {workspace_id}: {}",
+        legacy_reply.trim()
+    ))
 }
 
 #[cfg(test)]
