@@ -10,6 +10,10 @@ use std::io::{Read, Write};
 use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
 
+pub fn is_hyprland_active() -> bool {
+    runtime_dir().is_ok()
+}
+
 fn runtime_dir() -> Result<PathBuf> {
     let xdg = std::env::var("XDG_RUNTIME_DIR")
         .context("XDG_RUNTIME_DIR не установлена — не могу найти сокеты Hyprland")?;
@@ -74,10 +78,11 @@ pub fn get_clients() -> Result<Vec<Client>> {
         .with_context(|| format!("не удалось разобрать список окон Hyprland: {raw}"))
 }
 
-/// Убирает необязательный префикс `0x` и приводит к нижнему регистру,
+/// Убирает необязательный префикс `0x` (в любом регистре) и приводит к нижнему регистру,
 /// чтобы адреса окон из разных источников (события, JSON-запросы) сравнивались надёжно.
 pub fn norm_address(addr: &str) -> String {
-    addr.trim_start_matches("0x").to_lowercase()
+    let lower = addr.trim().to_lowercase();
+    lower.strip_prefix("0x").unwrap_or(&lower).to_string()
 }
 
 pub fn find_client_by_address<'a>(clients: &'a [Client], address: &str) -> Option<&'a Client> {
@@ -94,4 +99,41 @@ pub fn move_window_silent(address: &str, workspace_id: i32) -> Result<()> {
         return Err(anyhow!("Hyprland ответил на dispatch: {}", reply.trim()));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_addresses_properly() {
+        assert_eq!(norm_address("0x5590D2A3B1C0"), "5590d2a3b1c0");
+        assert_eq!(norm_address("5590d2a3b1c0"), "5590d2a3b1c0");
+        assert_eq!(norm_address("0XABC"), "abc");
+    }
+
+    #[test]
+    fn finds_client_by_normalized_address() {
+        let clients = vec![
+            Client {
+                address: "0x5590d2a3b1c0".to_string(),
+                class: "telegram-desktop".to_string(),
+                title: "Telegram".to_string(),
+                workspace: WorkspaceRef { id: 2, name: "2".to_string() },
+            },
+            Client {
+                address: "0x1234abcd".to_string(),
+                class: "firefox".to_string(),
+                title: "Mozilla Firefox".to_string(),
+                workspace: WorkspaceRef { id: 4, name: "4".to_string() },
+            },
+        ];
+
+        let found = find_client_by_address(&clients, "5590D2A3B1C0");
+        assert!(found.is_some());
+        assert_eq!(found.unwrap().class, "telegram-desktop");
+
+        let not_found = find_client_by_address(&clients, "999999");
+        assert!(not_found.is_none());
+    }
 }
