@@ -35,7 +35,8 @@ class ForegroundTracker(
         "com.sec.android.app.launcher",
         "com.miui.home",
         "com.oppo.launcher",
-        "com.huawei.android.launcher"
+        "com.huawei.android.launcher",
+        "com.hihonor.android.launcher"
     ),
     private val knownImePackages: MutableSet<String> = mutableSetOf(
         "com.google.android.inputmethod.latin",
@@ -77,18 +78,39 @@ class ForegroundTracker(
     }
 
     fun isSystemUi(packageName: String?): Boolean {
-        return packageName != null && (packageName == SYSTEM_UI_PACKAGE || packageName == ANDROID_FRAMEWORK_PACKAGE)
+        return packageName != null && (
+            packageName == SYSTEM_UI_PACKAGE ||
+            packageName == ANDROID_FRAMEWORK_PACKAGE ||
+            packageName == "com.hihonor.systemui" ||
+            packageName == "com.huawei.systemui"
+        )
     }
 
-    fun isPopupWindow(className: String?): Boolean {
+    fun isTransientWindow(className: String?): Boolean {
         if (className.isNullOrBlank()) return false
+        // Full activities must not be filtered even if they contain transient-like words
+        if (className.endsWith("Activity")) return false
+
         return className == "android.widget.PopupWindow" ||
                 className == "android.widget.ListPopupWindow" ||
                 className == "android.widget.PopupMenu" ||
                 className == "android.widget.Toast" ||
-                className.endsWith(".PopupWindow") ||
-                className.endsWith("\$PopupWindow")
+                className.contains("PopupWindow") ||
+                className.contains("PopupDecorView") ||
+                className.contains("PopupViewContainer") ||
+                className.endsWith("Dialog") ||
+                className.endsWith("\$Dialog") ||
+                className.endsWith("BottomSheet") ||
+                className.endsWith("\$BottomSheet") ||
+                className.endsWith("Popup") ||
+                className.endsWith("Menu") ||
+                className.endsWith("ContextMenu") ||
+                className.endsWith("Alert") ||
+                className.endsWith("ShareAlert") ||
+                className.endsWith("Sheet")
     }
+
+    fun isPopupWindow(className: String?): Boolean = isTransientWindow(className)
 
     fun normalizeEvent(payload: RawAccessibilityPayload): ProtectionEvent? {
         // Only TYPE_WINDOW_STATE_CHANGED is authoritative for package transitions
@@ -117,7 +139,7 @@ class ForegroundTracker(
         }
 
         // Filter attached sub-windows, popups, and menus
-        if (payload.isSubWindow || isPopupWindow(payload.className)) {
+        if (payload.isSubWindow || isTransientWindow(payload.className)) {
             return null
         }
 

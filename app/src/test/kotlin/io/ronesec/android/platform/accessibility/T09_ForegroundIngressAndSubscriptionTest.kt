@@ -236,6 +236,66 @@ class T09_ForegroundIngressAndSubscriptionTest {
         )
         assertNull("PopupWindow class must be filtered", tracker.normalizeEvent(popupEvent))
 
+        // 5b. Android framework PopupDecorView ignored
+        val popupDecorEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "org.telegram.messenger",
+            className = "android.widget.PopupWindow\$PopupDecorView",
+            uptimeMs = 2004L
+        )
+        assertNull("PopupDecorView must be filtered", tracker.normalizeEvent(popupDecorEvent))
+
+        // 5c. Telegram custom BottomSheet and Dialog ignored
+        val bottomSheetEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "org.telegram.messenger",
+            className = "org.telegram.ui.ActionBar.BottomSheet",
+            uptimeMs = 2004L
+        )
+        assertNull("Telegram BottomSheet must be filtered", tracker.normalizeEvent(bottomSheetEvent))
+
+        val telegramDialogEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "org.telegram.messenger",
+            className = "org.telegram.ui.ActionBar.AlertDialog",
+            uptimeMs = 2004L
+        )
+        assertNull("Telegram AlertDialog must be filtered", tracker.normalizeEvent(telegramDialogEvent))
+
+        // 5d. Real Activity with Dialog in name must NOT be filtered
+        val dialogActivityEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "org.telegram.messenger",
+            className = "org.telegram.ui.DialogActivity",
+            uptimeMs = 2004L
+        )
+        assertNotNull("Activity ending with Activity must NOT be filtered", tracker.normalizeEvent(dialogActivityEvent))
+
+        // 5e. Honor / Huawei system UI filtered
+        val honorSystemUiEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "com.hihonor.systemui",
+            uptimeMs = 2004L
+        )
+        assertNull("Honor system UI must be filtered", tracker.normalizeEvent(honorSystemUiEvent))
+
+        val huaweiSystemUiEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "com.huawei.systemui",
+            uptimeMs = 2004L
+        )
+        assertNull("Huawei system UI must be filtered", tracker.normalizeEvent(huaweiSystemUiEvent))
+
+        // 5f. Honor launcher recognized as launcher
+        val honorLauncherEvent = RawAccessibilityPayload(
+            eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            packageName = "com.hihonor.android.launcher",
+            uptimeMs = 2004L
+        )
+        val honorLauncherCandidate = tracker.normalizeEvent(honorLauncherEvent)
+        assertNotNull("Honor launcher candidate must not be null", honorLauncherCandidate)
+        assertTrue("Honor launcher must be recognized as launcher", (honorLauncherCandidate as ProtectionEvent.ForegroundCandidate).isLauncher)
+
         // 6. Sub-window / attached window ignored
         val subWindowEvent = RawAccessibilityPayload(
             eventType = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,

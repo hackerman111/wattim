@@ -285,7 +285,9 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
             if (window != null) {
                 if (window.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD) {
                     isImeWindow = true
-                } else if (window.type == AccessibilityWindowInfo.TYPE_SYSTEM) {
+                } else if (window.type == AccessibilityWindowInfo.TYPE_SYSTEM ||
+                    window.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY
+                ) {
                     isSystemWindow = true
                 }
                 if (window.parent != null) {
