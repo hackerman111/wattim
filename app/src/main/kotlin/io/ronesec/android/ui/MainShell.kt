@@ -119,7 +119,8 @@ fun MainShell(
                         StatsScreen(
                             uiState = statsUiState,
                             onVisible = { statsViewModel.onVisible() },
-                            onInvisible = { statsViewModel.onInvisible() }
+                            onInvisible = { statsViewModel.onInvisible() },
+                            onPeriodSelected = { statsViewModel.onPeriodSelected(it) }
                         )
                     } else {
                         StatsTabShell(permissionSnapshot = permissionSnapshot)
@@ -142,6 +143,7 @@ fun MainShell(
                             onDismissError = { configViewModel.onDismissError() },
                             onSetCustomEmergencyMinutes = { configViewModel.onSetCustomEmergencyMinutes(it) },
                             onRefreshPermissions = { configViewModel.onRefreshPermissions() },
+                            onToggleDynamicSystemAppFiltering = { configViewModel.onToggleDynamicSystemAppFiltering(it) },
                             shouldFocusPermissions = !permissionSnapshot.areRequiredPermissionsGranted
                         )
                     } else {

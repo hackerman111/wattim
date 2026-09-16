@@ -156,11 +156,23 @@ class T16_StatsAndConfigIntegrationTest {
         composeTestRule.onNodeWithText("SAVED TODAY").assertIsDisplayed()
 
         // Today summary
-        composeTestRule.onNodeWithText("TODAY").performScrollTo().assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText("TODAY"))[0].performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("ATTEMPTS").performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("CONTINUED").performScrollTo().assertIsDisplayed()
         composeTestRule.onAllNodes(hasText("CLOSED"))[0].performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("PREVENTED").performScrollTo().assertIsDisplayed()
+
+        // Verify period selector buttons
+        composeTestRule.onNodeWithText("7 DAYS").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("30 DAYS").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("ALL TIME").performScrollTo().assertIsDisplayed()
+
+        // Tap 7 DAYS and verify Daily Activity chart appears
+        composeTestRule.onNodeWithText("7 DAYS").performClick()
+        composeTestRule.waitUntil(5000) {
+            composeTestRule.onAllNodes(hasText("DAILY ACTIVITY")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("DAILY ACTIVITY").performScrollTo().assertIsDisplayed()
 
         // Per-app statistics table
         composeTestRule.onNodeWithText("APPLICATIONS TODAY").performScrollTo().assertIsDisplayed()
