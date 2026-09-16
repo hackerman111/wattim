@@ -90,30 +90,36 @@ pub fn find_client_by_address<'a>(clients: &'a [Client], address: &str) -> Optio
     clients.iter().find(|c| norm_address(&c.address) == target)
 }
 
-/// Тихо перемещает окно на рабочий стол, не переключая на него фокус пользователя.
+/// Тихо перемещает окно на рабочий стол, гарантируя, что фокус и текущий экран пользователя не переключатся.
 /// Поддерживает современный Lua API Hyprland 0.56+ с фоллбэком на классический dispatch.
 pub fn move_window_silent(address: &str, workspace_id: i32) -> Result<()> {
-    let addr = format!("0x{}", norm_address(address));
+    let norm = norm_address(address);
 
-    // 1. Пробуем современный Lua API Hyprland (0.50+)
+    // 1. Атомарный silent move через современный Lua API Hyprland (0.50+ / 0.56+).
+    // Важно:
+    // - hl.get_window требует формат "address:0x<addr>"
+    // - чтобы перемещение было абсолютно silent (без дергания экрана на целевой стол),
+    //   сохраняем активный рабочий стол и окно, выполняем перемещение и тут же
+    //   в рамках одного вызова возвращаем фокус пользователю.
     let lua_cmd = format!(
-        r#"repl return hl.dispatch(hl.dsp.window.move({{ window = hl.get_window("{addr}"), workspace = {workspace_id}, silent = true }}))"#
+        r#"repl local c_ws = hl.get_active_workspace(); local c_w = hl.get_active_window(); local win = hl.get_window("address:0x{norm}"); if win then hl.dispatch(hl.dsp.window.move({{ window = win, workspace = {workspace_id} }})); if c_ws and c_ws.id ~= {workspace_id} then hl.dispatch(hl.dsp.focus({{ workspace = c_ws.id }})); end; if c_w then hl.dispatch(hl.dsp.focus({{ window = c_w }})); end; return "ok"; else return "error: window not found"; end"#
     );
+
     if let Ok(reply) = send_command(&lua_cmd) {
-        if !reply.contains("error:") {
+        if reply.contains("ok") && !reply.contains("error:") {
             return Ok(());
         }
     }
 
-    // 2. Фоллбэк на классический командный dispatch для более старых версий
-    let legacy_cmd = format!("dispatch movetoworkspacesilent {workspace_id},address:{addr}");
+    // 2. Фоллбэк на классический командный dispatch для более старых версий Hyprland
+    let legacy_cmd = format!("dispatch movetoworkspacesilent {workspace_id},address:0x{norm}");
     let legacy_reply = send_command(&legacy_cmd)?;
     if legacy_reply.trim() == "ok" || !legacy_reply.contains("error:") {
         return Ok(());
     }
 
     Err(anyhow!(
-        "Hyprland не смог переместить окно {addr} на стол {workspace_id}: {}",
+        "Hyprland не смог переместить окно 0x{norm} на стол {workspace_id}: {}",
         legacy_reply.trim()
     ))
 }
