@@ -46,6 +46,7 @@ fun ConfigScreen(
     onEnableBattery: () -> Unit,
     onOpenAppInfo: () -> Unit,
     onDismissError: () -> Unit,
+    onOpenAppPermissions: () -> Unit = onOpenAppInfo,
     onSetCustomEmergencyMinutes: (Int?) -> Unit = {},
     onRefreshPermissions: () -> Unit = {},
     onToggleDynamicSystemAppFiltering: (Boolean) -> Unit = {},
@@ -153,6 +154,7 @@ fun ConfigScreen(
             onEnableMediaControl = onEnableMediaControl,
             onEnableOverlay = onEnableOverlay,
             onEnableBattery = onEnableBattery,
+            onOpenAppPermissions = onOpenAppPermissions,
             onRefreshPermissions = onRefreshPermissions,
             isHighlighted = isHighlighted,
             modifier = Modifier.bringIntoViewRequester(bringIntoViewRequester)

@@ -1,9 +1,12 @@
 package io.ronesec.android.ui.config
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +37,7 @@ fun PermissionStatusCard(
     onEnableMediaControl: () -> Unit,
     onEnableOverlay: () -> Unit,
     onEnableBattery: () -> Unit,
+    onOpenAppPermissions: () -> Unit = {},
     onRefreshPermissions: () -> Unit = {},
     isHighlighted: Boolean = false,
     modifier: Modifier = Modifier
@@ -96,6 +100,24 @@ fun PermissionStatusCard(
                 isGranted = batteryState == PermissionState.Granted,
                 onEnable = onEnableBattery
             )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            TerminalButton(
+                text = stringResource(R.string.action_open_app_permissions),
+                onClick = onOpenAppPermissions,
+                variant = TerminalButtonVariant.SECONDARY,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Text(
+                text = stringResource(R.string.permission_auto_revoke_hint),
+                fontFamily = typography.bodyMedium.fontFamily,
+                fontSize = 11.sp,
+                lineHeight = 16.sp,
+                color = colors.textSecondary,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
     }
 }
@@ -114,6 +136,7 @@ private fun PermissionItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .clickable(onClick = onEnable)
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically

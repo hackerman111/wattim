@@ -425,4 +425,29 @@ class TargetSettingsViewModelTest {
         assertTrue(saved!!.annoyingUnlockEnabled)
         assertEquals(50, saved.annoyingUnlockChancePercent)
     }
+
+    @Test
+    fun togglingEmergencyAccessUpdatesDraftAndPersistsOnSave() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val (store, viewModel) = createViewModel(backgroundScope, dispatcher)
+        store.awaitReady()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.draft.emergencyAccessEnabled)
+
+        viewModel.onToggleEmergencyAccess()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.draft.emergencyAccessEnabled)
+
+        viewModel.onSave()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.first { it.isSaved }
+        assertTrue(state.isSaved)
+
+        val saved = store.currentSnapshot.targets[targetPackage]
+        assertNotNull(saved)
+        assertFalse(saved!!.emergencyAccessEnabled)
+    }
 }

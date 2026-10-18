@@ -169,6 +169,8 @@
     <string name="target_attention_check_annoying_title">ANNOYING UNLOCK</string>
     <string name="target_attention_check_annoying_desc">Typed digits may fail to enter with a configured probability during attention check</string>
     <string name="target_attention_check_annoying_chance_label">Miss chance: %1$d%%</string>
+    <string name="target_emergency_access_title">EMERGENCY ACCESS</string>
+    <string name="target_emergency_access_desc">Allow emergency bypass during breathing pause or code challenge</string>
     <string name="attention_check_prompt_header">ATTENTION CHECK</string>
     <string name="attention_check_instruction">Type the code to continue:</string>
     <string name="attention_check_time_remaining">Remaining: %1$.1fs</string>
@@ -358,6 +360,8 @@
     <string name="config_experimental_system_filtering_desc">Automatically filter non-launchable background system services, tablet taskbars, and split-screen dividers to prevent accidental intervention triggers.</string>
 
     <string name="config_permissions_title">PERMISSIONS &amp; STATUS</string>
+    <string name="action_open_app_permissions">APP PERMISSIONS</string>
+    <string name="permission_auto_revoke_hint">If permissions keep getting revoked by system, tap App Permissions and turn off «Pause app activity if unused», then verify battery optimization is disabled.</string>
     <string name="permission_accessibility_desc">Detects foreground app openings</string>
     <string name="permission_overlay_desc">Displays breathing overlay</string>
     <string name="permission_battery_desc">Keeps protection alive in background</string>

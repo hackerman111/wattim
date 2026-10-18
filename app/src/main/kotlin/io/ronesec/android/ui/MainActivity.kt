@@ -70,7 +70,10 @@ class MainActivity : ComponentActivity() {
 
         val app = applicationContext as? WattimApplication
         val permissionMonitor = app?.permissionMonitor
-        permissionMonitor?.refresh()
+        val permissionSnapshot = permissionMonitor?.refresh()
+        if (permissionSnapshot?.areRequiredPermissionsGranted == true) {
+            FocusForegroundService.start(this)
+        }
         val policyStore = app?.policyStore
         val statisticsStore = app?.statisticsStore
         val packageCatalog = app?.packageCatalog
@@ -126,7 +129,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         isActivityResumed.value = true
-        (applicationContext as? WattimApplication)?.permissionMonitor?.refresh()
+        val snapshot = (applicationContext as? WattimApplication)?.permissionMonitor?.refresh()
+        if (snapshot?.areRequiredPermissionsGranted == true &&
+            FocusForegroundService.status.value != io.ronesec.android.platform.system.FgsStatus.Running
+        ) {
+            FocusForegroundService.start(this)
+        }
     }
 
     override fun onPause() {
@@ -137,7 +145,12 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        (applicationContext as? WattimApplication)?.permissionMonitor?.refresh()
+        val snapshot = (applicationContext as? WattimApplication)?.permissionMonitor?.refresh()
+        if (snapshot?.areRequiredPermissionsGranted == true &&
+            FocusForegroundService.status.value != io.ronesec.android.platform.system.FgsStatus.Running
+        ) {
+            FocusForegroundService.start(this)
+        }
         intent.permissionsRouteOrNull()?.let(routeRequests::trySend)
             ?: intent.codesRouteOrNull()?.let(routeRequests::trySend)
     }

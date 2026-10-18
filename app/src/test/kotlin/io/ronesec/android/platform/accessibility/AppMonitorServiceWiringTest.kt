@@ -45,6 +45,44 @@ class AppMonitorServiceWiringTest {
     }
 
     @Test
+    fun onInterrupt_doesNotTearDownConnection() {
+        val serviceController = Robolectric.buildService(AppMonitorService::class.java).create()
+        val service = serviceController.get()
+        service.onServiceConnected()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertTrue(AppMonitorService.isConnected.value)
+        assertNotNull(service.coordinator)
+        assertNotNull(service.overlayHost)
+
+        service.onInterrupt()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertTrue("onInterrupt must not tear down service connection", AppMonitorService.isConnected.value)
+        assertNotNull("Coordinator must remain active after onInterrupt", service.coordinator)
+        assertNotNull("OverlayHost must remain active after onInterrupt", service.overlayHost)
+
+        serviceController.destroy()
+    }
+
+    @Test
+    fun onUnbind_tearsDownConnection() {
+        val serviceController = Robolectric.buildService(AppMonitorService::class.java).create()
+        val service = serviceController.get()
+        service.onServiceConnected()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertTrue(AppMonitorService.isConnected.value)
+        assertNotNull(service.coordinator)
+
+        service.onUnbind(Intent())
+        shadowOf(Looper.getMainLooper()).idle()
+
+        org.junit.Assert.assertFalse("onUnbind must tear down connection", AppMonitorService.isConnected.value)
+        assertNull("Coordinator must be torn down on unbind", service.coordinator)
+    }
+
+    @Test
     fun targetEventReachesWindowManagerOnMainDispatcher() {
         ShadowSettings.setCanDrawOverlays(true)
         val serviceController = Robolectric.buildService(AppMonitorService::class.java).create()

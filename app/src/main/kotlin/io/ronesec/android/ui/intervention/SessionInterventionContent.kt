@@ -65,6 +65,7 @@ internal fun SessionInterventionContent(
                 length = challenge?.codeLength ?: mode.config.unlockCodeLength,
                 error = challenge?.error == true,
                 emergencyCode = challenge?.emergencyCode,
+                emergencyAccessEnabled = mode.config.emergencyAccessEnabled,
                 onGenerate = { send(ProtectionEvent.GenerateUnlockCode(mode.sessionId, mode.cycle)) },
                 onSubmit = { send(ProtectionEvent.SubmitUnlockCode(mode.sessionId, mode.cycle, it)) },
                 onExit = { send(ProtectionEvent.ActionExit(mode.sessionId)) },

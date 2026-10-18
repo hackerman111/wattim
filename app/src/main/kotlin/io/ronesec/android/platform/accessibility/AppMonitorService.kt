@@ -297,6 +297,9 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
         _isConnected.value = true
         app.permissionMonitor.setAccessibilityConnected(true)
 
+        // Ensure FocusForegroundService is running to prevent OS from killing the process
+        io.ronesec.android.platform.system.FocusForegroundService.start(this)
+
         // Trigger initial metadata resync
         requestResync(currentGeneration, 1L)
     }
@@ -376,7 +379,14 @@ class AppMonitorService : AccessibilityService(), ForegroundResyncPort {
     }
 
     override fun onInterrupt() {
+        // Android calls onInterrupt when accessibility feedback (e.g. spoken/haptic feedback)
+        // should be stopped. Wattim does not provide speech feedback, so we do not tear down
+        // the connection or stop the coordinator here.
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
         tearDownConnection()
+        return super.onUnbind(intent)
     }
 
     override fun onDestroy() {

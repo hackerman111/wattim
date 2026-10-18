@@ -82,33 +82,62 @@ class AndroidPlatformPermissionChecker(
 ) : PlatformPermissionChecker {
 
     override fun isAccessibilityEnabled(): Boolean {
+        if (AppMonitorService.isConnected.value) {
+            return true
+        }
+
         val targetService = ComponentName(context, AppMonitorService::class.java)
         val targetFlat = targetService.flattenToString()
         val targetShort = targetService.flattenToShortString()
 
         // 1. Check Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        val enabledServices = Settings.Secure.getString(
-            context.contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        )
-        if (!enabledServices.isNullOrEmpty()) {
-            val isFound = enabledServices.split(':').any {
-                it.equals(targetFlat, ignoreCase = true) || it.equals(targetShort, ignoreCase = true)
+        try {
+            val enabledServices = Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            )
+            if (!enabledServices.isNullOrEmpty()) {
+                val isFound = enabledServices.split(':').any { token ->
+                    val trimmed = token.trim()
+                    if (trimmed.equals(targetFlat, ignoreCase = true) || trimmed.equals(targetShort, ignoreCase = true)) {
+                        return@any true
+                    }
+                    val cn = ComponentName.unflattenFromString(trimmed)
+                    if (cn != null && cn.packageName == targetService.packageName &&
+                        (cn.className == targetService.className || cn.className.endsWith("AppMonitorService"))
+                    ) {
+                        return@any true
+                    }
+                    trimmed.contains(context.packageName, ignoreCase = true) &&
+                            trimmed.contains("AppMonitorService", ignoreCase = true)
+                }
+                if (isFound) return true
             }
-            if (isFound) return true
-        }
+        } catch (_: Exception) {}
 
         // 2. Check AccessibilityManager list
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
-        if (am != null) {
-            val services = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
-            val isFound = services.any { serviceInfo ->
-                serviceInfo.resolveInfo?.serviceInfo?.let { si ->
-                    si.packageName == targetService.packageName && si.name == targetService.className
-                } ?: false
+        try {
+            val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+            if (am != null) {
+                val services = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+                val isFound = services.any { serviceInfo ->
+                    val id = serviceInfo.id
+                    if (id != null && (id.equals(targetFlat, ignoreCase = true) ||
+                                id.equals(targetShort, ignoreCase = true) ||
+                                (id.contains(context.packageName, ignoreCase = true) && id.contains("AppMonitorService", ignoreCase = true)))) {
+                        return@any true
+                    }
+                    val si = serviceInfo.resolveInfo?.serviceInfo
+                    if (si != null && si.packageName == targetService.packageName &&
+                        (si.name == targetService.className || si.name.endsWith("AppMonitorService"))
+                    ) {
+                        return@any true
+                    }
+                    false
+                }
+                if (isFound) return true
             }
-            if (isFound) return true
-        }
+        } catch (_: Exception) {}
 
         return false
     }
@@ -182,7 +211,7 @@ class PermissionMonitor(
             accessibility = accessibilityState,
             mediaControl = mediaControlState,
             isAccessibilityConnected = if (accessibilityState == PermissionState.Granted) {
-                _statusFlow.value.isAccessibilityConnected
+                _statusFlow.value.isAccessibilityConnected || AppMonitorService.isConnected.value
             } else {
                 false
             },

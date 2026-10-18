@@ -140,6 +140,7 @@ fun MainShell(
                             onEnableOverlay = { configViewModel.onEnableOverlay() },
                             onEnableBattery = { configViewModel.onEnableBattery() },
                             onOpenAppInfo = { configViewModel.onOpenAppInfo() },
+                            onOpenAppPermissions = { configViewModel.onOpenAppPermissions() },
                             onDismissError = { configViewModel.onDismissError() },
                             onSetCustomEmergencyMinutes = { configViewModel.onSetCustomEmergencyMinutes(it) },
                             onRefreshPermissions = { configViewModel.onRefreshPermissions() },

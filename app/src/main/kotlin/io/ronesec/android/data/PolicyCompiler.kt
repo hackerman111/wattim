@@ -54,7 +54,8 @@ object PolicyCompiler {
             attentionCheckCodeLength = entity.attentionCheckCodeLength,
             attentionCheckTimeoutMs = entity.attentionCheckTimeoutMs,
             annoyingUnlockEnabled = entity.annoyingUnlockEnabled,
-            annoyingUnlockChancePercent = entity.annoyingUnlockChancePercent
+            annoyingUnlockChancePercent = entity.annoyingUnlockChancePercent,
+            emergencyAccessEnabled = entity.emergencyAccessEnabled
         )
     }
 
@@ -85,7 +86,8 @@ object PolicyCompiler {
             attentionCheckCodeLength = config.attentionCheckCodeLength,
             attentionCheckTimeoutMs = config.attentionCheckTimeoutMs,
             annoyingUnlockEnabled = config.annoyingUnlockEnabled,
-            annoyingUnlockChancePercent = config.annoyingUnlockChancePercent
+            annoyingUnlockChancePercent = config.annoyingUnlockChancePercent,
+            emergencyAccessEnabled = config.emergencyAccessEnabled
         )
     }
 

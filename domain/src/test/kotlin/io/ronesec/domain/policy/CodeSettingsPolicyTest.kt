@@ -42,6 +42,24 @@ class CodeSettingsPolicyTest {
         }
     }
 
+    @Test
+    fun targetEmergencyAccessEnabledIsPreservedInDecision() {
+        val packageName = "sample.app"
+        for (emergencyAccess in listOf(false, true)) {
+            val target = TargetConfig(
+                packageName, "Sample", emergencyAccessEnabled = emergencyAccess
+            )
+            val snapshot = RuntimePolicySnapshot.EMPTY.copy(
+                targets = mapOf(packageName to target)
+            )
+            val decision = RuleEngine.evaluate(
+                packageName, Instant.parse("2026-09-11T12:00:00Z"), 1_000L,
+                ZoneOffset.UTC, RuntimeState(snapshot)
+            ) as Decision.Intervention
+            assertEquals(emergencyAccess, decision.config.emergencyAccessEnabled)
+        }
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun rejectsEmptyCodes() {
         TargetConfig("sample.app", "Sample", unlockCodeLength = 0)

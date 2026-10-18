@@ -214,12 +214,14 @@ fun InterventionContent(
                             variant = TerminalButtonVariant.SECONDARY
                         )
 
-                        TerminalButton(
-                            text = stringResource(R.string.action_emergency),
-                            onClick = onEmergencyClick,
-                            modifier = Modifier.weight(1f),
-                            variant = TerminalButtonVariant.SECONDARY
-                        )
+                        if (config.emergencyAccessEnabled) {
+                            TerminalButton(
+                                text = stringResource(R.string.action_emergency),
+                                onClick = onEmergencyClick,
+                                modifier = Modifier.weight(1f),
+                                variant = TerminalButtonVariant.SECONDARY
+                            )
+                        }
                     }
                 } else {
                     // On completion: Cancel + Continue (Continue focused once)
@@ -251,7 +253,7 @@ fun InterventionContent(
         }
 
         // Emergency Dialog overlay
-        if (isEmergencyDialogOpen) {
+        if (isEmergencyDialogOpen && config.emergencyAccessEnabled) {
             EmergencyDialog(
                 targetName = targetTitle,
                 onDismissRequest = onDismissEmergency,

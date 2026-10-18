@@ -33,7 +33,8 @@ fun CodeGateContent(
     onGenerate: () -> Unit,
     onSubmit: (String) -> Unit,
     onExit: () -> Unit,
-    onEmergency: () -> Unit
+    onEmergency: () -> Unit,
+    emergencyAccessEnabled: Boolean = true
 ) {
     var input by remember(generated) { mutableStateOf("") }
     Column(
@@ -50,7 +51,9 @@ fun CodeGateContent(
             if (error) Text(stringResource(R.string.code_invalid), color = WattimTheme.colors.error)
             TerminalButton(text = stringResource(R.string.code_confirm), onClick = { onSubmit(input) }, modifier = Modifier.fillMaxWidth())
         }
-        TerminalButton(text = stringResource(R.string.action_emergency), onClick = onEmergency, modifier = Modifier.fillMaxWidth())
+        if (emergencyAccessEnabled) {
+            TerminalButton(text = stringResource(R.string.action_emergency), onClick = onEmergency, modifier = Modifier.fillMaxWidth())
+        }
         TerminalButton(text = stringResource(R.string.action_exit), onClick = onExit, modifier = Modifier.fillMaxWidth())
     }
 }

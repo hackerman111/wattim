@@ -303,12 +303,14 @@ fun AttentionCheckContent(
                     variant = TerminalButtonVariant.SECONDARY
                 )
 
-                TerminalButton(
-                    text = stringResource(R.string.action_emergency),
-                    onClick = onEmergency,
-                    modifier = Modifier.weight(1f),
-                    variant = TerminalButtonVariant.SECONDARY
-                )
+                if (config.emergencyAccessEnabled) {
+                    TerminalButton(
+                        text = stringResource(R.string.action_emergency),
+                        onClick = onEmergency,
+                        modifier = Modifier.weight(1f),
+                        variant = TerminalButtonVariant.SECONDARY
+                    )
+                }
             }
         }
     }

@@ -65,7 +65,8 @@ data class TargetConfig(
     val attentionCheckCodeLength: Int = 4,
     val attentionCheckTimeoutMs: Long = DEFAULT_ATTENTION_CHECK_TIMEOUT_MS,
     val annoyingUnlockEnabled: Boolean = false,
-    val annoyingUnlockChancePercent: Int = DEFAULT_ANNOYING_UNLOCK_CHANCE_PERCENT
+    val annoyingUnlockChancePercent: Int = DEFAULT_ANNOYING_UNLOCK_CHANCE_PERCENT,
+    val emergencyAccessEnabled: Boolean = true
 ) {
     init {
         require(packageName.isNotBlank()) { "Package name cannot be blank" }

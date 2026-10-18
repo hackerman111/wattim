@@ -169,6 +169,8 @@
     <string name="target_attention_check_annoying_title">БЕСЯЧАЯ РАЗБЛОКИРОВКА</string>
     <string name="target_attention_check_annoying_desc">С определенным шансом нажимаемая цифра не введется во время проверки внимания</string>
     <string name="target_attention_check_annoying_chance_label">Шанс пропуска: %1$d%%</string>
+    <string name="target_emergency_access_title">ЭКСТРЕННЫЙ ВХОД</string>
+    <string name="target_emergency_access_desc">Разрешить пропуск дыхательной паузы или ввода кода через экстренное меню</string>
     <string name="attention_check_prompt_header">ПРОВЕРКА ВНИМАНИЯ</string>
     <string name="attention_check_instruction">Введите код для продолжения:</string>
     <string name="attention_check_time_remaining">Осталось: %1$.1f с</string>
@@ -358,6 +360,8 @@
     <string name="config_experimental_system_filtering_desc">Автоматически фильтровать фоновые системные службы, панель задач планшета и разделители экранов во избежание ложных срабатываний.</string>
 
     <string name="config_permissions_title">РАЗРЕШЕНИЯ И СТАТУС</string>
+    <string name="action_open_app_permissions">РАЗРЕШЕНИЯ ПРИЛОЖЕНИЯ</string>
+    <string name="permission_auto_revoke_hint">Если разрешения сбрасываются системой: откройте «Разрешения приложения», отключите «Приостанавливать работу в неактивный период» и выберите «Без ограничений» для батареи.</string>
     <string name="permission_accessibility_desc">Обнаружение запуска приложений</string>
     <string name="permission_overlay_desc">Отображение экрана дыхания</string>
     <string name="permission_battery_desc">Стабильная работа в фоне</string>

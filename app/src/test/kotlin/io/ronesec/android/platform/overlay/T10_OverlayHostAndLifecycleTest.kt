@@ -411,6 +411,25 @@ class T10_OverlayHostAndLifecycleTest {
     }
 
     @Test
+    fun `OverlayPresenter blocks emergency dialog when emergencyAccessEnabled is false`() = runTest {
+        val fakeDispatcher = FakeActionDispatcher()
+        val presenter = OverlayPresenter(
+            actionDispatcher = fakeDispatcher,
+            policyStore = null,
+            statisticsStore = null,
+            scope = this
+        )
+        val session = SessionId(1L, 1L, 1L)
+        val noEmergencyConfig = sampleConfig.copy(emergencyAccessEnabled = false)
+        presenter.showIntervention(session, 1, noEmergencyConfig)
+
+        assertFalse(presenter.uiState.value.isEmergencyDialogOpen)
+        presenter.openEmergencyDialog()
+        assertFalse(presenter.uiState.value.isEmergencyDialogOpen)
+        assertTrue(fakeDispatcher.codeEvents.isEmpty())
+    }
+
+    @Test
     fun `OverlayLifecycleOwner transitions through correct lifecycle states on attach and detach`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val view = View(context)

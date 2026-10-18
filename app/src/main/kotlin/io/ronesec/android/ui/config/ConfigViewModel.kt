@@ -183,6 +183,15 @@ class ConfigViewModel(
         }
     }
 
+    fun onOpenAppPermissions() {
+        val adapter = settingsIntentAdapter ?: return
+        _uiState.update { it.copy(errorMessage = null) }
+        val result = adapter.launchAppPermissionsSafely()
+        if (result.isFailure) {
+            _uiState.update { it.copy(errorMessage = "Unable to open app permissions") }
+        }
+    }
+
     fun onRefreshPermissions() {
         permissionMonitor.refresh()
     }

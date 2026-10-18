@@ -261,6 +261,11 @@ class ConfigViewModelTest {
         viewModel.onOpenAppInfo()
         assertEquals(5, settingsAdapter.launchedIntents.size)
         assertNull(viewModel.uiState.value.errorMessage)
+
+        viewModel.onOpenAppPermissions()
+        assertEquals(6, settingsAdapter.launchedIntents.size)
+        assertEquals("android.intent.action.MANAGE_APP_PERMISSIONS", settingsAdapter.launchedIntents.last().action)
+        assertNull(viewModel.uiState.value.errorMessage)
     }
 
     @Test

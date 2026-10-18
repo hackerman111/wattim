@@ -238,4 +238,36 @@ class AttentionCheckContentTest {
 
         assertEquals(null, submittedCode)
     }
+
+    @Test
+    fun hidesEmergencyButtonWhenEmergencyAccessDisabled() {
+        val noEmergencyConfig = sampleConfig.copy(emergencyAccessEnabled = false)
+        val attentionCheck = AttentionCheckUi(
+            active = true,
+            code = "7492",
+            deadlineElapsedMs = 10000L,
+            timeoutMs = 5000L,
+            pausedElapsedProgressMs = 3000L,
+            totalDurationMs = 10000L,
+            hasError = false
+        )
+        val pausedProgress = BreathingTimeline.calculate(0L, 3000L, 10000L)
+
+        composeTestRule.setContent {
+            WattimTheme {
+                AttentionCheckContent(
+                    config = noEmergencyConfig,
+                    pausedProgress = pausedProgress,
+                    attentionCheck = attentionCheck,
+                    onSubmit = {},
+                    onExit = {},
+                    onEmergency = {},
+                    nowElapsedMs = 5000L
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("EXIT").assertIsDisplayed()
+        composeTestRule.onNodeWithText("EMERGENCY", substring = true).assertDoesNotExist()
+    }
 }

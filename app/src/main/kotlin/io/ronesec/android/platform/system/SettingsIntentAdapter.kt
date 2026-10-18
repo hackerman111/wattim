@@ -55,6 +55,22 @@ open class SettingsIntentAdapter(
         }
     }
 
+    fun createAppPermissionsSettingsIntent(): Intent {
+        return Intent("android.intent.action.MANAGE_APP_PERMISSIONS").apply {
+            putExtra(Intent.EXTRA_PACKAGE_NAME, context.packageName)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+
+    open fun launchAppPermissionsSafely(): Result<Unit> {
+        val permissionsIntent = createAppPermissionsSettingsIntent()
+        val directResult = launchSafely(permissionsIntent)
+        if (directResult.isSuccess) {
+            return directResult
+        }
+        return launchSafely(createAppDetailsSettingsIntent())
+    }
+
     open fun launchSafely(intent: Intent): Result<Unit> {
         return try {
             context.startActivity(intent)
@@ -71,11 +87,29 @@ open class SettingsIntentAdapter(
                 } catch (fallbackEx: Exception) {
                     Result.failure(fallbackEx)
                 }
+            } else if (intent.action == "android.intent.action.MANAGE_APP_PERMISSIONS") {
+                try {
+                    val fallbackIntent = createAppDetailsSettingsIntent()
+                    context.startActivity(fallbackIntent)
+                    return Result.success(Unit)
+                } catch (fallbackEx: Exception) {
+                    Result.failure(fallbackEx)
+                }
             } else {
                 Result.failure(e)
             }
         } catch (e: SecurityException) {
-            Result.failure(e)
+            if (intent.action == "android.intent.action.MANAGE_APP_PERMISSIONS") {
+                try {
+                    val fallbackIntent = createAppDetailsSettingsIntent()
+                    context.startActivity(fallbackIntent)
+                    return Result.success(Unit)
+                } catch (fallbackEx: Exception) {
+                    Result.failure(fallbackEx)
+                }
+            } else {
+                Result.failure(e)
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

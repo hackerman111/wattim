@@ -34,7 +34,8 @@ data class EffectiveInterventionConfig(
     val attentionCheckCodeLength: Int = 4,
     val attentionCheckTimeoutMs: Long = 5_000L,
     val annoyingUnlockEnabled: Boolean = false,
-    val annoyingUnlockChancePercent: Int = 20
+    val annoyingUnlockChancePercent: Int = 20,
+    val emergencyAccessEnabled: Boolean = true
 )
 
 sealed interface Decision {
@@ -264,7 +265,8 @@ object RuleEngine {
                 attentionCheckCodeLength = target.attentionCheckCodeLength,
                 attentionCheckTimeoutMs = target.attentionCheckTimeoutMs,
                 annoyingUnlockEnabled = target.annoyingUnlockEnabled,
-                annoyingUnlockChancePercent = target.annoyingUnlockChancePercent
+                annoyingUnlockChancePercent = target.annoyingUnlockChancePercent,
+                emergencyAccessEnabled = target.emergencyAccessEnabled
             )
         )
     }

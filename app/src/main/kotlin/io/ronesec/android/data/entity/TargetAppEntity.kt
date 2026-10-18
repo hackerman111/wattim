@@ -32,5 +32,6 @@ data class TargetAppEntity(
     @ColumnInfo(defaultValue = "4") val attentionCheckCodeLength: Int = 4,
     @ColumnInfo(defaultValue = "5000") val attentionCheckTimeoutMs: Long = 5_000L,
     @ColumnInfo(defaultValue = "0") val annoyingUnlockEnabled: Boolean = false,
-    @ColumnInfo(defaultValue = "20") val annoyingUnlockChancePercent: Int = 20
+    @ColumnInfo(defaultValue = "20") val annoyingUnlockChancePercent: Int = 20,
+    @ColumnInfo(defaultValue = "1") val emergencyAccessEnabled: Boolean = true
 )

@@ -294,4 +294,38 @@ class T14_InterventionContentAndTimelineTest {
         composeTestRule.onAllNodes(androidx.compose.ui.test.hasText("SOCIAL APP"))[0].assertIsDisplayed()
         composeTestRule.onAllNodes(androidx.compose.ui.test.hasText("EXIT"))[0].assertIsDisplayed()
     }
+
+    @Test
+    fun `during breathing with emergencyAccessEnabled false hides emergency button and shows exit button`() {
+        val disabledEmergencyConfig = testConfig.copy(emergencyAccessEnabled = false)
+        val progress = BreathingTimeline.calculate(
+            startElapsedMs = 10000L,
+            nowElapsedMs = 11250L,
+            durationMs = 5000L
+        )
+
+        composeTestRule.setContent {
+            WattimTheme {
+                InterventionContent(
+                    config = disabledEmergencyConfig,
+                    progress = progress,
+                    showSavedBadge = false,
+                    savedMinutes = 0L,
+                    isEmergencyDialogOpen = false,
+                    onContinue = {},
+                    onExit = {},
+                    onCancel = {},
+                    onEmergencyClick = {},
+                    onDismissEmergency = {},
+                    onEmergencyOnce = {},
+                    onEmergencyTimed = {},
+                    onEmergencyForever = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("EXIT").assertIsDisplayed()
+        composeTestRule.onNodeWithText("EMERGENCY", substring = true).assertDoesNotExist()
+    }
 }
+

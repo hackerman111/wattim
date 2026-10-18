@@ -66,6 +66,7 @@ class TargetSettingsViewModel(
         val attentionTimeoutSec = existing?.let { (it.attentionCheckTimeoutMs / 1000L).toInt() } ?: 5
         val annoyingEnabled = existing?.annoyingUnlockEnabled ?: false
         val annoyingChance = existing?.annoyingUnlockChancePercent ?: 20
+        val emergencyAccess = existing?.emergencyAccessEnabled ?: true
 
         val initialDraft = TargetSettingsDraft(
             packageName = packageName,
@@ -95,7 +96,8 @@ class TargetSettingsViewModel(
             attentionCheckCodeLength = attentionCodeLen,
             attentionCheckTimeoutSeconds = attentionTimeoutSec,
             annoyingUnlockEnabled = annoyingEnabled,
-            annoyingUnlockChancePercent = annoyingChance
+            annoyingUnlockChancePercent = annoyingChance,
+            emergencyAccessEnabled = emergencyAccess
         )
 
         val delays = Backoff.calculateFirstTen(
@@ -239,6 +241,14 @@ class TargetSettingsViewModel(
         updateDraft { it.copy(requireEmergencyCode = enabled) }
     }
 
+    fun onEmergencyAccessEnabledChange(enabled: Boolean) {
+        updateDraft { it.copy(emergencyAccessEnabled = enabled) }
+    }
+
+    fun onToggleEmergencyAccess() {
+        updateDraft { it.copy(emergencyAccessEnabled = !it.emergencyAccessEnabled) }
+    }
+
     fun onOpenPreview() {
         _uiState.update { it.copy(isPreviewOpen = true) }
     }
@@ -301,7 +311,8 @@ class TargetSettingsViewModel(
             attentionCheckCodeLength = draft.attentionCheckCodeLength,
             attentionCheckTimeoutMs = draft.attentionCheckTimeoutSeconds * 1000L,
             annoyingUnlockEnabled = draft.annoyingUnlockEnabled,
-            annoyingUnlockChancePercent = draft.annoyingUnlockChancePercent
+            annoyingUnlockChancePercent = draft.annoyingUnlockChancePercent,
+            emergencyAccessEnabled = draft.emergencyAccessEnabled
         )
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }

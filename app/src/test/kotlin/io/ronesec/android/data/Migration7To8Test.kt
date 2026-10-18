@@ -52,7 +52,7 @@ class Migration7To8Test {
         helper.close()
 
         val database = Room.databaseBuilder(context, WattimDatabase::class.java, name)
-            .addMigrations(WattimDatabase.MIGRATION_7_8).allowMainThreadQueries().build()
+            .addMigrations(WattimDatabase.MIGRATION_7_8, WattimDatabase.MIGRATION_8_9).allowMainThreadQueries().build()
         try {
             val settings = database.appSettingsDao().getSettings()!!
             assertEquals("NORD", settings.themeId)

@@ -29,7 +29,9 @@ fun CodeSettingsCard(
     onUnlockCodeLengthChange: (Int) -> Unit,
     onRequireEmergencyCodeChange: (Boolean) -> Unit,
     enabled: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    emergencyAccessEnabled: Boolean = true,
+    onEmergencyAccessEnabledChange: (Boolean) -> Unit = {}
 ) {
     val dimensions = WattimTheme.dimensions
     TerminalCard(modifier = modifier.fillMaxWidth()) {
@@ -63,12 +65,21 @@ fun CodeSettingsCard(
                 }
             }
             CodeSettingToggle(
-                title = stringResource(R.string.code_settings_emergency),
-                description = stringResource(R.string.code_settings_emergency_description),
-                checked = requireEmergencyCode,
+                title = stringResource(R.string.target_emergency_access_title),
+                description = stringResource(R.string.target_emergency_access_desc),
+                checked = emergencyAccessEnabled,
                 enabled = enabled,
-                onCheckedChange = onRequireEmergencyCodeChange
+                onCheckedChange = onEmergencyAccessEnabledChange
             )
+            if (emergencyAccessEnabled) {
+                CodeSettingToggle(
+                    title = stringResource(R.string.code_settings_emergency),
+                    description = stringResource(R.string.code_settings_emergency_description),
+                    checked = requireEmergencyCode,
+                    enabled = enabled,
+                    onCheckedChange = onRequireEmergencyCodeChange
+                )
+            }
         }
     }
 }

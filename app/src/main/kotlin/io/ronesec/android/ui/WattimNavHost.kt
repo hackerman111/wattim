@@ -215,6 +215,7 @@ fun WattimNavHost(
                     onAttentionCheckTimeoutSecondsChange = targetViewModel::onAttentionCheckTimeoutSecondsChange,
                     onToggleAnnoyingUnlock = targetViewModel::onToggleAnnoyingUnlock,
                     onAnnoyingUnlockChanceChange = targetViewModel::onAnnoyingUnlockChancePercentChange,
+                    onEmergencyAccessEnabledChange = targetViewModel::onEmergencyAccessEnabledChange,
                     onToggleEnabled = { targetViewModel.onToggleEnabled() },
                     onOpenPreview = { targetViewModel.onOpenPreview() },
                     onDismissPreview = { targetViewModel.onDismissPreview() },

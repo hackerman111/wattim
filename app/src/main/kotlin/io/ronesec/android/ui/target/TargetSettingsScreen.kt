@@ -94,7 +94,8 @@ fun TargetSettingsScreen(
     onAttentionCheckCodeLengthChange: (Int) -> Unit = {},
     onAttentionCheckTimeoutSecondsChange: (Int) -> Unit = {},
     onToggleAnnoyingUnlock: () -> Unit = {},
-    onAnnoyingUnlockChanceChange: (Int) -> Unit = {}
+    onAnnoyingUnlockChanceChange: (Int) -> Unit = {},
+    onEmergencyAccessEnabledChange: (Boolean) -> Unit = {}
 ) {
     val colors = WattimTheme.colors
     val dimensions = WattimTheme.dimensions
@@ -218,9 +219,11 @@ fun TargetSettingsScreen(
             twoStageUnlock = draft.twoStageUnlock,
             unlockCodeLength = draft.unlockCodeLength,
             requireEmergencyCode = draft.requireEmergencyCode,
+            emergencyAccessEnabled = draft.emergencyAccessEnabled,
             onTwoStageUnlockChange = onTwoStageUnlockChange,
             onUnlockCodeLengthChange = onUnlockCodeLengthChange,
             onRequireEmergencyCodeChange = onRequireEmergencyCodeChange,
+            onEmergencyAccessEnabledChange = onEmergencyAccessEnabledChange,
             enabled = !state.isLoading
         )
 
