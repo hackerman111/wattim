@@ -1,267 +1,257 @@
-/**
- * wattim Browser Extension - Background Service Worker
- * Evaluates navigation rules, computes exponential delay,
- * handles mindful pauses, session grants, and tab closures.
- */
+// wattim × One Sec × Go Fucking Work — Persistent Background Rule Engine (v2.0 Fixed)
+const DEFAULT_SETTINGS = {
+  "baseDelay": 10,
+  "progressiveStep": 5,
+  "backoffMode": "exponential",
+  "growthPercent": 25,
+  "windowMinutes": 60,
+  "reinterventionMinutes": 5,
+  "tabBlurResetSec": 30,
+  "requireIntention": true,
+  "minIntentionLength": 8,
+  "requireChallengePhrase": true,
+  "challengePhrase": "Я захожу на {domain} строго по делу",
+  "canvasStyle": "PULSE",
+  "themePalette": "gfw_crimson",
+  "pauseMedia": true,
+  "hapticFeedback": true,
+  "touchHoldMode": false,
+  "avgSessionMinutes": 10,
+  "domains": [
+    "youtube.com",
+    "reddit.com",
+    "x.com",
+    "twitter.com",
+    "vk.com",
+    "t.me",
+    "pikabu.ru",
+    "instagram.com",
+    "tiktok.com",
+    "twitch.tv"
+  ],
+  "phrases": [
+    "Серьёзно? Опять сюда? Твои задачи сами себя не закроют, иди работай.",
+    "Ты открыл эту вкладку на чистом рефлексе. Закрой её и займись делом.",
+    "Go Fucking Work. Мемы деградируют и без твоего участия.",
+    "У тебя что, все дедлайны закрыты и на счету миллион долларов? Нет? Тогда за работу.",
+    "Ещё одна минута прокрастинации — и ты снова будешь сидеть ночью в мыле.",
+    "Сделай глубокий вдох, осознай масштаб своей лени и закрой эту вкладку."
+  ],
+  "schedules": [
+    {
+      "id": "work_focus",
+      "name": "Рабочий фокус (Hard Block)",
+      "enabled": false,
+      "mode": "hard_block",
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "start": "09:00",
+      "end": "18:00"
+    }
+  ]
+};
 
-import {
-  extractHostname,
-  matchDomain,
-  calculateBackoffDelay,
-  isScheduleActive
-} from './rule-engine.js';
-
-import {
-  DEFAULT_STORAGE,
-  initStorageWithDefaults,
-  calculateUpdatedStats,
-  getReinterventionSeconds,
-  getStorage,
-  setStorage
-} from '../common/storage.js';
-
-// In-memory state
-// Maps domain -> expiration timestamp (ms)
-const sessionPasses = new Map();
-
-// Attempt history: Array of { domain: string, timestamp: number }
-let attemptHistory = [];
-
-/**
- * Clean up old attempts outside the maximum backoff window (default 60 mins).
- */
-function pruneAttemptHistory(windowMinutes = 60) {
-  const cutoff = Date.now() - windowMinutes * 60 * 1000;
-  attemptHistory = attemptHistory.filter(a => a.timestamp >= cutoff);
+function normalizeHost(input) {
+  if (!input || typeof input !== 'string') return '';
+  return input.trim().toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^(www|m|mobile)\./, '')
+    .split('/')[0]
+    .split(':')[0];
 }
 
-/**
- * Counts attempts for a specific domain within the sliding window.
- */
-function getRecentAttemptCount(domain, windowMinutes = 60) {
-  pruneAttemptHistory(windowMinutes);
-  return attemptHistory.filter(a => a.domain === domain).length;
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
 }
 
-/**
- * Initializes default settings upon installation or update.
- */
-chrome.runtime.onInstalled.addListener(async () => {
-  const current = await getStorage();
-  await setStorage(current);
-  console.log('[wattim] Extension initialized with settings:', current.settings);
+function timeToMinutes(t) {
+  if (!t || typeof t !== 'string') return 0;
+  const [h, m] = t.split(':').map(n => parseInt(n, 10) || 0);
+  return h * 60 + m;
+}
+
+function isScheduleActive(sched, nowDate = new Date()) {
+  if (!sched || !sched.enabled || !Array.isArray(sched.days)) return false;
+  const day = nowDate.getDay();
+  const curMin = nowDate.getHours() * 60 + nowDate.getMinutes();
+  const startMin = timeToMinutes(sched.start);
+  const endMin = timeToMinutes(sched.end);
+
+  if (startMin <= endMin) {
+    return sched.days.includes(day) && curMin >= startMin && curMin < endMin;
+  }
+  if (curMin >= startMin && sched.days.includes(day)) return true;
+  if (curMin < endMin && sched.days.includes((day + 6) % 7)) return true;
+  return false;
+}
+
+function calculateDelay(settings, attemptCount) {
+  const base = Math.max(3, Number(settings.baseDelay) || 10);
+  const step = Math.max(0, Number(settings.progressiveStep) || 0);
+  if (attemptCount <= 0 || step <= 0) return base;
+  if (settings.backoffMode === 'exponential') {
+    const growth = Number(settings.growthPercent) || (step * 5) || 20;
+    return Math.min(180, Math.round(base * Math.pow(1 + growth / 100, attemptCount)));
+  }
+  return Math.min(180, base + attemptCount * step);
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.get(['settings', 'stats', 'domainPasses', 'attemptHistory', 'globalPauseUntil'], (res) => {
+    const updates = {};
+    if (!res.settings) updates.settings = DEFAULT_SETTINGS;
+    if (!res.stats) {
+      updates.stats = {
+        dayKey: getTodayKey(),
+        savedCount: 0,
+        enteredCount: 0,
+        savedMinutes: 0,
+        history: []
+      };
+    }
+    if (!res.domainPasses) updates.domainPasses = {};
+    if (!res.attemptHistory) updates.attemptHistory = [];
+    if (res.globalPauseUntil === undefined) updates.globalPauseUntil = 0;
+    if (Object.keys(updates).length > 0) {
+      chrome.storage.local.set(updates);
+    }
+  });
 });
 
-/**
- * Core rule evaluation: determines if a URL requires intervention.
- * 
- * @param {string} url - Target URL to evaluate
- * @returns {Promise<Object>} Evaluation result
- */
-export async function evaluateNavigation(url) {
-  if (!url || typeof url !== 'string') {
-    return { shouldIntervene: false };
-  }
-
-  if (
-    url.startsWith('chrome://') ||
-    url.startsWith('chrome-extension://') ||
-    url.startsWith('moz-extension://') ||
-    url.startsWith('about:') ||
-    url.startsWith('edge://') ||
-    url.startsWith('view-source:')
-  ) {
-    return { shouldIntervene: false };
-  }
-
-  const hostname = extractHostname(url);
-  if (!hostname) return { shouldIntervene: false };
-
-  const storage = await getStorage();
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!msg || typeof msg !== 'object') return;
   const now = Date.now();
 
-  // 1. Global Pause check
-  if (storage.globalPause && storage.globalPause.until > now) {
-    return { shouldIntervene: false, isGloballyPaused: true };
-  }
-
-  // 2. Target domain check
-  const matchedTarget = storage.targets.find(t => t.enabled && matchDomain(url, t.domain));
-  if (!matchedTarget) {
-    return { shouldIntervene: false };
-  }
-
-  const targetDomain = matchedTarget.domain;
-
-  // 3. Active Session Pass check
-  const passExpiry = sessionPasses.get(targetDomain);
-  if (passExpiry && passExpiry > now) {
-    return { shouldIntervene: false, hasActivePass: true, remainingMs: passExpiry - now };
-  }
-
-  // 4. Schedules check
-  let isHardBlocked = false;
-  let customDelay = null;
-
-  if (Array.isArray(storage.schedules)) {
-    for (const schedule of storage.schedules) {
-      if (isScheduleActive(schedule, new Date())) {
-        if (schedule.targetDomain === 'all' || schedule.targetDomain === targetDomain) {
-          if (schedule.mode === 'hard_block') {
-            isHardBlocked = true;
-            break;
-          } else if (schedule.mode === 'custom_intervention') {
-            customDelay = Number(schedule.customDelaySeconds) || 20;
-          }
-        }
+  if (msg.action === 'CLOSE_CURRENT_TAB' || msg.type === 'CLOSE_TAB') {
+    chrome.storage.local.get(['settings', 'stats'], (data) => {
+      const settings = data.settings || DEFAULT_SETTINGS;
+      let stats = data.stats || { dayKey: getTodayKey(), savedCount: 0, enteredCount: 0, savedMinutes: 0, history: [] };
+      if (stats.dayKey !== getTodayKey()) {
+        stats.dayKey = getTodayKey();
+        stats.enteredCount = 0;
       }
-    }
-  }
+      const addMins = Number(msg.minutesSaved) || Number(settings.avgSessionMinutes) || 10;
+      stats.savedCount = (stats.savedCount || 0) + 1;
+      stats.savedMinutes = (stats.savedMinutes || 0) + addMins;
+      stats.history = [{ timestamp: now, domain: msg.domain || '', savedMinutes: addMins }, ...(stats.history || [])].slice(0, 100);
 
-  if (isHardBlocked) {
-    return {
-      shouldIntervene: true,
-      mode: 'hard_block',
-      targetDomain,
-      url,
-      settings: storage.settings,
-      stats: storage.stats
-    };
-  }
-
-  // 5. Exponential Backoff Calculation
-  const windowMinutes = (storage.backoff && storage.backoff.windowMinutes) || 60;
-  const recentAttempts = getRecentAttemptCount(targetDomain, windowMinutes);
-
-  // Record this attempt
-  attemptHistory.push({ domain: targetDomain, timestamp: now });
-
-  let delay = customDelay;
-  if (delay === null) {
-    const baseDelay = (storage.settings && storage.settings.baseDelaySeconds) || 10;
-    const maxDelay = (storage.settings && storage.settings.maxDelaySeconds) || 120;
-    const growthPercent = (storage.backoff && storage.backoff.enabled)
-      ? (storage.backoff.growthPercent || 20)
-      : 0;
-
-    delay = calculateBackoffDelay(baseDelay, growthPercent, recentAttempts, maxDelay);
-  }
-
-  return {
-    shouldIntervene: true,
-    mode: 'normal',
-    targetDomain,
-    url,
-    delay,
-    attempts: recentAttempts,
-    growthPercent: (storage.backoff && storage.backoff.growthPercent) || 20,
-    reInterventionSeconds: getReinterventionSeconds(storage.settings),
-    settings: storage.settings,
-    stats: storage.stats
-  };
-}
-
-/**
- * Message Dispatcher
- */
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!message || typeof message !== 'object') return;
-
-  const now = Date.now();
-
-  switch (message.type) {
-    case 'CHECK_NAVIGATION': {
-      (async () => {
-        const result = await evaluateNavigation(message.url);
-        sendResponse(result);
-      })();
-      return true;
-    }
-
-    case 'CLOSE_TAB': {
-      (async () => {
-        const { domain, minutesSaved } = message;
-        const storage = await getStorage();
-        const updatedStats = calculateUpdatedStats(
-          storage.stats,
-          minutesSaved || storage.settings.avgSessionMinutes || 10,
-          domain
-        );
-        await setStorage({ stats: updatedStats });
-
+      chrome.storage.local.set({ stats }, () => {
         if (sender.tab && sender.tab.id) {
-          chrome.tabs.remove(sender.tab.id);
+          chrome.tabs.remove(sender.tab.id, () => sendResponse({ ok: true, stats }));
+        } else {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs && tabs[0] && tabs[0].id) chrome.tabs.remove(tabs[0].id);
+            sendResponse({ ok: true, stats });
+          });
         }
-        sendResponse({ success: true, stats: updatedStats });
-      })();
-      return true;
-    }
+      });
+    });
+    return true;
+  }
 
-    case 'GRANT_PASS': {
-      const { domain, durationSeconds, durationMinutes } = message;
-      const sec = (durationSeconds !== undefined && durationSeconds !== null)
-        ? Number(durationSeconds)
-        : (Number(durationMinutes) || 15) * 60;
-      if (domain) {
-        const expiry = now + Math.max(5, sec) * 1000;
-        sessionPasses.set(domain, expiry);
+  if (msg.type === 'EVALUATE_SITE') {
+    chrome.storage.local.get(['settings', 'stats', 'domainPasses', 'attemptHistory', 'globalPauseUntil'], (data) => {
+      const settings = data.settings || DEFAULT_SETTINGS;
+      const globalPauseUntil = Number(data.globalPauseUntil) || 0;
+      if (globalPauseUntil > now) {
+        sendResponse({ shouldIntervene: false, isGloballyPaused: true, remainingPauseMs: globalPauseUntil - now });
+        return;
       }
-      sendResponse({ success: true });
-      break;
-    }
 
-    case 'LOG_IMPULSE': {
-      (async () => {
-        const { domain, minutesSaved } = message;
-        const storage = await getStorage();
-        const updatedStats = calculateUpdatedStats(
-          storage.stats,
-          minutesSaved || storage.settings.avgSessionMinutes || 10,
-          domain
-        );
-        await setStorage({ stats: updatedStats });
-        sendResponse({ success: true, stats: updatedStats });
-      })();
-      return true;
-    }
+      const cleanHost = normalizeHost(msg.hostname || msg.url);
+      const matchedRoot = (settings.domains || []).find(d => {
+        const cleanD = normalizeHost(d);
+        return cleanD && (cleanHost === cleanD || cleanHost.endsWith('.' + cleanD));
+      });
 
-    case 'SET_GLOBAL_PAUSE': {
-      (async () => {
-        const { durationMinutes = 15 } = message;
-        const until = durationMinutes > 0 ? now + durationMinutes * 60 * 1000 : 0;
-        await setStorage({ globalPause: { until } });
-        sendResponse({ success: true, until });
-      })();
-      return true;
-    }
+      if (!matchedRoot) {
+        sendResponse({ shouldIntervene: false });
+        return;
+      }
 
-    case 'GET_STATUS': {
-      (async () => {
-        const storage = await getStorage();
-        const until = (storage.globalPause && storage.globalPause.until) || 0;
-        const isPaused = until > now;
-        const remainingMs = isPaused ? until - now : 0;
+      const domainKey = normalizeHost(matchedRoot);
+      const passes = data.domainPasses || {};
+      const activePass = passes[domainKey] || passes[cleanHost];
 
+      if (activePass && activePass.until > now && !msg.forceReintervene) {
         sendResponse({
-          isPaused,
-          remainingMs,
-          until,
-          activeTargetsCount: storage.targets.filter(t => t.enabled).length,
-          savedImpulses: (storage.stats && storage.stats.savedImpulses) || 0,
-          savedMinutes: (storage.stats && storage.stats.savedMinutes) || 0
+          shouldIntervene: false,
+          hasActivePass: true,
+          domainKey,
+          passUntil: activePass.until,
+          intention: activePass.intention || 'Осознанный визит'
         });
-      })();
-      return true;
-    }
+        return;
+      }
 
-    case 'CHECK_SESSION': {
-      const { domain } = message;
-      const expiry = sessionPasses.get(domain) || 0;
-      sendResponse({ valid: expiry > now, remainingMs: Math.max(0, expiry - now) });
-      break;
-    }
+      // Check schedules (Hard Block)
+      const activeHardBlock = (settings.schedules || []).find(s => isScheduleActive(s) && s.mode === 'hard_block');
+      const windowMs = ((settings.windowMinutes || 60) * 60 * 1000);
+      const history = (data.attemptHistory || []).filter(a => (now - a.timestamp) < windowMs);
+      const domainAttempts = history.filter(a => a.domain === domainKey).length;
 
-    default:
-      sendResponse({ error: 'Unknown message type' });
+      const waitSec = calculateDelay(settings, domainAttempts);
+      const stats = data.stats || { dayKey: getTodayKey(), savedCount: 0, enteredCount: 0, savedMinutes: 0 };
+
+      sendResponse({
+        shouldIntervene: true,
+        mode: activeHardBlock ? 'hard_block' : 'normal',
+        scheduleName: activeHardBlock ? activeHardBlock.name : null,
+        domainKey,
+        cleanHost,
+        attemptNumber: domainAttempts + 1,
+        waitSec,
+        settings,
+        stats
+      });
+    });
+    return true;
+  }
+
+  if (msg.type === 'GRANT_SITE_PASS') {
+    chrome.storage.local.get(['settings', 'stats', 'domainPasses', 'attemptHistory'], (data) => {
+      const settings = data.settings || DEFAULT_SETTINGS;
+      const domainKey = normalizeHost(msg.domainKey || msg.hostname);
+      const minutes = Math.max(1, Number(msg.minutes) || Number(settings.reinterventionMinutes) || 5);
+      const until = now + minutes * 60 * 1000;
+
+      const domainPasses = data.domainPasses || {};
+      domainPasses[domainKey] = {
+        until,
+        intention: msg.intention || 'Осознанный визит'
+      };
+
+      const windowMs = ((settings.windowMinutes || 60) * 60 * 1000);
+      const attemptHistory = [
+        ...(data.attemptHistory || []).filter(a => (now - a.timestamp) < windowMs),
+        { domain: domainKey, timestamp: now }
+      ];
+
+      let stats = data.stats || { dayKey: getTodayKey(), savedCount: 0, enteredCount: 0, savedMinutes: 0, history: [] };
+      if (stats.dayKey !== getTodayKey()) {
+        stats.dayKey = getTodayKey();
+        stats.enteredCount = 0;
+      }
+      stats.enteredCount = (stats.enteredCount || 0) + 1;
+
+      chrome.storage.local.set({ domainPasses, attemptHistory, stats }, () => {
+        sendResponse({ ok: true, until, stats });
+      });
+    });
+    return true;
+  }
+
+  if (msg.type === 'SET_GLOBAL_PAUSE') {
+    const mins = Number(msg.durationMinutes) || 0;
+    const globalPauseUntil = mins > 0 ? (now + mins * 60 * 1000) : 0;
+    chrome.storage.local.set({ globalPauseUntil }, () => {
+      sendResponse({ ok: true, globalPauseUntil });
+    });
+    return true;
   }
 });

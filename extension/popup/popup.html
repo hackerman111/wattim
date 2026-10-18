@@ -1,83 +1,68 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="nord">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>wattim 🌿</title>
-  <link rel="stylesheet" href="../common/theme.css">
-  <link rel="stylesheet" href="popup.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 350px; min-width: 320px; max-width: 480px; padding: 16px;
+      background: #09090b; color: #fafafa;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #27272a; }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; }
+    .badge { background: rgba(244,63,94,0.15); color: #fb7185; padding: 3px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; font-family: monospace; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 10px 8px; text-align: center; }
+    .val { font-size: 18px; font-weight: 900; font-family: monospace; }
+    .lbl { font-size: 10px; color: #a1a1aa; margin-top: 2px; }
+    .sec-title { font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.05em; margin: 10px 0 6px; }
+    .pause-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+    .btn-sm { background: #18181b; border: 1px solid #27272a; color: #e4e4e7; padding: 7px 4px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .btn-sm:hover { border-color: #f43f5e; color: #fb7185; }
+    .site-box { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .site-name { font-family: monospace; font-size: 12px; font-weight: 700; color: #fb7185; overflow: hidden; text-overflow: ellipsis; }
+    .btn-toggle { background: #27272a; border: 1px solid #3f3f46; color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .btn-main { width: 100%; min-height: 42px; padding: 10px; border-radius: 10px; border: none; background: #e11d48; color: #fff; font-weight: 800; font-size: 13px; cursor: pointer; margin-top: 6px; }
+    .btn-sec { width: 100%; min-height: 38px; padding: 8px; border-radius: 10px; border: 1px solid #27272a; background: #18181b; color: #d4d4d8; font-weight: 700; font-size: 12px; cursor: pointer; margin-top: 6px; }
+  </style>
 </head>
 <body>
-  <div class="popup-container">
-    <!-- Header -->
-    <header class="popup-header">
-      <div class="header-logo">
-        <span class="logo-leaf">🌿</span>
-        <span class="logo-text">wattim</span>
-      </div>
-      <div class="header-version">v1.0.0</div>
-    </header>
-
-    <!-- Status Card -->
-    <div class="status-card" id="statusCard">
-      <div class="status-indicator">
-        <span class="status-dot dot-active" id="statusDot"></span>
-        <span class="status-title" id="statusTitle">ЗАЩИТА АКТИВНА</span>
-      </div>
-      <div class="status-desc" id="statusDesc">
-        Отслеживается сайтов: <strong id="activeTargetsCount">0</strong>
-      </div>
-      <!-- Countdown timer when paused -->
-      <div class="pause-timer-box" id="pauseTimerBox" style="display: none;">
-        <span class="pause-timer-label">Пауза истекает через:</span>
-        <span class="pause-countdown" id="pauseCountdown">00:00</span>
-        <button class="btn-resume" id="btnResume">Возобновить защиту</button>
-      </div>
-    </div>
-
-    <!-- Quick Pause Buttons Group -->
-    <div class="section-title">Быстрая пауза всей защиты:</div>
-    <div class="pause-buttons-grid">
-      <button class="btn-pause" data-duration="15">15 мин</button>
-      <button class="btn-pause" data-duration="30">30 мин</button>
-      <button class="btn-pause" data-duration="60">1 час</button>
-      <button class="btn-pause btn-pause-infinite" data-duration="1440">1 день</button>
-    </div>
-
-    <!-- Quick Target Action for Current Active Tab -->
-    <div class="current-site-card" id="currentSiteCard">
-      <div class="current-site-info">
-        <span class="site-label">Текущая вкладка:</span>
-        <span class="site-domain" id="currentDomain">Загрузка...</span>
-      </div>
-      <button class="btn-toggle-site" id="btnToggleSite">
-        + Защитить этот сайт
-      </button>
-    </div>
-
-    <!-- Stats Summary -->
-    <div class="stats-card">
-      <div class="stats-row">
-        <span class="stat-item">
-          <span class="stat-value" id="statImpulses">0</span>
-          <span class="stat-label">побед над импульсом</span>
-        </span>
-        <span class="stat-separator">·</span>
-        <span class="stat-item">
-          <span class="stat-value" id="statMinutes">0</span>
-          <span class="stat-label">мин сбережено</span>
-        </span>
-      </div>
-    </div>
-
-    <!-- Footer Controls -->
-    <footer class="popup-footer">
-      <button class="btn-options" id="btnOpenOptions">
-        ⚙️ Все настройки
-      </button>
-    </footer>
+  <div class="header">
+    <div class="brand"><span>🌿</span> WATTIM × GFW</div>
+    <div class="badge" id="statusBadge">АКТИВЕН</div>
   </div>
 
-  <script type="module" src="popup.js"></script>
+  <div class="stats">
+    <div class="card">
+      <div class="val" style="color:#34d399" id="savedCount">0</div>
+      <div class="lbl">Отбито</div>
+    </div>
+    <div class="card">
+      <div class="val" style="color:#38bdf8" id="savedMinutes">0м</div>
+      <div class="lbl">Сбережено</div>
+    </div>
+    <div class="card">
+      <div class="val" style="color:#fbbf24" id="enteredCount">0</div>
+      <div class="lbl">Входов</div>
+    </div>
+  </div>
+
+  <div class="site-box">
+    <span class="site-name" id="currentHost">вкладка...</span>
+    <button class="btn-toggle" id="btnToggleDomain">+ Под надзор</button>
+  </div>
+
+  <div class="sec-title">Быстрая пауза защиты (wattim):</div>
+  <div class="pause-grid">
+    <button class="btn-sm pause-btn" data-m="15">15 мин</button>
+    <button class="btn-sm pause-btn" data-m="30">30 мин</button>
+    <button class="btn-sm pause-btn" data-m="60">1 час</button>
+    <button class="btn-sm pause-btn" data-m="0" style="color:#34d399">▶ Вкл</button>
+  </div>
+
+  <button class="btn-sec" id="openOptionsBtn">⚙️ Открыть полную панель настроек</button>
+  <script src="popup.js"></script>
 </body>
 </html>
