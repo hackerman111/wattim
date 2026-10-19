@@ -229,6 +229,7 @@
           font-size: 13px; color: #a1a1aa; margin: 0 0 16px 0; line-height: 1.45;
         }
         .controls { width: 100%; display: none; flex-direction: column; gap: 10px; margin-top: 4px; }
+        .branch { display: contents; }
         .gate-box {
           background: #09090b; border: 1px solid ${pal.border}; border-radius: 14px;
           padding: 11px 13px; text-align: left;
@@ -271,78 +272,100 @@
     shadow.adoptedStyleSheets = [stylesheet];
     shadow.innerHTML = `
       <div class="overlay" id="ov-wrap">
-        <div class="ambient ${s.canvasStyle === 'FILL' ? 'fill' : s.canvasStyle === 'ZEN_ORBIT' ? 'orbit' : ''} ${isHardBlock ? 'paused' : ''}" id="ambient"></div>
+        <div class="ambient" id="ambient"></div>
         <div class="card-wrap">
           <div class="badge">
-            <strong style="color:${pal.accent}">${isHardBlock ? '🔒 HARD BLOCK' : (isReintervention ? '⏰ ЛИМИТ ИСТЁК' : '🛑 СТОП-КРАН')}</strong>
+            <strong id="badge-title"></strong>
             <span>•</span>
-            <span>${domainKey}</span>
+            <span id="domain-name"></span>
             <span>•</span>
-            <span style="color:#fbbf24">Попытка #${attemptNumber} (${totalWaitSec}с)</span>
+            <span style="color:#fbbf24" id="attempt-label"></span>
           </div>
 
-          ${isHardBlock ? `
-            <h1>Сайт заблокирован расписанием «${evalData.scheduleName || 'Фокус'}»</h1>
+          <div class="branch" id="hard-content">
+            <h1 id="hard-title"></h1>
             <p class="sub">Сейчас действует режим строгой блокировки (Hard Block). Вход отключён до окончания рабочего окна.</p>
-            <button class="btn-work" id="btn-quit-hard">💪 Закрыть вкладку и работать (${(evalData.stats && evalData.stats.savedMinutes) || 0} мин сбережено)</button>
-          ` : `
+            <button class="btn-work" id="btn-quit-hard"></button>
+          </div>
+          <div class="branch" id="normal-content">
             <div class="orb-wrap" id="orb-touch">
               <div class="ring" id="ring"></div>
-              <div class="timer-circle" id="timer">${totalWaitSec}</div>
+              <div class="timer-circle" id="timer"></div>
             </div>
-            <div class="breath-lbl" id="breath">${s.touchHoldMode ? '👆 Удерживай круг пальцем...' : 'Глубокий вдох...'}</div>
-            <h1>${roastText}</h1>
-            <p class="sub">
-              ${isReintervention
-                ? 'Твой лимит времени на сайте истёк! Закроем вкладку или тебя снова засосало в думскроллинг?'
-                : 'Пока идёт таймер, спроси себя: ты открыл этот сайт по делу или на чистом рефлексе?'}
-            </p>
+            <div class="breath-lbl" id="breath"></div>
+            <h1 id="roast-text"></h1>
+            <p class="sub" id="visit-description"></p>
 
             <div class="controls" id="unlock-box">
-              ${s.requireChallengePhrase ? `
-                <div class="gate-box">
+                <div class="gate-box" id="challenge-gate">
                   <div class="gate-hdr">
                     <span style="color:#fcd34d">⌨️ Шаг 1: Напечатай проверочную фразу (без Ctrl+V)</span>
                     <span id="chal-status">Ожидание</span>
                   </div>
-                  <div class="phrase-target">${expectedChallenge}</div>
+                  <div class="phrase-target"></div>
                   <input class="input" id="challenge-input" autocomplete="off" spellcheck="false" placeholder="Повтори фразу символ в символ..." />
                 </div>
-              ` : ''}
-
-              ${s.requireIntention ? `
-                <div class="gate-box">
+                <div class="gate-box" id="intention-gate">
                   <div class="gate-hdr">
                     <span>🎯 Шаг 2: Конкретная причина входа (мин. 8 симв.)</span>
                     <span id="int-status">0 / 8 симв.</span>
                   </div>
                   <input class="input" id="intention-input" autocomplete="off" placeholder="Зачем ты сюда идёшь? (не менее 8 символов)" />
                 </div>
-              ` : ''}
 
               <div class="dur-row">
                 <span>Пустить на:</span>
                 <button class="dur-btn" data-m="2">2 мин</button>
-                <button class="dur-btn active" data-m="${s.reinterventionMinutes || 5}">${s.reinterventionMinutes || 5} мин</button>
+                <button class="dur-btn active" id="default-duration"></button>
                 <button class="dur-btn" data-m="15">15 мин</button>
               </div>
               <button class="btn-work" id="btn-quit-2">💪 Закрыть вкладку и пойти работать</button>
-              <button class="btn-enter" id="btn-proceed" ${(s.requireIntention || s.requireChallengePhrase) ? 'disabled' : ''}>
+              <button class="btn-enter" id="btn-proceed" disabled>
                 Всё равно пустить на сайт (без перезагрузки) →
               </button>
             </div>
 
             <button class="btn-work" id="btn-quit-1">💪 Я передумал, закрыть вкладку</button>
-          `}
+          </div>
 
           <div class="footer-stats">
-            🌿 Отбито импульсов: <strong>${(evalData.stats && evalData.stats.savedCount) || 0}</strong> · Сбережено: <strong>${(evalData.stats && evalData.stats.savedMinutes) || 0} мин</strong>
+            🌿 Отбито импульсов: <strong id="saved-count"></strong> · Сбережено: <strong id="saved-minutes"></strong>
           </div>
         </div>
       </div>
     `;
 
+    const setText = (id, value) => { shadow.getElementById(id).textContent = value; };
+    setText('badge-title', isHardBlock ? '🔒 HARD BLOCK' : isReintervention ? '⏰ ЛИМИТ ИСТЁК' : '🛑 СТОП-КРАН');
+    shadow.getElementById('badge-title').style.color = pal.accent;
+    setText('domain-name', domainKey);
+    setText('attempt-label', `Попытка #${attemptNumber} (${totalWaitSec}с)`);
+    const stats = evalData.stats || {};
+    setText('saved-count', stats.savedCount || 0);
+    setText('saved-minutes', `${stats.savedMinutes || 0} мин`);
+    if (isHardBlock) {
+      shadow.getElementById('normal-content').remove();
+      setText('hard-title', `Сайт заблокирован расписанием «${evalData.scheduleName || 'Фокус'}»`);
+      setText('btn-quit-hard', `💪 Закрыть вкладку и работать (${stats.savedMinutes || 0} мин сбережено)`);
+    } else {
+      shadow.getElementById('hard-content').remove();
+      setText('timer', totalWaitSec);
+      setText('breath', s.touchHoldMode ? '👆 Удерживай круг пальцем...' : 'Глубокий вдох...');
+      setText('roast-text', roastText);
+      setText('visit-description', isReintervention
+        ? 'Твой лимит времени на сайте истёк! Закроем вкладку или тебя снова засосало в думскроллинг?'
+        : 'Пока идёт таймер, спроси себя: ты открыл этот сайт по делу или на чистом рефлексе?');
+      shadow.querySelector('.phrase-target').textContent = expectedChallenge;
+      if (!s.requireChallengePhrase) shadow.getElementById('challenge-gate').remove();
+      if (!s.requireIntention) shadow.getElementById('intention-gate').remove();
+      setText('default-duration', `${s.reinterventionMinutes || 5} мин`);
+      shadow.getElementById('default-duration').dataset.m = s.reinterventionMinutes || 5;
+      shadow.getElementById('btn-proceed').disabled = Boolean(s.requireIntention || s.requireChallengePhrase);
+    }
     const ambient = shadow.getElementById('ambient');
+    if (s.canvasStyle === 'FILL') ambient.classList.add('fill');
+    if (s.canvasStyle === 'ZEN_ORBIT') ambient.classList.add('orbit');
+    if (isHardBlock) ambient.classList.add('paused');
     const updateAnimationVisibility = () => ambient.classList.toggle('hidden', document.hidden);
     document.addEventListener('visibilitychange', updateAnimationVisibility);
     updateAnimationVisibility();
@@ -504,6 +527,11 @@
       hud = document.createElement('div');
       hud.id = 'onesec-gfw-hud';
       hud.style.cssText = 'position:fixed;top:calc(12px + env(safe-area-inset-top, 0px));right:12px;z-index:2147483646;background:rgba(9,9,11,0.92);border:1px solid #3f3f46;color:#fafafa;padding:7px 13px;border-radius:999px;font-family:monospace;font-size:12px;box-shadow:0 8px 20px rgba(0,0,0,0.45);backdrop-filter:blur(8px);touch-action:none;user-select:none;cursor:grab;';
+      const time = document.createElement('strong');
+      time.style.color = '#fb7185';
+      const intention = document.createElement('span');
+      intention.style.color = '#d4d4d8';
+      hud.append(time, document.createTextNode(' • '), intention);
       document.documentElement.appendChild(hud);
 
       let offsetY = 0;
@@ -516,6 +544,8 @@
       }, { passive: true });
     }
 
+    const time = hud.querySelector('strong');
+    hud.querySelector('span').textContent = activeIntention;
     const updateHud = () => {
       const leftMs = activePassUntil - Date.now();
       if (leftMs <= 0) {
@@ -526,7 +556,7 @@
       const totalSec = Math.ceil(leftMs / 1000);
       const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
       const s = String(totalSec % 60).padStart(2, '0');
-      hud.innerHTML = `<strong style="color:#fb7185">⏱ ${m}:${s}</strong> • <span style="color:#d4d4d8">${activeIntention}</span>`;
+      time.textContent = `⏱ ${m}:${s}`;
     };
     updateHud();
     hudInterval = setInterval(updateHud, 1000);

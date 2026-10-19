@@ -4,6 +4,8 @@ Requires Python Playwright and Chromium (or WATTIM_BROWSER pointing to Chrome).
 Only the extension runtime transport is faked; DOM, typing and media events are real.
 """
 import os
+import json
+import re
 from pathlib import Path
 import unittest
 
@@ -87,6 +89,64 @@ class OverlayHarness:
 
 
 class OverlayTests(OverlayHarness, unittest.TestCase):
+    def test_disabled_gates_allow_entry_without_inputs(self):
+        self.load(settings={'requireChallengePhrase': False, 'requireIntention': False})
+        proceed = self.overlay.locator('#btn-proceed')
+        proceed.wait_for(state='visible')
+        self.assertEqual(self.overlay.locator('input').count(), 0)
+        self.assertTrue(proceed.is_enabled())
+        proceed.click()
+        self.assertEqual(self.page.locator('#onesec-gfw-root').count(), 0)
+
+    def test_intention_only_gate_works_without_challenge(self):
+        self.load(settings={'requireChallengePhrase': False, 'requireIntention': True})
+        self.overlay.locator('#intention-input').wait_for(state='visible')
+        self.assertEqual(self.overlay.locator('#challenge-input').count(), 0)
+        self.assertTrue(self.overlay.locator('#btn-proceed').is_disabled())
+        self.overlay.locator('#intention-input').fill('Research for work')
+        self.assertTrue(self.overlay.locator('#btn-proceed').is_enabled())
+
+    def test_settings_markup_is_displayed_as_literal_text(self):
+        payload = '<img src=x onerror="alert(1)"> & <b>work</b>'
+        self.load(settings={
+            'phrases': [payload], 'challengePhrase': payload,
+            'requireChallengePhrase': True, 'pauseMedia': False,
+        })
+        self.assertEqual(self.overlay.locator('h1').text_content(), payload)
+        self.assertEqual(self.overlay.locator('.phrase-target').text_content(), payload)
+        self.assertEqual(self.overlay.locator('img, b').count(), 0)
+
+    def test_schedule_name_is_displayed_as_literal_text(self):
+        payload = '<img src=x> & <b>Focus</b>'
+        self.load(mode='hard_block', scheduleName=payload)
+        self.assertIn(payload, self.overlay.locator('h1').text_content())
+        self.assertEqual(self.overlay.locator('img, b').count(), 0)
+
+    def test_hud_treats_intention_as_text_and_keeps_its_nodes(self):
+        payload = '<img src=x onerror="alert(1)"> & <b>work</b>'
+        self.page.clock.install()
+        self.load(shouldIntervene=False, hasActivePass=True,
+                  passUntil=self.page.evaluate('Date.now() + 60000'), intention=payload)
+        hud = self.page.locator('#onesec-gfw-hud')
+        self.assertEqual(hud.locator('span').text_content(), payload)
+        self.assertEqual(hud.locator('img, b').count(), 0)
+        hud.locator('strong').evaluate('el => window.originalTimeNode = el')
+        before = hud.locator('strong').text_content()
+        self.page.clock.fast_forward(1000)
+        self.assertTrue(hud.locator('strong').evaluate('el => el === window.originalTimeNode'))
+        self.assertNotEqual(hud.locator('strong').text_content(), before)
+
+    def test_userscript_phrase_is_displayed_as_literal_text(self):
+        payload = '<img src=x onerror="alert(1)"> & <b>work</b>'
+        source = (EXTENSION / 'onesec-gfw.user.js').read_text()
+        source = source.replace('"domains": [', '"domains": ["example.com",', 1)
+        source = re.sub(r'"phrases": \[.*?\]',
+                        lambda _: '"phrases": ' + json.dumps([payload]), source, count=1, flags=re.S)
+        self.page.add_script_tag(content=source)
+        root = self.page.locator('#onesec-userscript-root')
+        self.assertEqual(root.locator('h1').text_content(), payload)
+        self.assertEqual(root.locator('img, b').count(), 0)
+
     def test_site_shortcuts_cannot_truncate_phrase_or_intention(self):
         # A page sees the shadow host as event.target, so its input exemption fails.
         self.page.evaluate("""() => document.addEventListener('keydown', event => {

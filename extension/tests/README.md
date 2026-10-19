@@ -30,7 +30,9 @@ these credentials. See [Mozilla's publishing instructions](https://extensionwork
 
 ## Results, 2026-10-20
 
-- 14 Chromium browser tests and one Node test passed.
+- 20 Chromium browser tests and one Node test passed, including literal rendering
+  of HTML-like settings, schedule names, intention and userscript phrases, HUD node
+  reuse and optional input gates.
 - Actual Firefox 157.0.1 passed normal and restrictive-CSP smoke cases. The original
   iframe inline stylesheet failed the restrictive case; a stylesheet constructed
   in the frame document fixed it. Raw final reports: [firefox-smoke.json](evidence/firefox-smoke.json).
@@ -39,15 +41,17 @@ these credentials. See [Mozilla's publishing instructions](https://extensionwork
   long Cyrillic input, 150% text enlargement and a simulated keyboard viewport resize.
 - No Android device was connected. Real Firefox Android keyboard, safe-area and
   browser-toolbar behavior still require a device check.
-- Firefox runtime package lint: zero errors, two existing dynamic `innerHTML`
-  warnings in the overlay template/HUD. No warnings were suppressed.
+- Version 1.0.2 Firefox runtime package and full extension source lint: zero errors,
+  zero notices and zero warnings. Dynamic strings use `textContent`/DOM properties;
+  HTML templates contain only static markup. No warnings were suppressed.
 - Independent review found no remaining introduced correctness/lifecycle blocker.
   The long content script was reviewed for decomposition; this change keeps one
   overlay/session owner and removes the canvas loop without a broader rewrite.
 
 ## Performance boundary
 
-Baseline is commit `13e8db8`. Same local fixture, headless Chrome 143.0.7499.192,
+The saved performance comparison is for version 1.0.1 against commit `13e8db8`.
+Same local fixture, headless Chrome 143.0.7499.192,
 1440×900, DPR 1, three consecutive 2-second samples per state. The metric is CDP
 renderer **main-thread busy time / wall time**, not whole-browser or OS CPU usage.
 GPU/compositor, service-worker and real website costs are outside this measurement.
