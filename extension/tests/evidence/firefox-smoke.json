@@ -1,0 +1,20 @@
+[
+  {
+    "restrictive": false,
+    "iframe": true,
+    "position": "fixed",
+    "display": "flex",
+    "proceedEnabled": true,
+    "overlayRemoved": true,
+    "hud": true
+  },
+  {
+    "restrictive": true,
+    "iframe": true,
+    "position": "fixed",
+    "display": "flex",
+    "proceedEnabled": true,
+    "overlayRemoved": true,
+    "hud": true
+  }
+]

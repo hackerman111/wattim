@@ -77,6 +77,7 @@
   let activeIntention = '';
   let activeDomainKey = '';
   let lastCheckedUrl = location.href;
+  let evaluationVersion = 0;
 
   function normalizeHost(hostname) {
     return (hostname || '').toLowerCase().replace(/^(www|m|mobile)\./, '');
@@ -98,13 +99,15 @@
 
   function checkCurrentPage(forceReintervene = false) {
     if (!chrome || !chrome.runtime || !chrome.runtime.sendMessage) return;
+    const version = ++evaluationVersion;
+    const url = location.href;
     chrome.runtime.sendMessage({
       type: 'EVALUATE_SITE',
       hostname: window.location.hostname,
       url: window.location.href,
       forceReintervene
     }, (res) => {
-      if (chrome.runtime.lastError || !res) return;
+      if (chrome.runtime.lastError || !res || version !== evaluationVersion || url !== location.href) return;
       if (res.settings) currentSettings = res.settings;
 
       if (res.shouldIntervene) {
@@ -116,83 +119,6 @@
         startActiveHudAndReintervention(res.domainKey);
       }
     });
-  }
-
-  // 60 FPS Canvas Animator from wattim integrated into our Shadow DOM
-  function start60FpsCanvas(canvas, style, pal) {
-    const ctx = canvas.getContext('2d');
-    let running = true;
-    let expand = 0;
-    const particles = Array.from({ length: 28 }, (_, i) => ({
-      angle: (i / 28) * Math.PI * 2,
-      offset: (Math.random() - 0.5) * 22,
-      speed: 0.015 + Math.random() * 0.015,
-      size: 2 + Math.random() * 2.5
-    }));
-
-    function resize() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    function frame(now) {
-      if (!running) return;
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      ctx.clearRect(0, 0, w, h);
-
-      // Smooth 6-second breathing cycle
-      const cycle = (now % 6000) / 6000;
-      expand = (1 - Math.cos(cycle * Math.PI * 2)) / 2;
-
-      if (style === 'FILL') {
-        const fillH = h * (0.12 + 0.65 * expand);
-        const baseY = h - fillH;
-        const grad = ctx.createLinearGradient(0, baseY - 40, 0, h);
-        grad.addColorStop(0, pal.glow);
-        grad.addColorStop(1, 'transparent');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(0, h);
-        for (let x = 0; x <= w; x += 12) {
-          ctx.lineTo(x, baseY + Math.sin(x * 0.008 + now * 0.003) * (10 + 10 * expand));
-        }
-        ctx.lineTo(w, h);
-        ctx.fill();
-      } else if (style === 'ZEN_ORBIT') {
-        const cx = w / 2, cy = h / 2;
-        const r = Math.min(w, h) * 0.22 * (0.8 + 0.45 * expand);
-        particles.forEach(p => {
-          p.angle += p.speed;
-          const px = cx + Math.cos(p.angle) * (r + p.offset * expand);
-          const py = cy + Math.sin(p.angle) * (r + p.offset * expand);
-          ctx.fillStyle = pal.accent;
-          ctx.globalAlpha = 0.35 + 0.4 * expand;
-          ctx.beginPath();
-          ctx.arc(px, py, p.size, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        ctx.globalAlpha = 1;
-      } else {
-        // PULSE
-        const cx = w / 2, cy = h / 2;
-        const r = Math.min(w, h) * (0.14 + 0.20 * expand);
-        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 1.4);
-        grad.addColorStop(0, pal.glow);
-        grad.addColorStop(1, 'transparent');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r * 1.4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-    return () => { running = false; window.removeEventListener('resize', resize); };
   }
 
   function showInterventionOverlay(evalData, isReintervention) {
@@ -214,28 +140,57 @@
 
     pauseAllPageMedia();
     vibrateDevice([60, 40, 60]);
-    const mediaStopper = setInterval(pauseAllPageMedia, 400);
+    const onMediaPlay = (event) => {
+      if (s.pauseMedia && event.target instanceof HTMLMediaElement) event.target.pause();
+    };
+    document.addEventListener('play', onMediaPlay, true);
 
-    const hostEl = document.createElement('div');
+    // A separate document also isolates input from capture listeners on the page.
+    const hostEl = document.createElement('iframe');
     hostEl.id = 'onesec-gfw-root';
-    hostEl.style.cssText = 'position:fixed !important;inset:0 !important;z-index:2147483647 !important;width:100vw !important;height:100dvh !important;touch-action:manipulation !important;';
-    const shadow = hostEl.attachShadow({ mode: 'open' });
+    hostEl.title = 'wattim — Осознанная пауза';
+    hostEl.style.cssText = 'position:fixed !important;inset:0 !important;z-index:2147483647 !important;width:100vw !important;height:100dvh !important;border:0 !important;display:block !important;touch-action:manipulation !important;';
+    document.documentElement.appendChild(hostEl);
+    const viewport = window.visualViewport;
+    const updateViewport = () => {
+      hostEl.style.setProperty('height', `${viewport.height}px`, 'important');
+      hostEl.style.setProperty('top', `${viewport.offsetTop}px`, 'important');
+    };
+    if (viewport) {
+      viewport.addEventListener('resize', updateViewport);
+      viewport.addEventListener('scroll', updateViewport);
+      updateViewport();
+    }
+    const shadow = hostEl.contentDocument.body.attachShadow({ mode: 'open' });
 
-    shadow.innerHTML = `
-      <style>
+    // Construct in the frame's document so site CSP cannot block an inline style tag.
+    const stylesheet = new hostEl.contentWindow.CSSStyleSheet();
+    stylesheet.replaceSync(`
         * { box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         .overlay {
           position: fixed; inset: 0; width: 100vw; height: 100dvh;
           background: ${pal.bg}; color: #fafafa;
-          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
           padding: calc(16px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
           text-align: center; user-select: none; overflow-y: auto;
           transition: opacity 0.3s ease;
         }
-        #bg-canvas { position: fixed; inset: 0; width: 100vw; height: 100dvh; pointer-events: none; z-index: 0; }
+        .ambient {
+          position: fixed; inset: 0; margin: auto; width: 80vmin; height: 80vmin; pointer-events: none; z-index: 0;
+          border-radius: 50%; background: radial-gradient(circle, ${pal.glow}, transparent 70%);
+          animation: breathe 6s ease-in-out infinite alternate;
+        }
+        .ambient.fill { inset: auto 0 0; width: 100vw; height: 80vh; border-radius: 0;
+          background: linear-gradient(transparent, ${pal.glow}); transform-origin: bottom; }
+        .ambient.orbit { background: none; border: 3px dotted ${pal.accent}; opacity: 0.4; }
+        .ambient.paused { animation: none; }
+        .ambient.hidden { animation-play-state: paused; }
+        @keyframes breathe { from { transform: scale(0.65); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
+        @media (prefers-reduced-motion: reduce) { .ambient { animation: none; } .ring { transition: none; } }
         .card-wrap {
           position: relative; z-index: 2; width: 100%; max-width: 520px;
-          background: rgba(24, 24, 27, 0.86); backdrop-filter: blur(20px);
+          flex-shrink: 0; margin-block: auto; overflow-wrap: anywhere;
+          background: ${pal.card};
           border: 1px solid ${pal.border}; border-radius: 24px;
           padding: 24px 22px; box-shadow: 0 25px 60px rgba(0,0,0,0.65), 0 0 35px ${pal.glow};
           display: flex; flex-direction: column; align-items: center;
@@ -289,13 +244,13 @@
           padding: 7px 10px; border-radius: 9px; margin-bottom: 8px; user-select: none;
         }
         .input {
-          width: 100%; padding: 11px 12px; border-radius: 10px;
+          width: 100%; min-height: 48px; padding: 11px 12px; border-radius: 10px; user-select: text;
           background: #18181b; border: 1px solid #3f3f46; color: #fff; font-size: 16px; outline: none;
         }
         .input:focus { border-color: ${pal.accent}; }
         .dur-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; font-size: 12px; color: #a1a1aa; margin: 4px 0; }
         .dur-btn {
-          min-height: 36px; padding: 5px 13px; border-radius: 10px; border: 1px solid #3f3f46;
+          min-width: 48px; min-height: 48px; padding: 5px 13px; border-radius: 10px; border: 1px solid #3f3f46;
           background: #09090b; color: #e4e4e7; cursor: pointer; font-weight: 700; font-size: 12px;
         }
         .dur-btn.active { background: ${pal.accent}; border-color: ${pal.accent}; color: #09090b; }
@@ -305,16 +260,18 @@
           cursor: pointer; transition: transform 0.1s;
         }
         .btn-enter {
-          width: 100%; min-height: 44px; padding: 11px 16px; border-radius: 14px; border: 1px solid #27272a;
+          width: 100%; min-height: 48px; padding: 11px 16px; border-radius: 14px; border: 1px solid #27272a;
           background: #09090b; color: #d4d4d8; font-weight: 600; font-size: 13px; cursor: pointer;
         }
         .btn-enter:disabled { opacity: 0.35; cursor: not-allowed; }
         .footer-stats {
           margin-top: 14px; font-size: 11px; color: #71717a; font-family: monospace;
         }
-      </style>
+    `);
+    shadow.adoptedStyleSheets = [stylesheet];
+    shadow.innerHTML = `
       <div class="overlay" id="ov-wrap">
-        <canvas id="bg-canvas"></canvas>
+        <div class="ambient ${s.canvasStyle === 'FILL' ? 'fill' : s.canvasStyle === 'ZEN_ORBIT' ? 'orbit' : ''} ${isHardBlock ? 'paused' : ''}" id="ambient"></div>
         <div class="card-wrap">
           <div class="badge">
             <strong style="color:${pal.accent}">${isHardBlock ? '🔒 HARD BLOCK' : (isReintervention ? '⏰ ЛИМИТ ИСТЁК' : '🛑 СТОП-КРАН')}</strong>
@@ -385,12 +342,24 @@
       </div>
     `;
 
-    document.documentElement.appendChild(hostEl);
-    const stopCanvas = start60FpsCanvas(shadow.getElementById('bg-canvas'), s.canvasStyle || 'PULSE', pal);
+    const ambient = shadow.getElementById('ambient');
+    const updateAnimationVisibility = () => ambient.classList.toggle('hidden', document.hidden);
+    document.addEventListener('visibilitychange', updateAnimationVisibility);
+    updateAnimationVisibility();
+    let cdInterval = null;
+    const stopOverlayWork = () => {
+      clearInterval(cdInterval);
+      ambient.classList.add('paused');
+      document.removeEventListener('play', onMediaPlay, true);
+      document.removeEventListener('visibilitychange', updateAnimationVisibility);
+      if (viewport) {
+        viewport.removeEventListener('resize', updateViewport);
+        viewport.removeEventListener('scroll', updateViewport);
+      }
+    };
 
     const quitHandler = () => {
-      stopCanvas();
-      clearInterval(mediaStopper);
+      stopOverlayWork();
       chrome.runtime.sendMessage({
         action: 'CLOSE_CURRENT_TAB',
         domain: domainKey,
@@ -434,7 +403,7 @@
     };
     if (!s.touchHoldMode) animBreath();
 
-    const cdInterval = setInterval(() => {
+    cdInterval = setInterval(() => {
       if (s.touchHoldMode && !isHolding) {
         breathEl.textContent = '👆 Удерживай палец на круге...';
         return;
@@ -443,6 +412,7 @@
       if (remaining % 3 === 0) animBreath();
       if (remaining <= 0) {
         clearInterval(cdInterval);
+        ambient.classList.add('paused');
         timerEl.textContent = '0';
         breathEl.textContent = 'Осознанный выбор 🌿';
         vibrateDevice([40, 60, 40]);
@@ -509,9 +479,7 @@
     });
 
     proceedBtn.addEventListener('click', () => {
-      clearInterval(cdInterval);
-      clearInterval(mediaStopper);
-      stopCanvas();
+      stopOverlayWork();
       const intentionText = intentionInput ? intentionInput.value.trim() : 'Осознанный визит';
 
       chrome.runtime.sendMessage({
@@ -577,12 +545,13 @@
     }
   });
 
-  setInterval(() => {
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type !== 'PAGE_URL_CHANGED') return;
     if (location.href !== lastCheckedUrl) {
       lastCheckedUrl = location.href;
       checkCurrentPage(false);
     }
-  }, 1200);
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => checkCurrentPage(false));

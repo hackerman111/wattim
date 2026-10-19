@@ -1,0 +1,37 @@
+{
+  "browser": "143.0.7499.192",
+  "viewport": "1440x900, DPR=1",
+  "boundary": "fixture renderer main-thread TaskDuration / wall time",
+  "states": {
+    "unprotected": {
+      "main_thread_busy_percent_samples": [
+        0.021,
+        0.007,
+        0.012
+      ],
+      "median_percent": 0.012,
+      "canvas_draws_in_6s": 0,
+      "media_scans_in_6s": 0
+    },
+    "waiting_for_input": {
+      "main_thread_busy_percent_samples": [
+        1.978,
+        0.868,
+        0.012
+      ],
+      "median_percent": 0.868,
+      "canvas_draws_in_6s": 0,
+      "media_scans_in_6s": 0
+    },
+    "hard_block": {
+      "main_thread_busy_percent_samples": [
+        0.044,
+        0.014,
+        0.017
+      ],
+      "median_percent": 0.017,
+      "canvas_draws_in_6s": 0,
+      "media_scans_in_6s": 0
+    }
+  }
+}

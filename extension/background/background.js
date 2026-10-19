@@ -123,6 +123,17 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+function notifyPageNavigation(details) {
+  if (details.frameId !== 0) return;
+  chrome.tabs.sendMessage(details.tabId, { type: 'PAGE_URL_CHANGED' }, { frameId: 0 }, () => {
+    // Restricted pages and tabs without a content script have no receiver.
+    void chrome.runtime.lastError;
+  });
+}
+
+chrome.webNavigation.onHistoryStateUpdated.addListener(notifyPageNavigation);
+chrome.webNavigation.onReferenceFragmentUpdated.addListener(notifyPageNavigation);
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || typeof msg !== 'object') return;
   const now = Date.now();

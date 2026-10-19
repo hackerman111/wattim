@@ -6,7 +6,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      width: 350px; min-width: 320px; max-width: 480px; padding: 16px;
+      width: 350px; max-width: 100vw; padding: 16px;
       background: #09090b; color: #fafafa;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
@@ -19,13 +19,13 @@
     .lbl { font-size: 10px; color: #a1a1aa; margin-top: 2px; }
     .sec-title { font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.05em; margin: 10px 0 6px; }
     .pause-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
-    .btn-sm { background: #18181b; border: 1px solid #27272a; color: #e4e4e7; padding: 7px 4px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .btn-sm { min-height: 48px; min-width: 48px; background: #18181b; border: 1px solid #27272a; color: #e4e4e7; padding: 7px 4px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
     .btn-sm:hover { border-color: #f43f5e; color: #fb7185; }
     .site-box { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .site-name { font-family: monospace; font-size: 12px; font-weight: 700; color: #fb7185; overflow: hidden; text-overflow: ellipsis; }
-    .btn-toggle { background: #27272a; border: 1px solid #3f3f46; color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-    .btn-main { width: 100%; min-height: 42px; padding: 10px; border-radius: 10px; border: none; background: #e11d48; color: #fff; font-weight: 800; font-size: 13px; cursor: pointer; margin-top: 6px; }
-    .btn-sec { width: 100%; min-height: 38px; padding: 8px; border-radius: 10px; border: 1px solid #27272a; background: #18181b; color: #d4d4d8; font-weight: 700; font-size: 12px; cursor: pointer; margin-top: 6px; }
+    .btn-toggle { min-height: 48px; background: #27272a; border: 1px solid #3f3f46; color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .btn-main { width: 100%; min-height: 48px; padding: 10px; border-radius: 10px; border: none; background: #e11d48; color: #fff; font-weight: 800; font-size: 13px; cursor: pointer; margin-top: 6px; }
+    .btn-sec { width: 100%; min-height: 48px; padding: 8px; border-radius: 10px; border: 1px solid #27272a; background: #18181b; color: #d4d4d8; font-weight: 700; font-size: 12px; cursor: pointer; margin-top: 6px; }
   </style>
 </head>
 <body>

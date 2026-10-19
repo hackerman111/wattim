@@ -6,25 +6,27 @@
   <title>wattim × One Sec × GFW — Панель управления</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #09090b; color: #fafafa; font-family: 'Inter', -apple-system, sans-serif; padding: 32px 20px; max-width: 900px; margin: 0 auto; }
+    body { background: #09090b; color: #fafafa; font-family: 'Inter', -apple-system, sans-serif; padding: 32px 20px; max-width: 900px; margin: 0 auto; overflow-wrap: anywhere; }
     h1 { font-size: 24px; font-weight: 900; margin-bottom: 6px; }
     .sub { color: #a1a1aa; font-size: 14px; margin-bottom: 24px; }
     .card { background: #18181b; border: 1px solid #27272a; border-radius: 16px; padding: 22px; margin-bottom: 20px; }
     .card h2 { font-size: 16px; font-weight: 800; color: #fb7185; margin-bottom: 14px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+    .grid > div { min-width: 0; }
     label { display: block; font-size: 12px; font-weight: 700; color: #d4d4d8; margin-bottom: 6px; }
     input[type="text"], input[type="number"], select, textarea {
       width: 100%; background: #09090b; border: 1px solid #3f3f46; color: #fff;
-      border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: monospace;
+      min-height: 48px; border-radius: 10px; padding: 10px 12px; font-size: 16px; font-family: monospace;
     }
-    .chk-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 13px; cursor: pointer; }
-    .btn { background: linear-gradient(to right, #e11d48, #ea580c); color: #fff; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; }
+    .chk-row { display: flex; align-items: center; min-height: 48px; gap: 10px; margin: 10px 0; font-size: 13px; cursor: pointer; }
+    .chk-row input { flex-shrink: 0; }
+    .btn { min-height: 48px; background: linear-gradient(to right, #e11d48, #ea580c); color: #fff; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; }
     .toast { display: none; margin-left: 12px; color: #34d399; font-weight: 700; font-size: 13px; }
   </style>
 </head>
 <body>
   <h1>🌿 wattim × One Sec × Go Fucking Work (v2.0)</h1>
-  <p class="sub">Полная панель настройки таймеров, проверочной фразы (Anti-CopyPaste), 60 FPS анимаций и блокируемых сайтов.</p>
+  <p class="sub">Полная панель настройки таймеров, проверочной фразы (Anti-CopyPaste), дыхательных анимаций и блокируемых сайтов.</p>
 
   <div class="card">
     <h2>⌨️ Проверочная фраза и Барьер намерения (8 символов)</h2>
@@ -35,7 +37,7 @@
   </div>
 
   <div class="card">
-    <h2>⏱️ Таймеры, Бэкофф и 60 FPS Canvas</h2>
+    <h2>⏱️ Таймеры, Бэкофф и дыхательная пауза</h2>
     <div class="grid">
       <div>
         <label>Базовая пауза дыхания (сек):</label>
@@ -53,7 +55,7 @@
         </select>
       </div>
       <div>
-        <label>Стиль 60 FPS анимации:</label>
+        <label>Стиль дыхательной анимации:</label>
         <select id="canvasStyle">
           <option value="PULSE">PULSE (Сфера)</option>
           <option value="FILL">FILL (Волна)</option>
